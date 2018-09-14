@@ -1,0 +1,1325 @@
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_MEMORY
+OBJECT MODULE PLACED IN Code\Oem\OEM_MEMORY.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_MEMORY.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\
+                    -INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1           /*-----------------------------------------------------------------------------
+   2           * Filename:OEM_MEMORY.C     For Chipset: ITE.IT85XX
+   3           *
+   4           * Function: Memory Definition for extern all code base reference
+   5           *
+   6           * [Memory Map Description]
+   7           *
+   8           * Chip Internal Ram : 0x00-0xFF For Kernel and Chip Level use
+   9           *
+  10           ***************************************************
+  11           * Chip 8500       : External ram 0x000-0x7FF
+  12           * Chip Other 85XX : External ram 0x000-0xFFF
+  13           ***************************************************
+  14           *
+  15           * [OEM Memory Rang]
+  16           * [External Ram]
+  17           * 0x100-0x1FF   OEM RAM
+  18           * 0x200-0x2FF   OEM RAM SPI buffer array
+  19           * 0x300-0x3FF   OEM RAM EC Space
+  20           * 0x400-0x4FF   OEM RAM
+  21           * 0x500-0x5FF   OEM RAM
+  22           * 0x600-0x6FF   OEM RAM
+  23          
+  24           * 0x800-0x8FF   OEM RAM keyboard matrix
+  25           * 0x900-0x9FF   OEM RAM
+  26           * 0xA00-0xAFF   OEM RAM
+  27           * 0xB00-0xBFF   OEM RAM
+  28           * 0xC00-0xCFF   OEM RAM
+  29           * 0xD00-0xDFF   OEM RAM
+  30           * 0xE00-0xEFF   OEM RAM
+  31           * 0xF00-0xFFF   OEM RAM For HSPI ram code function
+  32           *
+  33           * Copyright (c) 2006-2009, ITE Tech. Inc. All Rights Reserved.
+  34           *---------------------------------------------------------------------------*/
+  35          
+  36          #include <CORE_INCLUDE.H>
+  37          #include <OEM_INCLUDE.H>
+  38          
+  39          //*******************************************************************************
+  40          //-------------------------------------------------------------------------------
+  41          //      0x100-0x1FF   OEM RAM 1
+  42          //-------------------------------------------------------------------------------
+  43          //*******************************************************************************
+  44          XBYTE   SysPowState                                                     _at_(OEMRAM1+0x00); //(byte)
+  45          XBYTE   PWSeqStep                                                       _at_(OEMRAM1+0x01); //(byte)
+  46          XBYTE   DeepSleepCunt                                           _at_(OEMRAM1+0x02); //(byte)
+  47          XWORD   DelayDoPowerSeq                                         _at_(OEMRAM1+0x03); //(word)
+  48          XWORD   PowSeqDelay                                                     _at_(OEMRAM1+0x05); //(word)
+  49          
+  50          XBYTE   SBSWReleaseCunt                     _at_(OEMRAM1+0x07); //(byte)  
+  51          
+  52          XBYTE   Test109                                                         _at_(OEMRAM1+0x09); //(byte)
+  53          XBYTE   UART_DB_RAM                             _at_(OEMRAM1+0x0B);  
+  54          XBYTE   KB_OBF_count                                            _at_(OEMRAM1+0x0C);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 2   
+
+  55          XBYTE   UpdateLEDBL_delay                                       _at_(OEMRAM1+0x0D);
+  56          XBYTE   uVGATurboFun                                            _at_(OEMRAM1+0x0E);     //
+  57          
+  58          XBYTE   CmdData2                                                        _at_(ECRAM1+0x0F);
+  59          XBYTE   BatSMbusFailCount                                       _at_(ECRAM1+0x10);
+  60          XBYTE   Batpollstep1                                            _at_(ECRAM1+0x11);
+  61          XBYTE   EC_oCCBQl                                                       _at_(ECRAM1+0x12);
+  62          XBYTE   EC_oCCBQh                                                       _at_(ECRAM1+0x13);
+  63          XBYTE   EC_oCBTl                                                        _at_(ECRAM1+0x14);
+  64          XBYTE   EC_oCBTh                                                        _at_(ECRAM1+0x15);
+  65          XBYTE   BAT1PERCL                                                       _at_(ECRAM1+0x16);
+  66          XBYTE   BAT1PERCH                                                       _at_(ECRAM1+0x17);
+  67          
+  68          XBYTE   uVPCeventSource                                         _at_(ECRAM1+0x18);
+  69          XBYTE   uVPCeventSource2                                        _at_(ECRAM1+0x19);
+  70          XBYTE   uNovoVPCCount                                           _at_(ECRAM1+0x1A);
+  71          XBYTE   DebugCombineKey                                         _at_(ECRAM1+0x1B);
+  72          XBYTE   PowerLed_Count                                          _at_(ECRAM1+0x1C);
+  73          XBYTE   LED_KB_PWM_Step                                         _at_(ECRAM1+0x1D);
+  74          XBITS_8 uReserve07                                                      _at_(ECRAM1+0x1E);
+  75          XBYTE   CombineKeyStatus                                        _at_(ECRAM1+0x1F);
+  76          
+  77          XBYTE   CHGIC_SMbusFailCnt                                      _at_(ECRAM1+0x20);
+  78          XBYTE   CHGIC_ptr                                                       _at_(ECRAM1+0x21);
+  79          XBYTE   CHGIC_InputCurrentL                                     _at_(ECRAM1+0x22);
+  80          XBYTE   CHGIC_InputCurrentH                                     _at_(ECRAM1+0x23);
+  81          XBYTE   CHGIC_ReadCmd0x14L                                      _at_(ECRAM1+0x24);
+  82          XBYTE   CHGIC_ReadCmd0x14H                                      _at_(ECRAM1+0x25);
+  83          XBYTE   CHGIC_ReadCmd0x15L                                      _at_(ECRAM1+0x26);
+  84          XBYTE   CHGIC_ReadCmd0x15H                                      _at_(ECRAM1+0x27);
+  85          XBYTE   CHGIC_ReadCmd0x3FL                                      _at_(ECRAM1+0x28);
+  86          XBYTE   CHGIC_ReadCmd0x3FH                                      _at_(ECRAM1+0x29);
+  87          XWORD   BATTEMP                                                         _at_(ECRAM1+0x2A);
+  88          XBYTE   EC_C_modeL                                                      _at_(ECRAM1+0x2C);
+  89          XBYTE   EC_C_modeH                                                      _at_(ECRAM1+0x2D);
+  90          //XBYTE ManualFanPRM                                            _at_(ECRAM1+0x2E);//72JERRY014: Add the second fan method
+  91           XBYTE  Charge_current_flag                                     _at_(ECRAM1+0x2e);//72JERRY066:Modify charge current vlave for power limit.
+  92          XBYTE   AdapterID                                                       _at_(ECRAM1+0x2F);
+  93          
+  94          XBYTE   eFlashVarifyOK                                          _at_(ECRAM1+0x30);
+  95          XBYTE   eFlash_r_data                                           _at_(ECRAM1+0x31);
+  96          XBYTE   eFlashA1                                                        _at_(ECRAM1+0x32);
+  97          XBYTE   eFlashA0                                                        _at_(ECRAM1+0x33);
+  98          XBYTE   eEEPROMBank                                                     _at_(ECRAM1+0x34);
+  99          XBYTE   eEEPROMAddrsss                                          _at_(ECRAM1+0x35);
+ 100          XBYTE   eEEPROMData                                                     _at_(ECRAM1+0x36);
+ 101          XBYTE   eEEPROMMarkData                                         _at_(ECRAM1+0x37);
+ 102          XBYTE   e256ByteCnt                                                     _at_(ECRAM1+0x38);
+ 103          XBYTE   eUpdateEEPROMCnt                                        _at_(ECRAM1+0x39);
+ 104          XBYTE   eUpdatepDevStusCnt                                      _at_(ECRAM1+0x3A);
+ 105          XBYTE   BatLowCnt                                                       _at_(ECRAM1+0x3B);
+ 106          XBYTE   WSMbusTemp01                                            _at_(ECRAM1+0x3C);
+ 107          XBYTE   WSMbusTemp02                                            _at_(ECRAM1+0x3D);
+ 108          XBYTE   SMbusFailCnt2                                           _at_(ECRAM1+0x3E);
+ 109          XBYTE   SMbusFailCnt3                                           _at_(ECRAM1+0x3F);
+ 110          
+ 111          XBYTE   CombineKeyRN                                            _at_(ECRAM1+0x40);
+ 112          XBYTE   EscScanCodeDelay                                        _at_(ECRAM1+0x41);
+ 113          XWORD   API_ID                                                          _at_(ECRAM1+0x42);
+ 114          
+ 115          XBYTE   SMbusFailCnt4                           _at_(ECRAM1+0x44);//Start Shipmode disable 5s loop once 
+ 116          
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 3   
+
+ 117          XBYTE   Chk_Trickle_Current_status                      _at_(ECRAM1+0x45);
+ 118          XBYTE   Chk_Trickle_Current_count                       _at_(ECRAM1+0x46);
+ 119          XWORD   Chk_Trickle_Current_Now_Current         _at_(ECRAM1+0x47); //0x47~0x48
+ 120          XWORD   Chk_Trickle_Current_Chg_Current         _at_(ECRAM1+0x49); //0x49~0x4A
+ 121          XBYTE   Get_Batt_debounce_count                         _at_(ECRAM1+0x4B);
+ 122          XBYTE   Get_Batt_debounce_hash1                         _at_(ECRAM1+0x4C);
+ 123          XBYTE   Get_Batt_debounce_hash2                         _at_(ECRAM1+0x4D);
+ 124          XBYTE   CombineKeyIO                                            _at_(ECRAM1+0x4E);
+ 125          XBYTE   GPIO_STATUS                                                     _at_(ECRAM1+0x4F);
+ 126          
+ 127          XBYTE   Bat0x0BTempL                                            _at_(ECRAM1+0x50);
+ 128          XBYTE   Bat0x0BTempH                                            _at_(ECRAM1+0x51);
+ 129          XBYTE   Bat0x0BFakeCnt                                          _at_(ECRAM1+0x52);
+ 130          XBYTE   Bat0x08OTPCnt                                           _at_(ECRAM1+0x53);
+ 131          XBYTE   S3ResumeRSOC                                            _at_(ECRAM1+0x54);
+ 132          XBYTE   BatteryAlarm                                            _at_(ECRAM1+0x55);
+ 133          XBYTE   CHGIC_ReadCmd0x12L                                      _at_(ECRAM1+0x56);
+ 134          XBYTE   CHGIC_ReadCmd0x12H                                      _at_(ECRAM1+0x57);
+ 135          XBYTE   Bat0x3ETempL                                            _at_(ECRAM1+0x58);
+ 136          XBYTE   Bat0x3ETempH                                            _at_(ECRAM1+0x59);
+ 137          XBYTE   EC_BatteryStatusL                                       _at_(ECRAM1+0x5A);
+ 138          XBYTE   EC_BatteryStatusH                                       _at_(ECRAM1+0x5B);
+ 139          XBYTE   BattTemp                                                        _at_(ECRAM1+0x5C);
+ 140          XBYTE   BatteryOTPRelease                                       _at_(ECRAM1+0x5D);
+ 141          XBYTE   BatteryOTP                                                      _at_(ECRAM1+0x5E);
+ 142          XBYTE   BatteryOTPShutdown                                      _at_(ECRAM1+0x5F);
+ 143          
+ 144          XBYTE   FAN_Tab_OFF                                                     _at_(ECRAM1+0x60);
+ 145          XBYTE   FAN_Tab_LOW                                                     _at_(ECRAM1+0x61);
+ 146          XBYTE   FAN_Tab_Step1                                           _at_(ECRAM1+0x62);
+ 147          XBYTE   FAN_Tab_Step2                                           _at_(ECRAM1+0x63);
+ 148          XBYTE   FAN_Tab_HI                                                      _at_(ECRAM1+0x64);
+ 149          XBYTE   THR_PRO_OFF                                                     _at_(ECRAM1+0x65);
+ 150          XBYTE   THR_PRO_ON                                                      _at_(ECRAM1+0x66);
+ 151          XBYTE   THR_Turo_Rem                                            _at_(ECRAM1+0x67);
+ 152          XBYTE   THR_Turo_OFF                                            _at_(ECRAM1+0x68);
+ 153          XBYTE   THR_Tab_Shut                                            _at_(ECRAM1+0x69);
+ 154          XBYTE   KB_S3Dly                                                        _at_(ECRAM1+0x6A);
+ 155          XBYTE   SLI_FAN_Tab_OFF                                         _at_(ECRAM1+0x6B);
+ 156          XBYTE   SLI_FAN_Tab_LOW                                         _at_(ECRAM1+0x6C);
+ 157          XBYTE   SLI_FAN_Tab_Step1                                       _at_(ECRAM1+0x6D);
+ 158          XBYTE   SLI_FAN_Tab_Step2                                       _at_(ECRAM1+0x6E);
+ 159          XBYTE   SLI_FAN_Tab_HI                                          _at_(ECRAM1+0x6F);
+ 160          
+ 161          XBYTE   VFAN_Tab_OFF                                            _at_(ECRAM1+0x70);
+ 162          XBYTE   VFAN_Tab_LOW                                            _at_(ECRAM1+0x71);
+ 163          XBYTE   VFAN_Tab_Step1                                          _at_(ECRAM1+0x72);
+ 164          XBYTE   VFAN_Tab_Step2                                          _at_(ECRAM1+0x73);
+ 165          XBYTE   VFAN_Tab_HI                                                     _at_(ECRAM1+0x74);
+ 166          XBYTE   VTHR_PRO_OFF                                            _at_(ECRAM1+0x75);
+ 167          XBYTE   VTHR_PRO_ON                                                     _at_(ECRAM1+0x76);
+ 168          XBYTE   VTHR_Turo_Rem                                           _at_(ECRAM1+0x77);
+ 169          XBYTE   VTHR_Turo_OFF                                           _at_(ECRAM1+0x78);
+ 170          XBYTE   VTHR_Tab_Shut                                           _at_(ECRAM1+0x79);
+ 171          
+ 172          
+ 173          XBYTE   SLI_THR_PRO_OFF                                         _at_(ECRAM1+0x7B);
+ 174          XBYTE   SLI_THR_PRO_ON                                          _at_(ECRAM1+0x7C);
+ 175          XBYTE   SLI_THR_Turo_Rem                                        _at_(ECRAM1+0x7D);
+ 176          XBYTE   SLI_THR_Turo_OFF                                        _at_(ECRAM1+0x7E);
+ 177          XBYTE   SLI_THR_Tab_Shut                                        _at_(ECRAM1+0x7F);
+ 178          
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 4   
+
+ 179          XBYTE   inhibit2sec                                             _at_(ECRAM1+0x80);
+ 180          XBYTE   Battdata_ready                                          _at_(ECRAM1+0x81);
+ 181          XWORD   TrickleChgTimeOutCnt                            _at_(ECRAM1+0x82);//0x82,0x83
+ 182          XWORD   FastChgTimeOutCnt                                       _at_(ECRAM1+0x84);//0x84,0x85
+ 183          XBYTE   RSMshutdownCnt                                          _at_(ECRAM1+0x86);
+ 184          XBYTE   ChkBattery_abnormal_status                      _at_(ECRAM1+0x87);
+ 185          XBYTE   ChkBattery_abnormal_count                       _at_(ECRAM1+0x88);
+ 186          XBYTE   LOWBATT_3TIMES                                          _at_(ECRAM1+0x89);
+ 187          XBYTE   Bat0x00TempL                                            _at_(ECRAM1+0x8C);
+ 188          XBYTE   Bat0x00TempH                                            _at_(ECRAM1+0x8D);
+ 189          XBYTE   Bat0x0FTempL                                            _at_(ECRAM1+0x8E);
+ 190          XBYTE   Bat0x0FTempH                                            _at_(ECRAM1+0x8F);
+ 191          
+ 192          //Mos: Keep ACIN_Count to judge does that ACIN status change
+ 193          XBYTE   Chk_Wrong_ADP_Status                            _at_(ECRAM1+0x90);
+ 194          XBYTE   ACIN_FallINT_Count                                      _at_(ECRAM1+0x91);
+ 195          XWORD   Chk_Wrong_10ms_Count                            _at_(ECRAM1+0x92);
+ 196          XBYTE   Chk_ACOP_Status                                         _at_(ECRAM1+0x94);
+ 197          XWORD   Chk_ACOP_Bat_Chg_Current                        _at_(ECRAM1+0x95);
+ 198          XWORD   Chk_ACOP_10ms_Count                                     _at_(ECRAM1+0x97);
+ 199          
+ 200          XBYTE   Chk_Hybrid_STPP_Status                                          _at_(ECRAM1+0x99);
+ 201          XBYTE   Chk_Hybrid_STPP_min_BattGasgauge                        _at_(ECRAM1+0x9A);
+ 202          XWORD   Chk_Hybrid_STPP_Batt_Output_Power                       _at_(ECRAM1+0x9B);
+ 203          XWORD   Chk_Hybrid_STPP_Batt_Output_Power_Limit         _at_(ECRAM1+0x9D);
+ 204          XBYTE   BackLight_En_Delay                                                      _at_(ECRAM1+0x9F);
+ 205          
+ 206          XBYTE   UCS1002ID                                                                       _at_(ECRAM1+0xA0);
+ 207          
+ 208          XWORD   Chk_Hybrid_STPP_Turboboost_Battery_Current_limit        _at_(ECRAM1+0xA2);
+ 209          //ANGELAS016:s+ Change charge IC option setting.
+ 210          XBYTE   CHGIC_ReadCmd0x37L                                              _at_(ECRAM1+0xA4);
+ 211          XBYTE   CHGIC_ReadCmd0x37H                                              _at_(ECRAM1+0xA5);
+ 212          //ANGELAS016:+e Change charge IC option setting.
+ 213          XWORD   ADPI_Data[4]                                                    _at_(ECRAM1+0xA8);//0xA8~0xAF
+ 214          //ANGELAS016:s+ Change charge IC option setting.
+ 215          XBYTE   chargerInitIndex                                            _at_(ECRAM1+0xB0);
+ 216          XBYTE   CHGIC_ReadCmd0x3BL                                          _at_(ECRAM1+0xB1);
+ 217          XBYTE   CHGIC_ReadCmd0x3BH                                          _at_(ECRAM1+0xB2);  
+ 218          XBYTE   CHGIC_ReadCmd0x3CL                                              _at_(ECRAM1+0xB3);
+ 219          XBYTE   CHGIC_ReadCmd0x3CH                                              _at_(ECRAM1+0xB4);
+ 220          XBYTE   CHGIC_ReadCmd0x3DL                                              _at_(ECRAM1+0xB5);
+ 221          XBYTE   CHGIC_ReadCmd0x3DH                                              _at_(ECRAM1+0xB6);
+ 222          XBYTE   CHGIC_ReadCmd0x39L                                              _at_(ECRAM1+0xB7);
+ 223          XBYTE   CHGIC_ReadCmd0x39H                                              _at_(ECRAM1+0xB8);
+ 224           XBYTE  CHGIC_WriteCmd0x38L                                             _at_(ECRAM1+0xB9);
+ 225           XBYTE  CHGIC_WriteCmd0x38H                                             _at_(ECRAM1+0xBA);
+ 226           XBYTE  CHGIC_WriteCmd0x37L                                             _at_(ECRAM1+0xBB);
+ 227           XBYTE  CHGIC_WriteCmd0x37H                                             _at_(ECRAM1+0xBC);
+ 228           XBYTE  CHGIC_WriteCmd0x12L                                             _at_(ECRAM1+0xBD);
+ 229           XBYTE  CHGIC_WriteCmd0x12H                                         _at_(ECRAM1+0xBE);
+ 230          //ANGELAS016:+e Change charge IC option setting.
+ 231          XWORD   XWTemp1                                                         _at_(ECRAM1+0xC0);
+ 232          XWORD   OCPCapacityRelease                                      _at_(ECRAM1+0xC2);
+ 233          XWORD   OCPCapacity                                                     _at_(ECRAM1+0xC4);
+ 234          XBYTE   ECBIOSVersionH                                          _at_(ECRAM1+0xC6);
+ 235          XBYTE   ECBIOSVersionL                                          _at_(ECRAM1+0xC7);
+ 236          XBYTE   ECBIOSUbSVersion                                        _at_(ECRAM1+0xC8);
+ 237          
+ 238          XBYTE   ADPIDON10MS_NUM                                         _at_(ECRAM1+0xC9); 
+ 239          XBYTE   TEST_FLAG                                               _at_(ECRAM1+0xCA);
+ 240          XBYTE   AdapterIDOn_Flag                    _at_(ECRAM1+0xCB);  //MEILING001:add.
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 5   
+
+ 241          XBYTE   ResetTestFlag                           _at_(ECRAM1+0xCC);       //MEILING009:add.
+ 242          XBYTE   CPUProchotONCnt                         _at_(ECRAM1+0xCD);  //MEILING033:add. //MEILING055:modify ProchotO
+             -NCnt name.
+ 243          XBYTE   GPUProchotDelay                         _at_(ECRAM1+0xCE);  //MEILING042:add.
+ 244          
+ 245          
+ 246          XBYTE   ADPI2Sec                                                        _at_(ECRAM1+0xCF);
+ 247          
+ 248          XWORD   TurboBoostCP                                            _at_(ECRAM1+0xD0);
+ 249          XWORD   TurboBoostEn                                            _at_(ECRAM1+0xD2);
+ 250          XWORD   TurboBoostthrottlEn                                     _at_(ECRAM1+0xD4);
+ 251          XWORD   TurboBoostthrottlDis                            _at_(ECRAM1+0xD6);
+ 252          XWORD   TurboBoostDis                                           _at_(ECRAM1+0xD8);
+ 253          XWORD   ACModeSTPPEn                                            _at_(ECRAM1+0xDA);
+ 254          XWORD   ACModeSTPPDis                                           _at_(ECRAM1+0xDC);
+ 255          XWORD   ADPI_AvgData                                            _at_(ECRAM1+0xDE);
+ 256          
+ 257          XBYTE   POWER_FLAG1                                             _at_(OEMRAM1+0xE0);     // EC power flag 1
+ 258          XBYTE   BT1_STATUS1                                     _at_(OEMRAM1+0xE1); // Battery 1 status1 flag
+ 259          XBYTE   EVT_STATUS1                                     _at_(OEMRAM1+0xE2); // Event status flag 1
+ 260          
+ 261          XWORD   PSW_COUNTER                                     _at_(OEMRAM1+0xE3); // (word)
+ 262          
+ 263          XBYTE   DSxPowState                                                     _at_(OEMRAM1+0xE5); // (byte)
+ 264          XBYTE   DS3PowSeqStep                                   _at_(OEMRAM1+0xE6);
+ 265          XWORD   DS3PowSeqDelay                                          _at_(OEMRAM1+0xE7); // (word)
+ 266          XBYTE   DRAMRST_CNTRL_CNT                                       _at_(ECRAM1+0xE9);
+ 267          //XWORD SUSACK_LOW_CNT                          _at_(ECRAM1+0xEA);
+ 268          //XBYTE   SUSACK_HI_CNT                                 _at_(ECRAM1+0xEC);
+ 269          XBYTE   DRAMRST_CNTRL_LOW_CNT                           _at_(ECRAM1+0xED);
+ 270          //XBYTE   S3S4DelayCnt                                          _at_(ECRAM1+0xEE); //ANGELAS012:Remove S3 delay.
+ 271          XBYTE   S3S4DelayCnt                                            _at_(ECRAM1+0xEE); //ANGELAS063:add
+ 272          XBYTE   CPUThrottlingDelayTime              _at_(ECRAM1+0xEF); //MEILING052:add.
+ 273          
+ 274          //===============================================================================
+ 275          // OEMRAM1 Offset 0xF0 ~ 0xFF   Event debounce counter
+ 276          XBYTE   DEBOUNCE_CONT1                                          _at_(DebounceRAM+0x00); //(byte)
+ 277          XBYTE   DEBOUNCE_CONT2                                          _at_(DebounceRAM+0x01); //(byte)
+ 278          XBYTE   DEBOUNCE_CONT3                                          _at_(DebounceRAM+0x02); //(byte)
+ 279          XBYTE   DEBOUNCE_CONT4                                          _at_(DebounceRAM+0x03); //(byte)
+ 280          XBYTE   DEBOUNCE_CONT5                                          _at_(DebounceRAM+0x04); //(byte)
+ 281          XBYTE   DEBOUNCE_CONT6                                          _at_(DebounceRAM+0x05); //(byte)
+ 282          XBYTE   DEBOUNCE_CONT7                                          _at_(DebounceRAM+0x06); //(byte)
+ 283          XBYTE   DEBOUNCE_CONT8                                          _at_(DebounceRAM+0x07); //(byte)
+ 284          XBYTE   DEBOUNCE_CONT9                                          _at_(DebounceRAM+0x08); //(byte)
+ 285          XBYTE   DEBOUNCE_CONT10                                         _at_(DebounceRAM+0x09); //(byte)
+ 286          XBYTE   DEBOUNCE_CONT11                                         _at_(DebounceRAM+0x0A); //(byte)
+ 287          XBYTE   DEBOUNCE_CONT12                                         _at_(DebounceRAM+0x0B); //(byte)
+ 288          XBYTE   DEBOUNCE_CONT13                                         _at_(DebounceRAM+0x0C); //(byte)
+ 289          XBYTE   DEBOUNCE_CONT14                                         _at_(DebounceRAM+0x0D); //(byte)
+ 290          XBYTE   DEBOUNCE_CONT15                                         _at_(DebounceRAM+0x0E); //(byte)
+ 291          XBYTE   DEBOUNCE_CONT16                                         _at_(DebounceRAM+0x0F); //(byte)
+ 292          
+ 293          //*******************************************************************************
+ 294          //-------------------------------------------------------------------------------
+ 295          //      0x200-0x2FF   OEM RAM 2
+ 296          //-------------------------------------------------------------------------------
+ 297          //*******************************************************************************
+ 298          
+ 299          XBYTE   pProject0                                               _at_(OEMRAM2+0x02);
+ 300          XBYTE   pDevStus                                                _at_(OEMRAM2+0x03);
+ 301          //ANGELAS107:S-Add code for GBSI function.
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 6   
+
+ 302          //ANGELAS033:Add start
+ 303          //XBYTE batteryFirstUsedDateL                   _at_(OEMRAM2+0x04);
+ 304          //XBYTE batteryFirstUsedDateH           _at_(OEMRAM2+0x05);
+ 305          //ANGELAS033:Add end
+ 306          //ANGELAS107:E-Add code for GBSI function.
+ 307          XBYTE  batteryChemistry[4]              _at_(OEMRAM2+0x06);//ANGELAS107:Add code for GBSI function.
+ 308          XBYTE   pOneKeyAPPStatus                                _at_(OEMRAM2+0x0B);     // Lenovo_VGATurbo
+ 309          XBYTE   pPROCHOT                                                _at_(OEMRAM2+0x0C);
+ 310          XBYTE   pProject4                                           _at_(OEMRAM2+0x0D);//HEGANGS028:Disable POWERSW when flash bios
+ 311          XBYTE   SMartNoise                                              _at_(OEMRAM2+0x11);
+ 312           XBYTE  uPGID                           _at_(OEMRAM2+0x14);
+ 313          
+ 314          XBYTE   uMBID                                                   _at_(OEMRAM2+0x15);
+ 315          XBYTE   MBID_READY                                              _at_(OEMRAM2+0x16); 
+ 316          XBYTE   uMBGPU                                                  _at_(OEMRAM2+0x17);
+ 317          XBYTE   uMBpw                                                   _at_(OEMRAM2+0x18);
+ 318          XBYTE   uPJID                           _at_(OEMRAM2+0x19);
+ 319          
+ 320          XBYTE   BAT1_MD_1                                   _at_(OEMRAM2+0x20);
+ 321          XBYTE   BAT1_MD_2                                   _at_(OEMRAM2+0x21);
+ 322          XBYTE   BAT1_MD_3                                   _at_(OEMRAM2+0x22);
+ 323          XBYTE   BAT1_MD_4                                   _at_(OEMRAM2+0x23);
+ 324          XBYTE   BAT1_MD_5                                   _at_(OEMRAM2+0x24);
+ 325          XBYTE   BAT1_MD_6                                   _at_(OEMRAM2+0x25);
+ 326          XBYTE   BAT1_MD_7                                   _at_(OEMRAM2+0x26);
+ 327          XBYTE   BAT1_MD_8                                   _at_(OEMRAM2+0x27);
+ 328          XBYTE   BAT1_MD_9                                   _at_(OEMRAM2+0x28);
+ 329          XBYTE   BAT1_MD_A                                   _at_(OEMRAM2+0x29);
+ 330          XBYTE   BAT1_MD_B                                   _at_(OEMRAM2+0x2A);
+ 331          XBYTE   BAT1_MD_C                                   _at_(OEMRAM2+0x2B);
+ 332          XBYTE   BAT1_MD_D                                   _at_(OEMRAM2+0x2C);
+ 333          XBYTE   BAT1_MD_E                                   _at_(OEMRAM2+0x2D);
+ 334          
+ 335          XBYTE   BAT1_Bar_Code[32]               _at_(OEMRAM2+0x2E); //2E~4D//MEILING031:add.
+ 336          
+ 337          XBYTE   UCSI_TUNNEL_Buffer[17]          _at_(OEMRAM2+0x4E); //4E~5F //72JERRY060
+ 338          
+ 339          XBYTE   StartFanClean                                   _at_(OEMRAM2+0x61);
+ 340          XBYTE   FanCleanFull                                    _at_(OEMRAM2+0x62);
+ 341          XBYTE   FanCleanHalt                                    _at_(OEMRAM2+0x63);
+ 342          
+ 343          XBYTE   pModuleID                                               _at_(OEMRAM2+0x66);
+ 344          XBYTE   pLastSID                                                _at_(OEMRAM2+0x67);
+ 345          XBYTE   pLastSID2                                               _at_(OEMRAM2+0x68);
+ 346          XBYTE   pLastSID3                                               _at_(OEMRAM2+0x69);
+ 347          XBYTE   pLastSID4                                               _at_(OEMRAM2+0x6A);
+ 348          XBYTE  AOURSTCNT                    _at_ (OEMRAM2+0x70); ////72JERRY008:
+ 349          XBYTE  EC_AOU_DBG_FLAG                 _at_ (OEMRAM2+0x71);    ////72JERRY008:
+ 350          XBYTE  EC_AOU_PWR_TYPE                 _at_ (OEMRAM2+0x72);   ////72JERRY008:
+ 351          XBYTE   cPacketPowerLimit1                              _at_(OEMRAM2+0x82);
+ 352          XWORD   KeepBattRemineCap                               _at_(OEMRAM2+0x83);
+ 353          XBYTE   ChkBattery_FCCchg_count                 _at_(OEMRAM2+0x85);
+ 354          XBYTE   ChkBattery_FCCchg_lastFCCL              _at_(OEMRAM2+0x86);
+ 355          XBYTE   ChkBattery_FCCchg_lastFCCH              _at_(OEMRAM2+0x87);
+ 356          XBYTE   CountSecAfterPswPressed                 _at_(OEMRAM2+0x88);
+ 357          XBYTE   CountSecAfterNOVOPressed                _at_(OEMRAM2+0x89);
+ 358          
+ 359          XBYTE   pVCompareFlag                                   _at_(OEMRAM2+0x8A);
+ 360          XWORD   NTC_V2                                                  _at_(OEMRAM2+0x8B);
+ 361          
+ 362          
+ 363          XBYTE   P80CMOS[7]                      _at_(OEMRAM2+0x90);//from 0x90-0x9E
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 7   
+
+ 364          XBYTE   P80Index                        _at_(OEMRAM2+0x97);
+ 365          XBYTE   P80CMOSSts                      _at_(OEMRAM2+0xA0);
+ 366          
+ 367          XWORD   Read_VR_CPU_PWROK               _at_(OEMRAM2+0xb0);
+ 368          XBYTE   CombineKeyShip                  _at_(OEMRAM2+0xb3); //ANGELAS032: add
+ 369          XBYTE   CombineKeyShip1                 _at_(OEMRAM2+0xb4); //ANGELAS056: add
+ 370          LWORD   CalcBatRCC                      _at_(OEMRAM2+0xb5); //ANGELAS101:Modify battery discharge when batte
+             -ry RSOC is 59% in storage mode.
+ 371          XBYTE   PWR_LED_Debug                     _at_(OEMRAM2+0xBA);//Hang check
+ 372           //MEILING002: add start
+ 373          XBYTE   PMIC_counter                            _at_(OEMRAM2+0xC5);
+ 374          XBYTE   OTP_TEMP                                        _at_(OEMRAM2+0xC6);
+ 375          XBYTE   PowerInitOK                                     _at_(OEMRAM2+0xC7);
+ 376          XBYTE   PowerInitErrorCMD                       _at_(OEMRAM2+0xC8);
+ 377          XBYTE   PowerInitErrorDATA                      _at_(OEMRAM2+0xC9);
+ 378          XBYTE   PowerInitError                          _at_(OEMRAM2+0xCA);
+ 379          XBYTE   PowerInitIndex                          _at_(OEMRAM2+0xCB);
+ 380          XBYTE   PowerReturnData                                 _at_(OEMRAM2+0xCC);
+ 381          
+ 382          XBYTE   PowerVENDODID                                   _at_(OEMRAM2+0xCD);
+ 383          XBYTE   PowerREVID                                              _at_(OEMRAM2+0xCE);
+ 384          XBYTE   PowerSDWN                                               _at_(OEMRAM2+0xCF);
+ 385          XBYTE   PowerEN_RW                                              _at_(OEMRAM2+0xD0);
+ 386          XBYTE   PowerEN_MASK                                    _at_(OEMRAM2+0xD1);
+ 387          XBYTE   PowerEN_DEGL_SEL1                               _at_(OEMRAM2+0xD2);
+ 388          XBYTE   PowerEN_DEGL_SEL2                               _at_(OEMRAM2+0xD3);
+ 389          XBYTE   PowerPG_STATE                                   _at_(OEMRAM2+0xD4);
+ 390          XBYTE   PowerOVP_REG                                    _at_(OEMRAM2+0xD5);
+ 391          XBYTE   PowerUVP_REG                                    _at_(OEMRAM2+0xD6);
+ 392          XBYTE   PowerOCP_REG                                    _at_(OEMRAM2+0xD7);
+ 393          XBYTE   PowerOTP_REG                                    _at_(OEMRAM2+0xD8);
+ 394          XBYTE   PowerBUCK1CTRL                                  _at_(OEMRAM2+0xD9);
+ 395          XBYTE   PowerBUCK2CTRL                                  _at_(OEMRAM2+0xDA);
+ 396          XBYTE   PowerBUCK3CTRL                                  _at_(OEMRAM2+0xDB);
+ 397          XBYTE   PowerLDO1CTRL                                   _at_(OEMRAM2+0xDC);
+ 398          XBYTE   PowerLDO2CTRL                                   _at_(OEMRAM2+0xDD);
+ 399          XBYTE   PowerDISCHCTRL1                                 _at_(OEMRAM2+0xDE);
+ 400          XBYTE   PowerDISCHCTRL2                                 _at_(OEMRAM2+0xDF);
+ 401          XBYTE   PowerOC_CTRL                                    _at_(OEMRAM2+0xE0);
+ 402          XBYTE   PowerBUCK_FSW                                   _at_(OEMRAM2+0xE1);
+ 403          //MEILING002: add end
+ 404          
+ 405          XBYTE   CellCount                                               _at_(OEMRAM2+0xE5); //MEILING017: add
+ 406          
+ 407          XBYTE   BAT_LED_Cnt_ON                          _at_(OEMRAM2+0xE6);  //MEILING030:add.
+ 408          XBYTE   BAT_LED_Cnt_OFF                         _at_(OEMRAM2+0xE7);  //MEILING030:add.
+ 409          XBYTE   BAT_LOW_LED_Cnt                         _at_(OEMRAM2+0xE8);  //MEILING030:add.
+ 410          XBYTE   LENOVOBATT2                             _at_(OEMRAM2+0xF0);  //ANGELAG017: add
+ 411          
+ 412          
+ 413          //*******************************************************************************
+ 414          //-------------------------------------------------------------------------------
+ 415          //      0x300-0x3FF   OEM RAM 3
+ 416          //-------------------------------------------------------------------------------
+ 417          //*******************************************************************************
+ 418          XBYTE   SYS_MISC1                                                       _at_(OEMRAM3+0x00);
+ 419          XBYTE   PWM_LEDBeep_CNT                                         _at_(OEMRAM3+0x01);
+ 420          XBYTE   AutoTimer                                                       _at_(OEMRAM3+0x02);
+ 421          XBYTE   uWOVSTATUS                                              _at_(OEMRAM3+0x03);
+ 422          XBYTE   QEVENT_DEBUG                                        _at_(OEMRAM3+0x05); 
+ 423          
+ 424          XBYTE   SCI_Event_In_Index                                      _at_(OEMRAM3+0x06);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 8   
+
+ 425          XBYTE   SCI_Event_Out_Index                                     _at_(OEMRAM3+0x07);
+ 426          XBYTE   SCI_Event_Buffer[EVENT_BUFFER_SIZE]     _at_(OEMRAM3+0x08);
+ 427          XWORD   ADP_I                                                           _at_(OEMRAM3+0x10);
+ 428          XWORD   NTC_V1                                                          _at_(OEMRAM3+0x12);
+ 429          XWORD   NOVO_COUNTER                                            _at_ OEMRAM3+0x14;// Hang check
+ 430          //XWORD         CPU_I                                                   _at_(OEMRAM3+0x14);
+ 431          //XWORD         SLI_I                                                   _at_(OEMRAM3+0x16);
+ 432          //XWORD         SD_PWR_EN                                               _at_(OEMRAM3+0x16);  //MEILING001:remove.
+ 433          XBYTE   LV_Authen_Step_CNT                                      _at_(OEMRAM3+0x18);
+ 434          /*-----------------------------------------------------------------
+ 435          ; {LV_Authen_Step_CNT}
+ 436          ; B7 - Authentication Success
+ 437          ; B6 - Authentication Fail
+ 438          ; B5~B4 - Authentication Step from 01 to 03, 00=>stop
+ 439          ; B3~B0 - counter for 10 times
+ 440          -----------------------------------------------------------------*/
+ 441          XBYTE Bat1_FPChgFlag                                            _at_(OEMRAM3+0x19);
+ 442          /*-----------------------------------------------------------
+ 443          ; {Bat1_FPChgFlag} Battery 1 Fast & Pre Charging Flag
+ 444          ; B7 - Reserved
+ 445          ; B6 - Reserved
+ 446          ; B5 - Fast-Charge Time-Out
+ 447          ; B4 - Reserved
+ 448          ; B3 - Reserved
+ 449          ; B2 - Reserved
+ 450          ; B1 - Pre-Charge Time-Out
+ 451          ; B0 - Charge SMBus Failed
+ 452          ------------------------------------------------------------*/
+ 453          XWORD Auto_mode_AVG                                                     _at_(OEMRAM3+0x1D);
+ 454          XBYTE Auto_mode_EnPtr                                           _at_(OEMRAM3+0x1F);
+ 455          /*-----------------------------------------------------------------
+ 456          ; {Auto_mode_EnPtr}
+ 457          ; B07 - reserved
+ 458          ; B06 - Over 7A
+ 459          ; B05 - ADC error
+ 460          ; B04~B00 - Counter
+ 461          -----------------------------------------------------------------*/
+ 462          XWORD Auto_mode[20]                                                     _at_(OEMRAM3+0x20);
+ 463          
+ 464          XBYTE PM1PendingTXCount                                         _at_(OEMRAM3+0x50);
+ 465          XBYTE PM1PendingRXCount                                         _at_(OEMRAM3+0x51);
+ 466          XBYTE PM1DataPending[6]                                         _at_(OEMRAM3+0x52);
+ 467          XBYTE PM2PendingTXCount                                         _at_(OEMRAM3+0x58);
+ 468          XBYTE PM2PendingRXCount                                         _at_(OEMRAM3+0x59);
+ 469          XBYTE PM2DataPending[6]                                         _at_(OEMRAM3+0x5A);
+ 470          
+ 471          XBYTE   uCritBattWakeThre                                       _at_(OEMRAM3+0x63);
+ 472          XBYTE   uIffsCnt                                                        _at_(OEMRAM3+0x64);
+ 473          
+ 474          XBYTE   uISCT                                                           _at_(OEMRAM3+0x70);
+ 475          XBYTE   uISCT_2                                                         _at_(OEMRAM3+0x71);
+ 476          
+ 477          XBYTE   Reset_Delay                         _at_(OEMRAM3+0x72); 
+ 478          XBYTE   Reset_Delay_Count                       _at_(OEMRAM3+0x73); 
+ 479          
+ 480          XWORD   ShipModeACK                             _at_(OEMRAM3+0x75);//Start Shipmode disable 5s loop once 20130
+             -608 20:28 
+ 481          XBYTE   ShipModeCnt                         _at_(OEMRAM3+0x77);//Start Shipmode disable 5s loop once 20130
+             -608 20:28 
+ 482          
+ 483          XBYTE   ShipModeEn                          _at_(OEMRAM3+0x79);  
+ 484          XBYTE ChkBattery_FCCchg_count2                          _at_(OEMRAM3+0x8b); 
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 9   
+
+ 485          XBYTE   PCH_ColdBoot_TimeOut                _at_(OEMRAM3+0x8C); //ANGELAG012:add.
+ 486          XWORD   Psys_Data[4]                                    _at_(OEMRAM3+0x8d);//0x8d-0x94
+ 487          XWORD   Psys_AvgData                                    _at_(OEMRAM3+0x95); //0x95-0x96
+ 488          XBYTE   Psys_Counter                                    _at_(OEMRAM3+0x97);
+ 489          XWORD   Psys                                           _at_(OEMRAM3+0x98); //
+ 490          //*******************************************************************************
+ 491          //-------------------------------------------------------------------------------
+ 492          //      0x400-0x4FF   OEM RAM 4
+ 493          //-------------------------------------------------------------------------------
+ 494          //*******************************************************************************
+ 495          XBYTE   nVPC_CMD                                                        _at_(NameSpace+0x00);           // Customer EC name space
+ 496          XBYTE   nVPC_DATA                                                       _at_(NameSpace+0x01);           // Customer EC name space
+ 497          XBYTE   VPC_iStatus                                             _at_(NameSpace+0x02);           // Customer EC name space
+ 498          XBYTE   CRESERVED03                                                     _at_(NameSpace+0x03);           // Customer EC name space
+ 499          XBYTE   CRESERVED04                                             _at_(NameSpace+0x04);           // Customer EC name space
+ 500          XBYTE   CRESERVED05                                                     _at_(NameSpace+0x05);           // Customer EC name space
+ 501          XBYTE   nAtmFanSpeed                                            _at_(NameSpace+0x06);           // Fan speed. For Lenovo ATM
+ 502          XBYTE   LENOVOBATT                                                      _at_(NameSpace+0x07);           //
+ 503          XBYTE   nACBriTableLimit                                        _at_(NameSpace+0x08);           // AC Brightness table limit
+ 504          XBYTE   nDCBriTableLimit                                        _at_(NameSpace+0x09);           // DC brightness table limit
+ 505          XBYTE   LENOVOPMFW                                                      _at_(NameSpace+0x0A);           //
+ 506          XBYTE   SWITCHABLE                                                      _at_(NameSpace+0x0B);           //
+ 507          XBYTE   LENOVODEVICE                                            _at_(NameSpace+0x0C);           //
+ 508          XBYTE   nRamTemp                                                        _at_(NameSpace+0x0D);           // Ram temperature
+ 509          XBYTE   nVramTemp                                                       _at_(NameSpace+0x0E);           // V Ram temperature
+ 510          XBYTE   ATM_CMD                                                         _at_(NameSpace+0x0F);           // ATM Fan control command
+ 511          
+ 512          XBYTE   EM7FUNCTION                                                     _at_(NameSpace+0x10);   // 0x10
+ 513          XBYTE   BATTUPDATEFW                                            _at_(NameSpace+0x11);   // 0x11
+ 514          //      #define  PriBattInhib   (1<<0)  // bit0 1-Disable reading information from primary battery for update batt
+             -ery firmware
+ 515          //      #define  SecBattInhib   (1<<1)  // bit1 1-Disable reading information from second battery for update batte
+             -ry firmware.
+ 516          
+ 517          XBYTE    FirmwareUpdateStatusL                          _at_(NameSpace+0x12);   // 0x12
+ 518          XBYTE    FirmwareUpdateStatusH                          _at_(NameSpace+0x13);   // 0x13
+ 519          XBYTE    BatterymakerIDL                                        _at_(NameSpace+0x14);   // 0x14
+ 520          XBYTE    BatterymakerIDH                                        _at_(NameSpace+0x15);   // 0x15
+ 521          XBYTE    HardwareIDL                                            _at_(NameSpace+0x16);   // 0x16
+ 522          XBYTE    HardwareIDH                                            _at_(NameSpace+0x17);   // 0x17
+ 523          XBYTE    FirmwareversionL                                       _at_(NameSpace+0x18);   // 0x18
+ 524          XBYTE    FirmwareversionH                                       _at_(NameSpace+0x19);   // 0x19
+ 525          XBYTE    DataVersionL                                           _at_(NameSpace+0x1A);   // 0x1A
+ 526          XBYTE    DataVersionH                                           _at_(NameSpace+0x1B);   // 0x1B
+ 527          /*
+ 528          0x37 (Get Battery Information )         Read Block
+ 529          byte 0,1: The battery maker ID
+ 530          byte 2,3: Hardware ID
+ 531          byte 4,5: Firmware version (0 if the firmware is corrupted
+ 532          byte 6,7: Data version (0 if this is not supported or the firmware is corrupted.
+ 533          */
+ 534          XBYTE    FBClamp                                                        _at_(NameSpace+0x1C);   // 0x1C
+ 535          XBYTE    ThermalMode                                            _at_(NameSpace+0x1D);   // 0x1D
+ 536          XBYTE    CPUI57                                                         _at_(NameSpace+0x1E);   // 0x1E
+ 537          XBYTE    CRESERVED1F                                            _at_(NameSpace+0x1F);   // 0x1F
+ 538          XBYTE    CRESERVED20                                            _at_(NameSpace+0x20);   // 0x20
+ 539          XBYTE    CRESERVED21                                            _at_(NameSpace+0x21);   // 0x21
+ 540          XBYTE    CRESERVED22                                            _at_(NameSpace+0x22);   // 0x22
+ 541          XBYTE    CRESERVED23                                            _at_(NameSpace+0x23);   // 0x23
+ 542          XBYTE    CRESERVED24                                            _at_(NameSpace+0x24);   // 0x24
+ 543          XBYTE    CRESERVED25                                            _at_(NameSpace+0x25);   // 0x25
+ 544          XBYTE    CRESERVED26                                            _at_(NameSpace+0x26);   // 0x26
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 10  
+
+ 545          XBYTE    CRESERVED27                                            _at_(NameSpace+0x27);   // 0x27
+ 546          XBYTE    CRESERVED28                                            _at_(NameSpace+0x28);   // 0x28
+ 547          XBYTE    CRESERVED29                                            _at_(NameSpace+0x29);   // 0x29
+ 548          XBYTE    CRESERVED2A                                            _at_(NameSpace+0x2A);   // 0x2A
+ 549          XBYTE    CRESERVED2B                                            _at_(NameSpace+0x2B);   // 0x2B
+ 550          XBYTE    CRESERVED2C                                            _at_(NameSpace+0x2C);   // 0x2C
+ 551          
+ 552          XBYTE    PANEL_INFO[16]                                 _at_(NameSpace+0x30);   //ANGELAG008: modify 22 to 16 // 0x30~0x46
+ 553          XBYTE    pDevStatus1                                _at_(NameSpace+0x43);  // 0x43 //ANGELAG008: add
+ 554          XBYTE   PDFWStatus                          _at_(NameSpace+0x44);  //72JERRY060
+ 555          
+ 556          XBYTE    pDevStatus2                                _at_(NameSpace+0x49);  // 0x49
+ 557          XBYTE EMStatusBit2                          _at_(NameSpace+0x4A);       // 0x4A //ANGELAS032: add
+ 558          //ANGELAS107:S+Add code for GBSI function.
+ 559          XBYTE     YogaModeStatus                                      _at_(NameSpace+0x4B); //0x4B  //MARTINM039:Add
+ 560          XBYTE   batteryFirstUsedDateL                       _at_(NameSpace+0x4C);
+ 561          XBYTE   batteryFirstUsedDateH                       _at_(NameSpace+0x4D);
+ 562          //ANGELAS107:E+Add code for GBSI function.
+ 563          XBYTE    ISCT_Timer                                                     _at_(NameSpace+0x5A);   // 0x5A
+ 564          
+ 565          // External name space 0x5D ~ 0x5F
+ 566          XBYTE    EXT_NAMESPACE_INDEX                            _at_(NameSpace+0x5D);   // 0x5D
+ 567          XBYTE    EXT_NAMESPACE_BANK                                     _at_(NameSpace+0x5E);   // 0x5E
+ 568          XBYTE    EXT_NAMESPACE_DATA                                     _at_(NameSpace+0x5F); // 0x5F
+ 569          
+ 570          // SMBus EC interface ACPI RAM definition 0x60 ~ 0x87
+ 571          // #define SMBUS_Base_Address    0x60                       //Set SMBUS base address from Protocol
+ 572          XBYTE   SMB_PRTC                                                        _at_ (NameSpace+0x60);  // 0x60,
+ 573          XBYTE   SMB_STS                                                         _at_ (NameSpace+0x61);  // 0x61,
+ 574          XBYTE   SMB_ADDR                                                        _at_ (NameSpace+0x62);  // 0x62,
+ 575          XBYTE   SMB_CMD                                                         _at_ (NameSpace+0x63);  // 0x63,
+ 576          XBYTE   SMB_DATA                                                        _at_ (NameSpace+0x64);  // 0x64,
+ 577          XBYTE   SMB_DATA1                                                   _at_ (NameSpace+0x65);
+ 578          XBYTE   SMB_BCNT                                                        _at_ (NameSpace+0x84);  // 0x84,
+ 579          // SBS Only Alarm registers
+ 580          XBYTE   SMB_ALRA                                                        _at_ (NameSpace+0x85);  // 0x85,
+ 581          XBYTE   SMB_ALRD0                                                       _at_ (NameSpace+0x86);  // 0x86,
+ 582          XBYTE   SMB_ALRD1                                                       _at_ (NameSpace+0x87);  // 0x87,
+ 583          
+ 584          // Battery Information reading 0x90 ~ 0x9F
+ 585          //XBYTE  EXT_NAMESPACE_DATA[BATTMANUFACTURE]     _at_(ECRAM1+0x60); // 0x60
+ 586          
+ 587          //#define BATTMANUFACTURE                       0x30                            // (9 BYTES) Battery ManufactureName, reserve 9 byte
+ 588          //    #define nManufact(x)              SMB_ACPI[x-BATTMANUFACTURE]     // Only support main battery so far, 0x90~0x98
+ 589          //#define BATTDEVICENAME                        0x27                            // (7 BYTES) Battery DeviceName, reserve 7 byte
+ 590          //    #define nDeviceName(x)    SMB_ACPI[x-BATTDEVICENAME]      // Only support main battery so far, 0x99~0x9F
+ 591          
+ 592          XBYTE   nBattery0x16L                                           _at_(NameSpace+0x88);
+ 593          XBYTE   nBattery0x16H                                           _at_(NameSpace+0x89);
+ 594          XBYTE   EMStatusBit                                                     _at_(NameSpace+0x8A);
+ 595          XBYTE   TP_Type                                 _at_(NameSpace+0x8B);
+ 596          
+ 597          XBYTE   OEMControl                          _at_(NameSpace+0x8C);  //ANGELAG005:add.
+ 598          
+ 599          XBYTE   BATTMANUFACTURE[9]                                      _at_(NameSpace+0x8F);           // (9 BYTES) Battery ManufactureName, reserve 9 byte
+ 600          XBYTE   BATTDEVICENAME[8]                                       _at_(NameSpace+0x98);           // Only support main battery so far, 0x98~0x9F
+ 601          
+ 602          
+ 603          XBYTE   AOAC_STATUS                                                     _at_(NameSpace+0xA0);           //
+ 604          XBYTE   ACPI_HOTKEY                                                     _at_(NameSpace+0xA1);           //
+ 605          XBYTE   nOSShutdownTemp2                                        _at_(NameSpace+0xA2);           // OS Shutdown Temp. For system read setting. (DTS)
+ 606          XBYTE   SYS_STATUS                                                      _at_(NameSpace+0xA3);           //
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 11  
+
+ 607          XBYTE   WAKEUP_ENABLE                                           _at_(NameSpace+0xA4);           //
+ 608          XBYTE   ACOFF_SOURCE                                            _at_(NameSpace+0xA5);           //
+ 609          XBYTE   CURRENT_STATUS                                          _at_(NameSpace+0xA6);           // A6
+ 610          XBYTE   nOSThrottlingTemp                                       _at_(NameSpace+0xA7);           // OS Throttling Temp. For system read setting.
+ 611          XBYTE   nOSShutdownTemp                                         _at_(NameSpace+0xA8);           // Throttling Temp put a temp in for system throttling.
+ 612          XBYTE   nThrottlingAPSet                                        _at_(NameSpace+0xA9);
+ 613          XBYTE   TcontrolTemp                                            _at_(NameSpace+0xAA);           // For Tcontrol temp, sysbios will put Tcontrol temp
+ 614          XBYTE   THERMAL_STATUS                                          _at_(NameSpace+0xAB);           // HW throttling define
+ 615          XBYTE   nShutDownTemp                                           _at_(NameSpace+0xAC);           // Shutsown Temperature
+ 616          XBYTE   nFanStatus1                                                     _at_(NameSpace+0xAD);           // Just for utility (low nibble: Fan's speed step number ; 
+             -high nibble: Fan's number )
+ 617          XBYTE   REAL_THROTTLING_INDEX                           _at_(NameSpace+0xAE);
+ 618          XBYTE   THROTTLING_HW                                           _at_(NameSpace+0xAF);           // HW throttling define
+ 619          XBYTE   nCpuTemp                                                        _at_(NameSpace+0xB0);           // CPU current temperature
+ 620          XBYTE   nCpuTempLocal                                           _at_(NameSpace+0xB1);           // CPU local temperature
+ 621          XBYTE   nSKINTemp90                                                     _at_(NameSpace+0xB2);           // SKIN temperature address 90
+ 622          //XBYTE nOSShutdownTemp3                                _at_(NameSpace+0xB3);           // OS Shutdown Temp. For system read setting.(VGA) //AN
+             -GELAS070:remove
+ 623          XBYTE   ThermistorCPU_TEMP                                  _at_(NameSpace+0xB3);               //For system read setting.(VGA)//ANGELAS070:add
+ 624          XBYTE   VGA_TEMP                                                        _at_(NameSpace+0xB4);           // VGA temperature
+ 625          XBYTE   EXTVGA_TEMP                                                     _at_(NameSpace+0xB5);
+ 626          XBYTE   nNBTemp                                                         _at_(NameSpace+0xB6);           // NorthBridge temperature
+ 627          XBYTE   ACPI_STAT                                                       _at_(NameSpace+0xB7);
+ 628          XBYTE   SWI_EVENT                                                       _at_(NameSpace+0xB8);           // SWI Event indicators
+ 629          XBYTE   nBrightValue                                            _at_(NameSpace+0xB9);           // LCD Brightness value(0-0x09)
+ 630          
+ 631          XBYTE   GPU_REAL_THROTTLING_INDEX                   _at_(NameSpace+0xBA);  //MEILING033:add.
+ 632          
+ 633          XBYTE   DEVICEMODULE                                            _at_(NameSpace+0xBB);
+ 634          XBYTE   nKbProjectID                                            _at_(NameSpace+0xBC);
+ 635          XBYTE   CPU_TYPE                                                        _at_(NameSpace+0xBD);
+ 636          XBYTE   SEL_STATE0                                                      _at_(NameSpace+0xBE);
+ 637          XBYTE   SEL_STATE1                                                      _at_(NameSpace+0xBF);
+ 638          XBYTE   nBatteryStatL                                           _at_(NameSpace+0xC0);
+ 639          XBYTE   nBatteryStatH                                           _at_(NameSpace+0xC1);
+ 640          XBYTE   nRemainingCapL                                          _at_(NameSpace+0xC2);           // (WORD) Remaining Capacity
+ 641          XBYTE   nRemainingCapH                                          _at_(NameSpace+0xC3);
+ 642          XBYTE   nSerialNumL                                             _at_(NameSpace+0xC4);           // (WORD) Serial number
+ 643          XBYTE   nSerialNumH                                             _at_(NameSpace+0xC5);
+ 644          XBYTE   nPresentVoltL                                           _at_(NameSpace+0xC6);           // (WORD) Present voltage
+ 645          XBYTE   nPresentVoltH                                           _at_(NameSpace+0xC7);
+ 646          XBYTE   nDesignVoltL                                            _at_(NameSpace+0xC8);           // (WORD) Design voltage
+ 647          XBYTE   nDesignVoltH                                            _at_(NameSpace+0xC9);
+ 648          XBYTE   nDesignCapL                                             _at_(NameSpace+0xCA);           // (WORD) Design Capacity
+ 649          XBYTE   nDesignCapH                                             _at_(NameSpace+0xCB);
+ 650          XBYTE   nFullChgCapL                                            _at_(NameSpace+0xCC);           // (WORD) Full charge Capacity
+ 651          XBYTE   nFullChgCapH                                            _at_(NameSpace+0xCD);
+ 652          XBYTE   nBattGasgauge                                           _at_(NameSpace+0xCE);           // (BYTE) Battery percentage
+ 653          XBYTE   nCycleCounter                                           _at_(NameSpace+0xCF);           // (BYTE) Battery cycle counter
+ 654          XBYTE   nNowCurrentL                                            _at_(NameSpace+0xD0);           // (WORD) Battery current
+ 655          XBYTE   nNowCurrentH                                            _at_(NameSpace+0xD1);
+ 656          XBYTE   nAvgCurrentL                                            _at_(NameSpace+0xD2);           // (WORD) Battery average current
+ 657          XBYTE   nAvgCurrentH                                            _at_(NameSpace+0xD3);
+ 658          XBYTE   nBattComsup                                             _at_(NameSpace+0xD4);           // (BYTE) System power comsumption,Watt will not over 255. 
+             -So just only need 1 byte.
+ 659          XBYTE   nBattVolt                                                       _at_(NameSpace+0xD5);           // (BYTE) Battery Volt
+ 660          XBYTE   nBattTsTemp                                             _at_(NameSpace+0xD6);           // (BYTE) Battery Temp.
+ 661          XBYTE   nBattAverTemp                                           _at_(NameSpace+0xD7);           // (BYTE) Battery Average Temp.
+ 662          XBYTE   nBattCharCurrentL                                       _at_(NameSpace+0xD8);           // (WORD) Battery charge currrent.
+ 663          XBYTE   nBattCharCurrentH                                       _at_(NameSpace+0xD9);
+ 664          XBYTE   nBattTempCnt                                            _at_(NameSpace+0xDA);           // (BYTE) Battery current Temp sample counter
+ 665          XBYTE   nBattCmdIdx                                             _at_(NameSpace+0xDB);           // (BYTE) Battery Command index for read battery through SM
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 12  
+
+             -Bus
+ 666          XBYTE   nBattGetBattCnt                                         _at_(NameSpace+0xDC);           // (BYTE) Count up to communicate battery
+ 667          XBYTE   nBattOvrTempCnt                                         _at_(NameSpace+0xDD);           // (BYTE) Count up if battery is arrived overtemp.
+ 668          XBYTE   nBattStatusSMBL                                         _at_(NameSpace+0xDE);           // (WORD) Battrery SMBus status
+ 669          XBYTE   nBattStatusSMBH                                         _at_(NameSpace+0xDF);           //
+ 670          XBYTE   nBattOvrVoltCnt                                         _at_(NameSpace+0xE0);           // (BYTE) Battery over voltage counter
+ 671          XBYTE   nBattErrorCnt                                           _at_(NameSpace+0xE1);           // (BYTE) Communicatiion fail counter
+ 672          XBYTE   nBattTsVolt                                             _at_(NameSpace+0xE2);           // (BYTE) Battery voltage of ADC
+ 673          XBYTE   nCell1VoltL                                                     _at_(NameSpace+0xE3);
+ 674          XBYTE   nCell1VoltH                                                     _at_(NameSpace+0xE4);
+ 675          XBYTE   nCell2VoltL                                                     _at_(NameSpace+0xE5);
+ 676          XBYTE   nCell2VoltH                                                     _at_(NameSpace+0xE6);
+ 677          XBYTE   nCell3VoltL                                                     _at_(NameSpace+0xE7);
+ 678          XBYTE   nCell3VoltH                                                     _at_(NameSpace+0xE8);
+ 679          XBYTE   nCell4VoltL                                                     _at_(NameSpace+0xE9);
+ 680          XBYTE   nCell4VoltH                                                     _at_(NameSpace+0xEA);
+ 681          XBYTE   nManufactureAccessL                                     _at_(NameSpace+0xEB);
+ 682          XBYTE   nManufactureAccessH                                     _at_(NameSpace+0xEC);
+ 683          XBYTE   SHIPMODE_L                                                      _at_(NameSpace+0xED);
+ 684          XBYTE   SHIPMODE_H                                                      _at_(NameSpace+0xEE);
+ 685          XBYTE   RESERVEDEF                                                      _at_(NameSpace+0xEF);
+ 686          XBYTE   nBatteryStatus1                                 _at_(NameSpace+0xF0);
+ 687          XBYTE   nBatteryStatus2                                         _at_(NameSpace+0xF1);
+ 688          XBYTE   nStopChgStat3L                                          _at_(NameSpace+0xF2);
+ 689          XBYTE   nStopChgStat3H                                          _at_(NameSpace+0xF3);
+ 690          XBYTE   nManufactureDateL                                       _at_(NameSpace+0xF4);
+ 691          XBYTE   nManufactureDateH                                       _at_(NameSpace+0xF5);
+ 692          BYTE    nChargingVoltL                                          _at_(NameSpace+0xF6);
+ 693          XBYTE   nChargingVoltH                                          _at_(NameSpace+0xF7);
+ 694          XBYTE   BATTCELL                                                        _at_(NameSpace+0xF8);
+ 695          
+ 696          //XBYTE   PECIBIOSTEST                                          _at_(NameSpace+0xFC);//when enter S3/S4/CB,BIOS sent B4 CMD to EC from 66port 
+             -for peci fail.//: Remove  and  PECI workaround.
+ 697          XBYTE   MBID_FB                                                         _at_(NameSpace+0xFB);  //T054+
+ 698          XBYTE   F2_Pressed                                                              _at_(NameSpace+0xFC);  //ANGELAG001: add
+ 699           XBYTE  nAtmFan1Speed                                   _at_(NameSpace+0xFE);//2JERRY014:Add the second fan method
+ 700          XBYTE   EM8_TEST                                                        _at_(NameSpace+0xFF);
+ 701          
+ 702          
+ 703          //*******************************************************************************
+ 704          //-------------------------------------------------------------------------------
+ 705          //      0x500-0x5FF   OEM RAM 5
+ 706          //-------------------------------------------------------------------------------
+ 707          //*******************************************************************************
+ 708          //---------------------PECI-------------------------
+ 709          XBYTE   PECI_TIMEOUT                            _at_(OEMRAM5+0x0B);
+ 710          XBYTE   PECI_ERROR                                      _at_(OEMRAM5+0x0C);
+ 711          XBYTE   PECIDelayCnt                            _at_(OEMRAM5+0x0D);
+ 712          XWORD   PECIBuffer0                                     _at_(OEMRAM5+0x0E);
+ 713          XWORD   PECIBuffer1                                     _at_(OEMRAM5+0x10);
+ 714          XWORD   PECIBuffer2                                     _at_(OEMRAM5+0x12);
+ 715          XWORD   PECIBuffer3                                     _at_(OEMRAM5+0x14);
+ 716          XWORD   PECIBuffer4                                     _at_(OEMRAM5+0x16);
+ 717          XWORD   PECIBuffer5                                     _at_(OEMRAM5+0x18);
+ 718          XWORD   PECIBuffer6                                     _at_(OEMRAM5+0x1A);
+ 719          XWORD   PECIBuffer7                                     _at_(OEMRAM5+0x1C);
+ 720          // reserved 0xC1F
+ 721          XBYTE   TJMAX                                           _at_(OEMRAM5+0x20);
+ 722          XBYTE   PECI_Err_CNT                            _at_(OEMRAM5+0x21);
+ 723          
+ 724          XBYTE   PECI_GET_TEMPL                          _at_(OEMRAM5+0x24);
+ 725          XBYTE   PECI_GET_TEMPH                          _at_(OEMRAM5+0x25);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 13  
+
+ 726          
+ 727          XBYTE   ERR_THMSTS                                      _at_(OEMRAM5+0x39);
+ 728          XBYTE   TMErrCnt                                        _at_(OEMRAM5+0x3A);
+ 729          XBYTE   VGAErrCnt                                       _at_(OEMRAM5+0x3B);
+ 730          XBYTE   EXTVGAErrCnt                            _at_(OEMRAM5+0x3C);
+ 731          XBYTE   TmlICStep                                       _at_(OEMRAM5+0x3D);
+ 732          XBYTE   vgaok                                           _at_(OEMRAM5+0x3E);
+ 733          
+ 734          XWORD   cWriteCurrentPL1                        _at_(OEMRAM5+0x40);
+ 735          XWORD   cWriteCurrentPL2                        _at_(OEMRAM5+0x42);
+ 736          
+ 737          XBYTE   USB_Delay                                       _at_(OEMRAM5+0x44);  //ANGELAG008: modify BYTE to XBYTE
+ 738          XBYTE   AOU_IFG_Debounce_Cnt        _at_(OEMRAM5+0x45);  
+ 739          XBYTE   AOU_status                   _at_(OEMRAM5+0x46); 
+ 740          
+ 741          XBYTE     Fan1On_Step1                      _at_ (OEMRAM5+0x50);
+ 742          XBYTE     Fan1On_Step2                      _at_ (OEMRAM5+0x51);
+ 743          XBYTE     Fan1On_Step3                  _at_ (OEMRAM5+0x52);
+ 744          XBYTE     Fan1On_Step4                          _at_ (OEMRAM5+0x53);
+ 745          XBYTE     Fan1On_Step5                      _at_(OEMRAM5+0x54);
+ 746          XBYTE     Fan1On_Step6                      _at_(OEMRAM5+0x55);
+ 747          XBYTE     Fan1On_Step7                      _at_(OEMRAM5+0x56);
+ 748          XBYTE     Fan1On_Step8                      _at_(OEMRAM5+0x57);
+ 749          XBYTE     Fan2On_Step1                          _at_(OEMRAM5+0x58);
+ 750          XBYTE     Fan2On_Step2                          _at_(OEMRAM5+0x59);
+ 751          XBYTE     Fan2On_Step3                          _at_(OEMRAM5+0x5A);
+ 752          XBYTE     Fan2On_Step4                          _at_(OEMRAM5+0x5B);
+ 753          XBYTE     Fan2On_Step5                          _at_(OEMRAM5+0x5C);
+ 754          XBYTE     Fan2On_Step6                          _at_(OEMRAM5+0x5D);
+ 755          XBYTE     Fan2On_Step7                          _at_(OEMRAM5+0x5E);
+ 756          XBYTE     Fan2On_Step8                      _at_(OEMRAM5+0x5F);
+ 757          
+ 758          XBYTE   pDevStatus3                              _at_ (OEMRAM5 + 0x60); //ANGELAG008: add 
+ 759          XBYTE   MaxCPU_MCHTemp                          _at_(OEMRAM5+0x6C);
+ 760          // Reserve 0x056D~057F
+ 761          XBYTE   SYS_STATUS2                             _at_ (OEMRAM5 + 0x6D);//MARTINM026:add 
+ 762          
+ 763          XBYTE   CMOS_TEST                                       _at_(OEMRAM5+0x6F); // RTC_RST
+ 764          
+ 765          XBYTE   EC_DeepSleep_Temp0              _at_(OEMRAM5+0x70);
+ 766          XBYTE   EC_DeepSleep_Temp1              _at_(OEMRAM5+0x71);
+ 767          XBYTE   EC_DeepSleep_Temp2              _at_(OEMRAM5+0x72);
+ 768          XBYTE   EC_DeepSleep_Temp3              _at_(OEMRAM5+0x73);
+ 769          XBYTE   EC_DeepSleep_Temp4              _at_(OEMRAM5+0x74);
+ 770          XBYTE   EC_DeepSleep_Temp5              _at_(OEMRAM5+0x75);
+ 771          XBYTE   EC_DeepSleep_Temp6              _at_(OEMRAM5+0x76);
+ 772          
+ 773          //MARTINH154:Add start
+ 774          XBYTE cmosdelay                                         _at_(OEMRAM5+0x77);
+ 775          XBYTE cmosdelay1                                        _at_(OEMRAM5+0x78);
+ 776          XBYTE cmosshutdelay                             _at_(OEMRAM5+0x79);
+ 777          //MARTINH154:Add end
+ 778          
+ 779          XBYTE   EC_DeepSleep_TempPortA          _at_(OEMRAM5+0x80);
+ 780          XBYTE   EC_DeepSleep_TempPortB          _at_(OEMRAM5+0x81);
+ 781          XBYTE   EC_DeepSleep_TempPortC          _at_(OEMRAM5+0x82);
+ 782          XBYTE   EC_DeepSleep_TempPortD          _at_(OEMRAM5+0x83);
+ 783          XBYTE   EC_DeepSleep_TempPortE          _at_(OEMRAM5+0x84);
+ 784          XBYTE   EC_DeepSleep_TempPortF          _at_(OEMRAM5+0x85);
+ 785          XBYTE   EC_DeepSleep_TempPortG          _at_(OEMRAM5+0x86);
+ 786          XBYTE   EC_DeepSleep_TempPortH          _at_(OEMRAM5+0x87);
+ 787          XBYTE   EC_DeepSleep_TempPortI          _at_(OEMRAM5+0x88);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 14  
+
+ 788          XBYTE   EC_DeepSleep_TempPortJ          _at_(OEMRAM5+0x89);
+ 789          
+ 790          
+ 791          XBYTE     Fan1Off_Step1                 _at_(OEMRAM5+0x90);
+ 792          XBYTE     Fan1Off_Step2                 _at_(OEMRAM5+0x91);
+ 793          XBYTE     Fan1Off_Step3                 _at_(OEMRAM5+0x92);
+ 794          XBYTE     Fan1Off_Step4                 _at_(OEMRAM5+0x93);
+ 795          XBYTE     Fan1Off_Step5                 _at_(OEMRAM5+0x94);
+ 796          XBYTE     Fan1Off_Step6                 _at_(OEMRAM5+0x95);
+ 797          XBYTE     Fan1Off_Step7                 _at_(OEMRAM5+0x96);
+ 798          XBYTE     Fan1Off_Step8                 _at_(OEMRAM5+0x97);
+ 799          XBYTE     Fan2Off_Step1                 _at_(OEMRAM5+0x98);
+ 800          XBYTE     Fan2Off_Step2                 _at_(OEMRAM5+0x99);
+ 801          XBYTE     Fan2Off_Step3                 _at_(OEMRAM5+0x9A);
+ 802          XBYTE     Fan2Off_Step4                 _at_(OEMRAM5+0x9B);
+ 803          XBYTE     Fan2Off_Step5                 _at_(OEMRAM5+0x9C);
+ 804          XBYTE     Fan2Off_Step6                 _at_(OEMRAM5+0x9D);
+ 805          XBYTE     Fan2Off_Step7                 _at_(OEMRAM5+0x9E);
+ 806          XBYTE     Fan2Off_Step8                 _at_(OEMRAM5+0x9F);
+ 807          
+ 808          XBYTE    cCmd                       _at_(OEMRAM5+0xA0);
+ 809          XBYTE    cKBStatus                  _at_(OEMRAM5+0xA1);
+ 810          XBITS_8  cBattFlag0                 _at_(OEMRAM5+0xA2);
+ 811          XBITS_8  cDev                       _at_(OEMRAM5+0xA3);
+ 812          XBITS_8  cSPIEEPROM                 _at_(OEMRAM5+0xA4);
+ 813          XBITS_8  cThrottlingSet                         _at_(OEMRAM5+0xA5);     // 00: Nothing, 01: Thr 12.5%, 02: Thr 25%,..,08: Thr 100%
+ 814          XBYTE    cTargetGauge               _at_(OEMRAM5+0xA6);
+ 815          //XBYTE    uCpuLoadCnt                          _at_(OEMRAM5+0xA7);
+ 816          XBYTE    battery_critical           _at_(OEMRAM5+0xA7);  //ANGELAS093
+ 817          XBYTE    cCPUKind                   _at_(OEMRAM5+0xA8);
+ 818          XBYTE    cPanelId                   _at_(OEMRAM5+0xA9);
+ 819          XBYTE    cBrightUpDelayCnt          _at_(OEMRAM5+0xAA);
+ 820          XBYTE    cBrightDnDelayCnt          _at_(OEMRAM5+0xAB);
+ 821          XBYTE    cRecoveryBrightValue       _at_(OEMRAM5+0xAC);
+ 822          XBYTE    cSysActionFlag             _at_(OEMRAM5+0xAD);
+ 823          XBYTE    cADPThrottling             _at_(OEMRAM5+0xAE);
+ 824          XBYTE    cTHERMThrottling           _at_(OEMRAM5+0xAF);
+ 825          XBYTE    cBATTThrottling            _at_(OEMRAM5+0xB0);
+ 826          XBITS_16 cSysStus                   _at_(OEMRAM5+0xB1);
+ 827          XBITS_16 cBattInform                _at_(OEMRAM5+0xB3);
+ 828          XBITS_16 cOsLedCtrl                 _at_(OEMRAM5+0xB5);
+ 829          XBITS_16 cOsLed1Ctrl                _at_(OEMRAM5+0xB7);
+ 830          XBYTE    initMark                   _at_(OEMRAM5+0xB9);         // CMW 20121203
+ 831          XBYTE    TEMP_Error                 _at_(OEMRAM5+0xBA);         // CMW 20121203
+ 832          
+ 833          XBYTE    EM9_NEWFUN                 _at_(OEMRAM5+0xBB);    
+ 834          XBYTE    testtoolflag                           _at_(OEMRAM5+0xBC); 
+ 835          XBYTE    Bioswatchdog                           _at_(OEMRAM5+0xBD); //ANGELAS094:Add workaround for hang bios.
+ 836          XBYTE    Bioswatchdogtime           _at_(OEMRAM5+0xBE); //ANGELAS094:Add workaround for hang bios.
+ 837          XBYTE   ManualFanPRM                                            _at_(ECRAM5+0xBF);//72JERRY014: Add the second fan method
+ 838          //MEILING033:add start.
+ 839          //XBITS_8        cGPUThrottlingSet              _at_ (OEMRAM5+0xCA); //72JERRY014:-Add the second fan method
+ 840          XBYTE    cGPUThermalThrottling          _at_ (OEMRAM5+0xC0);
+ 841          XBYTE    cGPUBattThrottling                     _at_ (OEMRAM5+0xC1);
+ 842          XBYTE    cGPUBattOTPThrottling          _at_ (OEMRAM5+0xC2);
+ 843          XBYTE    cGPUBattLowThrottling          _at_ (OEMRAM5+0xC3);
+ 844          //MEILING033:add end.
+ 845          
+ 846          //MEILING055:S+.
+ 847          XBYTE    cGPUACtoBattThrottling     _at_ (OEMRAM5+0xC4);
+ 848          XBYTE    cGPUACtoBattTime               _at_ (OEMRAM5+0xC5);
+ 849          XBYTE    GPUProchotONCnt                _at_ (OEMRAM5+0xC6);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 15  
+
+ 850          XBYTE    cBATTLowThrottling             _at_ (OEMRAM5+0xC7);
+ 851          //MEILING055:E+.
+ 852          XBYTE    cGPUBattOCPThrottling          _at_ (OEMRAM5+0xC8); //ANGELAG017: add
+ 853          XBYTE    BatteryOCPDelay        _at_ (OEMRAM5+0xC9); //ANGELAG017: add
+ 854          XBITS_8  cGPUThrottlingSet              _at_ (OEMRAM5+0xCA); //72JERRY014: Add the second fan method
+ 855          XBYTE    GPU_Prochot            _at_ (OEMRAM5+0xCB); //ANGELAG020: add 
+ 856          
+ 857          XBYTE    ONEKEY_FLAG            _at_ (OEMRAM5+0xCC); //ONEKEY_FLAG
+ 858          XBYTE      FanTable_Type                _at_(OEMRAM5+0xCD);
+ 859          XBYTE    ONEKEY_TEMP_FLAG       _at_ (OEMRAM5+0xCE); //HEGANGS021:one key wake
+ 860          XBYTE    Proch_Delay            _at_ (OEMRAM5+0xCF); 
+ 861          XBYTE    Proch_Delay1           _at_ (OEMRAM5+0xD0); 
+ 862          XBYTE    cACIRQEventHappened       _at_ (OEMRAM5+0xD2); //THOMASG012:add.
+ 863          
+ 864          XBYTE    FAN1Count                                      _at_ (OEMRAM5+0xD3); 
+ 865          XBYTE    FAN2Count                                  _at_ (OEMRAM5+0xD4); 
+ 866          XBYTE    HighPerf                   _at_ (OEMRAM5+0xD5); //HEGANGS049:Add the 530s Highper formance and yog
+             -a30 quite mode function
+ 867          XBYTE    QuiteMode                  _at_ (OEMRAM5+0xD6); 
+ 868           
+ 869          XBYTE      Fan1RPM_Step1                        _at_ (OEMRAM5+0xE0);
+ 870          XBYTE      Fan1RPM_Step2                        _at_ (OEMRAM5+0xE1); 
+ 871          XBYTE      Fan1RPM_Step3                        _at_ (OEMRAM5+0xE2);
+ 872          XBYTE      Fan1RPM_Step4                        _at_ (OEMRAM5+0xE3); 
+ 873          XBYTE      Fan1RPM_Step5                        _at_ (OEMRAM5+0xE4); 
+ 874          XBYTE      Fan1RPM_Step6                        _at_ (OEMRAM5+0xE5); 
+ 875          XBYTE     Fan1RPM_Step7                         _at_ (OEMRAM5+0xE6); 
+ 876          XBYTE     Fan1RPM_Step8                         _at_ (OEMRAM5+0xE7); 
+ 877          XBYTE     Fan2RPM_Step1                         _at_ (OEMRAM5+0xE8); 
+ 878          XBYTE     Fan2RPM_Step2                         _at_ (OEMRAM5+0xE9); 
+ 879          XBYTE     Fan2RPM_Step3                         _at_ (OEMRAM5+0xEA); 
+ 880          XBYTE     Fan2RPM_Step4                         _at_ (OEMRAM5+0xEB); 
+ 881          XBYTE     Fan2RPM_Step5                         _at_ (OEMRAM5+0xEC); 
+ 882          XBYTE     Fan2RPM_Step6                         _at_ (OEMRAM5+0xED); 
+ 883          XBYTE    Fan2RPM_Step7                          _at_ (OEMRAM5+0xEE); 
+ 884          XBYTE     Fan2RPM_Step8                         _at_ (OEMRAM5+0xEF); 
+ 885          
+ 886          XBYTE      Fan1Level                    _at_(OEMRAM5+0xF8); 
+ 887          XBYTE     Fan2Level                     _at_(OEMRAM5+0xF9);
+ 888          XBYTE     FanLevel                      _at_(OEMRAM5+0xF7);
+ 889          
+ 890          
+ 891          XBYTE     Fan1RPMTemp                           _at_(OEMRAM5+0xFC); 
+ 892          XBYTE     Fan2RPMTemp                           _at_(OEMRAM5+0xFD);  
+ 893          XBYTE     Fan1RPMCount                          _at_(OEMRAM5+0xFE); 
+ 894          XBYTE     Fan2RPMCount                          _at_(OEMRAM5+0xFF);  
+ 895          
+ 896          XBYTE   ManualFan2PRM                   _at_(OEMRAM5+0xFA);//72JERRY014: Add the second fan method
+ 897          
+ 898           
+ 899          XBYTE   Fan1RPM_TargetBackUp        _at_(OEMRAM5+0x47);   
+ 900          XBYTE  Fan2RPM_TargetBackUp                 _at_(OEMRAM5+0x48);
+ 901          
+ 902          XBYTE   Fan1RPM_Target              _at_(OEMRAM5+0x49);   
+ 903          XBYTE  Fan2RPM_Target               _at_(OEMRAM5+0x4A);
+ 904          //*******************************************************************************
+ 905          //-------------------------------------------------------------------------------
+ 906          //      0x600-0x6FF   OEM RAM 6
+ 907          //-------------------------------------------------------------------------------
+ 908          //*******************************************************************************
+ 909          
+ 910          XBYTE    delayEDPTm                 _at_(OEMRAM6+0xBB);       // EDP Delay Initial Timer
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 16  
+
+ 911          XBYTE    cCHIPType                  _at_(OEMRAM6+0xBC);
+ 912          XBYTE    VFAN_Tab_Step3                         _at_(OEMRAM6+0xBD);  //MEILING003:add.
+ 913          XBYTE    FAN_Tab_Step3              _at_(OEMRAM6+0xBE);  //MEILING003:add.
+ 914          
+ 915          
+ 916          /* 
+ 917          XBYTE           cCmd                                    _at_(OEMRAM6+0x01);
+ 918          
+ 919          XBYTE           cKBStatus                               _at_(OEMRAM6+0x05);
+ 920          XBITS_8         cBattFlag0                              _at_(OEMRAM6+0x06);
+ 921          XBITS_8         cDev                                    _at_(OEMRAM6+0x07);
+ 922          
+ 923          XBITS_8         cSPIEEPROM                      _at_(OEMRAM6+0x0F);
+ 924          
+ 925          XBITS_8         cThrottlingSet                  _at_(OEMRAM6+0x15);     // 00: Nothing, 01: Thr 12.5%, 02: Thr 25%,..,08: Thr 100%
+ 926          
+ 927          XBYTE           cTargetGauge                    _at_(OEMRAM6+0x2B);
+ 928          XBYTE           uCpuLoadCnt                     _at_(OEMRAM6+0x2C);
+ 929          
+ 930          XBYTE           cCPUKind                                _at_(OEMRAM6+0x63);
+ 931          
+ 932          XBYTE           cPanelId                                        _at_(OEMRAM6+0x77);
+ 933          
+ 934          XBYTE           cBrightUpDelayCnt               _at_(OEMRAM6+0x79);
+ 935          XBYTE           cBrightDnDelayCnt               _at_(OEMRAM6+0x7A);
+ 936          XBYTE           cRecoveryBrightValue            _at_(OEMRAM6+0x7B);
+ 937          
+ 938          XBYTE           cSysActionFlag                  _at_(OEMRAM6+0x8A);
+ 939          
+ 940          XBYTE           cADPThrottling                  _at_(OEMRAM6+0x97);
+ 941          XBYTE           cTHERMThrottling                        _at_(OEMRAM6+0x98);
+ 942          XBYTE           cBATTThrottling                 _at_(OEMRAM6+0x99);
+ 943          
+ 944          XBITS_16        cSysStus                                _at_(OEMRAM6+0xC0);
+ 945          XBITS_16        cBattInform                             _at_(OEMRAM6+0xC2);
+ 946          
+ 947          XBITS_16        cOsLedCtrl                              _at_(OEMRAM6+0xCA);
+ 948          XBITS_16        cOsLed1Ctrl                             _at_(OEMRAM6+0xCC);
+ 949          
+ 950          XBYTE           initMark                                        _at_(OEMRAM6+0xCE);             // CMW 20121203
+ 951          XBYTE           TEMP_Error                              _at_(OEMRAM6+0xCF);             // CMW 20121203
+ 952          XBYTE           delayEDPTm                     _at_(OEMRAM6+0xD0);          // EDP Delay Initial Timer
+ 953          XBYTE           cCHIPType                               _at_(OEMRAM6+0xF8);
+ 954          */ 
+ 955          //*******************************************************************************
+ 956          //-------------------------------------------------------------------------------
+ 957          //      0x700-0x7FF   OEM RAM 7
+ 958          //-------------------------------------------------------------------------------
+ 959          //*******************************************************************************
+ 960          // Keil C
+ 961          
+ 962          //*******************************************************************************
+ 963          //-------------------------------------------------------------------------------
+ 964          //      0x800-0x8FF   OEM RAM 8
+ 965          //-------------------------------------------------------------------------------
+ 966          //*******************************************************************************
+ 967          // Keyboard matrix
+ 968          XBYTE   KB_RAM_Table[128]                               _at_(OEMRAM8+0x00);     // 0x00
+ 969          XBYTE   ExKB_RAM_Table[24]                              _at_(OEMRAM8+0x80);     // 0x80
+ 970          //72JERRY060¡êo Start UCSI feature memory 
+ 971          XBYTE   UCSI_Q20_Retry                 _at_(OEMRAM8+0x9B);//72JERRY076: Optimize ucsi function to handle O
+             -PM,EC notify OS every 2S by Q_20.
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 17  
+
+ 972          XBYTE   TYPEC_Adapter_Watts             _at_(OEMRAM8+0x9C);
+ 973          XBYTE   UCSI_Tunnel_Proc                _at_(OEMRAM8+0x9D); 
+ 974          XBYTE   UCSI_Tunnel_Step                _at_(OEMRAM8+0x9E);
+ 975          XBYTE   UCSI_Int_status                 _at_(OEMRAM8+0x9F);
+ 976          XBYTE   UCSI_Data_status               _at_(OEMRAM8+0xFF);
+ 977          T_UCSI_DATA  pUCSI                          _at_(OEMRAM8+0xA0); //0xA0-0xCF total 48bytes. 72JERRY075
+ 978          //T_PPM_HANDLE pPPM                         _at_(OEMRAMF+0xA0);//brooke End 72JERRY075
+ 979          //72JERRY060: ENd
+ 980          
+ 981          //*******************************************************************************
+ 982          //-------------------------------------------------------------------------------
+ 983          //      0x900-0x9FF   OEM RAM 9
+ 984          //-------------------------------------------------------------------------------
+ 985          //*******************************************************************************
+ 986          //Mos: add for control in Mailbox
+ 987          XBYTE   MMIO_rDATA_index                                _at_(OEMRAM9+0x91);     // 0x81
+ 988          XBYTE   MMIO_CMD_Ctrl                                   _at_(OEMRAM9+0x82);     // 0x82
+ 989          /*XBYTE MMIO_rDATA83                                    _at_(OEMRAM9+0x83);     // 0x83
+ 990          XBYTE   MMIO_rDATA84                                    _at_(OEMRAM9+0x84);     // 0x84
+ 991          XBYTE   MMIO_rDATA85                                    _at_(OEMRAM9+0x85);     // 0x85
+ 992          XBYTE   MMIO_rDATA86                                    _at_(OEMRAM9+0x86);     // 0x86
+ 993          XBYTE   MMIO_rDATA87                                    _at_(OEMRAM9+0x87);     // 0x87
+ 994          XBYTE   MMIO_rDATA88                                    _at_(OEMRAM9+0x88);     // 0x88
+ 995          XBYTE   MMIO_rDATA89                                    _at_(OEMRAM9+0x89);     // 0x89
+ 996          XBYTE   MMIO_rDATA9A                                    _at_(OEMRAM9+0x8A);     // 0x8A*/
+ 997          XBYTE   MMIO_rDATA[8]                                   _at_(OEMRAM9+0x83);     // 0x83 ~ 0x8A
+ 998          
+ 999          XBYTE   MMIO_iCMD                                               _at_(OEMRAM9+0x8B);     // 0x8B
+1000          XBYTE   MMIO_iDATA8C                                    _at_(OEMRAM9+0x8C);     // 0x8C
+1001          XBYTE   MMIO_iDATA8D                                    _at_(OEMRAM9+0x8D);     // 0x8D
+1002          XBYTE   MMIO_iDATA8E                                    _at_(OEMRAM9+0x8E);     // 0x8E
+1003          XBYTE   MMIO_iDATA8F                                    _at_(OEMRAM9+0x8F);     // 0x8F
+1004          XBYTE   MMIO_iDATA90                                    _at_(OEMRAM9+0x90);     // 0x90
+1005          
+1006          XBYTE   FnStatus                                                _at_(OEMRAM9+0xE0);
+1007          
+1008          XBYTE   SysStatus                                       _at_(OEMRAM9+0xF0);
+1009          XBYTE   LID_DEBOUNCE_CNT                _at_(OEMRAM9+0xF1);
+1010          XBYTE   PWRBTN_pressCnt                                 _at_(OEMRAM9+0xF2);
+1011          //XBYTE LID_readytime                           _at_(OEMRAM9+0xF3); //ANGELAS007:Optimize power on sequence.
+1012          //XBYTE NTC_FLAG                                        _at_(OEMRAM9+0xF3); //ANGELAS007:Optimize power on sequence. //ANGELAS038:remove  
+1013          XBYTE   ExtTimeCnt                      _at_(OEMRAM9+0xF4);
+1014          XBYTE   SysStatus2                              _at_(OEMRAM9+0xF5);
+1015          XBYTE   EC_ON_Flag                              _at_(OEMRAM9+0xF6); 
+1016           XBYTE PWRBTN_press_debounce                    _at_( OEMRAM9+0xF7); //72JERRY064:Modify press button 1s enter S3/S4/s
+             -hutdown follow UI spec.
+1017          
+1018          XBYTE   TPID1                                               _at_(OEMRAM9+0xFA);
+1019          XBYTE   TPID2                                               _at_(OEMRAM9+0xFB);
+1020          XBYTE   TPID3                                               _at_(OEMRAM9+0xFC);
+1021          XBYTE   TPID4                                               _at_(OEMRAM9+0xFD);
+1022          
+1023          XBYTE   LENOVOPMFW_Temp                 _at_(OEMRAM9+0xFF);
+1024          
+1025          //*******************************************************************************
+1026          //-------------------------------------------------------------------------------
+1027          //      0xA00-0xAFF   OEM RAM A
+1028          //-------------------------------------------------------------------------------
+1029          //*******************************************************************************
+1030          
+1031          
+1032          //*******************************************************************************
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 18  
+
+1033          //-------------------------------------------------------------------------------
+1034          //      0xB00-0xBFF   OEM RAM B
+1035          //-------------------------------------------------------------------------------
+1036          //*******************************************************************************
+1037          //---------------------FAN--------------------------
+1038          XBYTE   TEMP_Buff_1                             _at_(OEMRAMB+0x00);
+1039          XBYTE   TEMP_Buff_2                             _at_(OEMRAMB+0x01);
+1040          XBYTE   TEMP_Buff_3                             _at_(OEMRAMB+0x02);
+1041          XBYTE   EXT_Duty                                _at_(OEMRAMB+0x03);
+1042          XBYTE   Target_Duty                             _at_(OEMRAMB+0x04);
+1043          XBYTE   MBID_Reload                             _at_(OEMRAMB+0x05);
+1044          XBYTE   Fan_ON_Count                    _at_(OEMRAMB+0x06);
+1045          XBYTE   Fan_Debug_Temp                  _at_(OEMRAMB+0x07);
+1046          XBYTE   VGA_TBuff1                              _at_(OEMRAMB+0x08);
+1047          XBYTE   VGA_TBuff2                              _at_(OEMRAMB+0x09);
+1048          XBYTE   VGA_TBuff3                              _at_(OEMRAMB+0x0A);
+1049          XBYTE   WLAN_OFF_Cnt                    _at_(OEMRAMB+0x0B);
+1050          XBYTE   Average_Temp                    _at_(OEMRAMB+0x0C);     // Average temperature stage
+1051          XBYTE   SLI_Status                              _at_(OEMRAMB+0x0D);     // SLI check byte.
+1052          XBYTE   USB_Charger                             _at_(OEMRAMB+0x0E);     // USB charger EN/Dis
+1053          XBYTE   USB_Error                               _at_(OEMRAMB+0x0F);
+1054          XBYTE   MuteCount                               _at_(OEMRAMB+0x10);
+1055          XBYTE   EXT_VGA_Buff1                   _at_(OEMRAMB+0x11);
+1056          XBYTE   EXT_VGA_Buff2                   _at_(OEMRAMB+0x12);
+1057          XBYTE   EXT_VGA_Buff3                   _at_(OEMRAMB+0x13);
+1058          XBYTE   Thro_Status                             _at_(OEMRAMB+0x14);
+1059          XBYTE   Thro_Status2                    _at_(OEMRAMB+0x15);
+1060          XBYTE   CPU_Shut_Cnt                    _at_(OEMRAMB+0x16);
+1061          XBYTE   VGA_Shut_Cnt                    _at_(OEMRAMB+0x17);
+1062          XBYTE   EXTVGA_Shut_Cnt                 _at_(OEMRAMB+0x18);
+1063          XBYTE   LED_KB_PWM_Count                _at_(OEMRAMB+0x19);
+1064          XBYTE   FAN2PRM                                 _at_(OEMRAMB+0x1A);
+1065          XBYTE   FAN_CpTarget                    _at_(OEMRAMB+0x1B);
+1066          XBYTE   SMSC_ChgDelay                   _at_(OEMRAMB+0x1C);
+1067          XBYTE   USB_ChargerStep                 _at_(OEMRAMB+0x1D);
+1068          //XBYTE ManualFan2PRM                   _at_(OEMRAMB+0x1E);//72JERRY014: Add the second fan method
+1069          XWORD   SHA1_SEED                               _at_(OEMRAMB+0x1F);
+1070          
+1071          XBYTE   uODDPWRsaving                   _at_(OEMRAMB+0x21);     //
+1072          XBYTE   uODDdelaytimeStep               _at_(OEMRAMB+0x22);     //
+1073          XBYTE   SHA1failCnt                             _at_(OEMRAMB+0x23);
+1074          XBYTE   uWLBTLanTemp                    _at_(OEMRAMB+0x24);     //
+1075          XBYTE   uODDlowCnt                              _at_(OEMRAMB+0x25);     //
+1076          XBYTE   uODDtimeCnt                             _at_(OEMRAMB+0x26);     //
+1077          XBYTE   Service_Auth_Step               _at_(OEMRAMB+0x27);
+1078          
+1079          XBYTE   FAN_Std_Max                             _at_(OEMRAMB+0x28);
+1080          XBYTE   FAN_DOS_Max                             _at_(OEMRAMB+0x29);
+1081          XBYTE   FAN_Quite_Max                   _at_(OEMRAMB+0x2A);
+1082          
+1083          //XBYTE FAN_SP_Max                      _at_(OEMRAMB+0x2B);
+1084          XBYTE   FAN_RPM_L               _at_(OEMRAMB+0x2B);
+1085          
+1086          XBYTE   FAN_PWM_1                               _at_(OEMRAMB+0x2C);
+1087          XBYTE   FAN_PWM_2                               _at_(OEMRAMB+0x2D);
+1088          XBYTE   StatusKeeper                    _at_(OEMRAMB+0x2E);
+1089          XBYTE   ECSleepCount                    _at_(OEMRAMB+0x2F);
+1090          
+1091          XBYTE   TouchPadCount                   _at_(OEMRAMB+0x30);
+1092          XBYTE   EEPROM_PwrSts                   _at_(OEMRAMB+0x31);
+1093          
+1094          XWORD   FAN1_RPM                                _at_(OEMRAMB+0x32);  
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 19  
+
+1095          
+1096          XBYTE   PwrOnDly5Sec                    _at_(OEMRAMB+0x34); 
+1097          
+1098          XBYTE   SHA1FailRetry           _at_(OEMRAMB+0x35); 
+1099          
+1100          //ANGELAS043: add start
+1101          XBYTE   RSOC1PTO0PCount                 _at_(OEMRAMB+0x36);  
+1102          XBYTE   RSOC1PTO0PSaveSpace             _at_(OEMRAMB+0x37);
+1103          //ANGELAS043:add end
+1104          
+1105          XBYTE   SLI_GPUMax                              _at_(OEMRAMB+0x38);
+1106          XBYTE   SLI_GPUPWM1                             _at_(OEMRAMB+0x39);
+1107          XBYTE   SLI_GPUPWM2                             _at_(OEMRAMB+0x3A);
+1108          XBYTE   SLI_FANMax                              _at_(OEMRAMB+0x3B);
+1109          XBYTE   SLI_FANPWM1                             _at_(OEMRAMB+0x3C);
+1110          XBYTE   SLI_FANPWM2                             _at_(OEMRAMB+0x3D);
+1111          
+1112          XBYTE   FAN_PWM_3               _at_(OEMRAMB+0x3E); //MEILING003:add.
+1113          
+1114          XBYTE   Thro_Status3                    _at_ (OEMRAMB+0x3F);  //MEILING040:add.
+1115          
+1116          LWORD   K[5]                                    _at_(OEMRAMB+0x40);    //4*5 = 20 byte
+1117          LWORD   RBATH0                                  _at_(OEMRAMB+0x60);     // 0x0B60 ~ 0x0B63
+1118          LWORD   RBATH1                                  _at_(OEMRAMB+0x64);     // 0x0B64 ~ 0x0B67
+1119          LWORD   RBATH2                                  _at_(OEMRAMB+0x68);     // 0x0B68 ~ 0x0B6B
+1120          LWORD   RBATH3                                  _at_(OEMRAMB+0x6C);     // 0x0B6C ~ 0x0B6F
+1121          LWORD   RBATH4                                  _at_(OEMRAMB+0x70);     // 0x0B70 ~ 0x0B73
+1122          LWORD   BATchallenger[5]                _at_(OEMRAMB+0x80);     // 0x0B80 ~ 0x0B93
+1123          
+1124          XBYTE   ShutDnCause                     _at_(OEMRAMB+0xA3);    
+1125          XBYTE   FunctionKeyDebounce         _at_(OEMRAMB+0xA4);  //ANGELAS084:add
+1126          //72JERRY014: S+Add the second fan method
+1127           XWORD  FAN2_RPM                                _at_ (OEMRAMB + 0xA5);  
+1128           XBYTE FAN1_Std_Max                                             _at_ (OEMRAMB + 0xA7);
+1129           XBYTE FAN1_DOS_Max                                             _at_ (OEMRAMB + 0xA8);
+1130           XBYTE FAN1_Quite_Max                                           _at_ (OEMRAMB + 0xA9);
+1131           XBYTE FAN1_RPM_L                             _at_ (OEMRAMB + 0xAA);
+1132           XBYTE FAN1_PWM_1                                                       _at_ (OEMRAMB + 0xAB);
+1133           XBYTE FAN1_PWM_2                                                       _at_ (OEMRAMB + 0xAC);
+1134           XBYTE FAN1_PWM_3                       _at_ (OEMRAMB + 0xAD);  //MEILING003:add.
+1135           XBYTE  VFAN1_Tab_OFF                                   _at_(OEMRAMB+0xAE);
+1136           XBYTE  VFAN1_Tab_LOW                           _at_(OEMRAMB+0xAF);
+1137           XBYTE  VFAN1_Tab_Step1                                 _at_(OEMRAMB+0xB0);
+1138           XBYTE  VFAN1_Tab_Step2                                 _at_(OEMRAMB+0xB1);
+1139           XBYTE  VFAN1_Tab_HI                                    _at_(OEMRAMB+0xB2);
+1140           XBYTE  VFAN1_Tab_Step3                                 _at_(OEMRAMB+0xB3);
+1141           XBYTE    FAN1_Tab_Step3                  _at_(OEMRAMB+0xB4);
+1142           XBYTE  FAN1_Tab_OFF                                    _at_(OEMRAMB+0xB5);
+1143           XBYTE  FAN1_Tab_LOW                                    _at_(OEMRAMB+0xB6);
+1144           XBYTE  FAN1_Tab_Step1                                  _at_(OEMRAMB+0xB7);
+1145           XBYTE  FAN1_Tab_Step2                          _at_(OEMRAMB+0xB8);
+1146           XBYTE  FAN1_Tab_HI                                             _at_(OEMRAMB+0xB9);
+1147          //72JERRY014: E+Add the second fan method
+1148          //72JERRY057:s+Update fan table follow'720S_13IKB fan table_V03'.
+1149          XBYTE TEMP_Buff_4                                               _at_ (OEMRAMB + 0xBC);
+1150          XBYTE TEMP_Buff_5                                               _at_ (OEMRAMB + 0xBD);
+1151          XBYTE TEMP_Buff_6                                               _at_ (OEMRAMB + 0xBE);
+1152          XBYTE TEMP_Buff_7                                               _at_( OEMRAMB + 0xBF);
+1153          XBYTE TEMP_Buff_8                                               _at_ (OEMRAMB + 0xC0);
+1154          XBYTE TEMP_Buff_9                                               _at_ (OEMRAMB + 0xC1);
+1155          XBYTE TEMP_Buff_10                                              _at_ (OEMRAMB + 0xC2);
+1156          XBYTE TEMP_Buff_0                                               _at_ (OEMRAMB + 0xC3);
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 20  
+
+1157          //72JERRY057:e+Update fan table follow'720S_13IKB fan table_V03'.
+1158          LWORD   sdAMDTH0                                _at_(OEMRAMB+0xd0); 
+1159          LWORD   sdAMDTH1                                _at_(OEMRAMB+0xd4); 
+1160          LWORD   sdAMDTH2                                _at_(OEMRAMB+0xd8); 
+1161          LWORD   sdAMDTH3                                _at_(OEMRAMB+0xdC); 
+1162          XBYTE   Tgpuproup                               _at_(OEMRAMB+0xf0); 
+1163          XBYTE   Tgpuprodown                             _at_(OEMRAMB+0xf1);  
+1164          XBYTE   local_Shut_Cnt          _at_(OEMRAMB+0xf2); 
+1165          XBYTE   remote_Shut_Cnt         _at_(OEMRAMB+0xf3); 
+1166          
+1167          
+1168          
+1169          //*******************************************************************************
+1170          //-------------------------------------------------------------------------------
+1171          //      0xC00-0xCFF   OEM RAM C
+1172          //      0xD00-0xDFF   OEM RAM D
+1173          //-------------------------------------------------------------------------------
+1174          //*******************************************************************************
+1175          LWORD   SHA1_W[80]                                                      _at_ ECRAMC; // 0x0C00 ~ 0x0D3F
+1176          
+1177          LWORD   WS_temp                                                         _at_(ECRAMD+0x40); // 0x0D40 ~ 0x0D4F
+1178          
+1179          LWORD   SHA1_a                                                          _at_(ECRAMD+0x50); // 0x0D50 ~ 0x0D53
+1180          LWORD   SHA1_b                                                          _at_(ECRAMD+0x54); // 0x0D54 ~ 0x0D57
+1181          LWORD   SHA1_c                                                          _at_(ECRAMD+0x58); // 0x0D58 ~ 0x0D5B
+1182          LWORD   SHA1_d                                                          _at_(ECRAMD+0x5C); // 0x0D5C ~ 0x0D5F
+1183          LWORD   SHA1_e                                                          _at_(ECRAMD+0x60); // 0x0D60 ~ 0x0D63
+1184          
+1185          LWORD   H0                                                                      _at_(ECRAMD+0x64); // 0x0D64 ~ 0x0D67
+1186          LWORD   H1                                                                      _at_(ECRAMD+0x68); // 0x0D68 ~ 0x0D6B
+1187          LWORD   H2                                                                      _at_(ECRAMD+0x6C); // 0x0D6C ~ 0x0D6F
+1188          LWORD   H3                                                                      _at_(ECRAMD+0x70); // 0x0D70 ~ 0x0D73
+1189          LWORD   H4                                                                      _at_(ECRAMD+0x74); // 0x0D74 ~ 0x0D77
+1190          
+1191          LWORD   K0                                                                      _at_(ECRAMD+0x78); // 0x0D78 ~ 0x0D7B
+1192          
+1193          // --- here is EC result ---
+1194          LWORD   Hn0                                                                     _at_(ECRAMD+0x7C); // 0x0D7C ~ 0x0D7F
+1195          LWORD   Hn1                                                                     _at_(ECRAMD+0x80); // 0x0D80 ~ 0x0D83
+1196          LWORD   Hn2                                                                     _at_(ECRAMD+0x84); // 0x0D84 ~ 0x0D87
+1197          LWORD   Hn3                                                                     _at_(ECRAMD+0x88); // 0x0D88 ~ 0x0D8B
+1198          LWORD   Hn4                                                                     _at_(ECRAMD+0x8C); // 0x0D8C ~ 0x0D8F
+1199          
+1200          // --- here is battery result ---
+1201          LWORD   BATH0                                                           _at_(ECRAMD+0x90); // 0x0D90 ~ 0x0D93
+1202          LWORD   BATH1                                                           _at_(ECRAMD+0x94); // 0x0D94 ~ 0x0D97
+1203          LWORD   BATH2                                                           _at_(ECRAMD+0x98); // 0x0D98 ~ 0x0D9B
+1204          LWORD   BATH3                                                           _at_(ECRAMD+0x9C); // 0x0D9C ~ 0x0D9F
+1205          LWORD   BATH4                                                           _at_(ECRAMD+0xA0); // 0x0DA0 ~ 0x0DA3
+1206          
+1207          //XBYTE Service_Auth_Step                                       _at_ ECRAMD+0xFF; // 0x0DFF
+1208          
+1209          //*******************************************************************************
+1210          //-------------------------------------------------------------------------------
+1211          //      0xE00-0xEFF   OEM RAM E
+1212          //-------------------------------------------------------------------------------
+1213          //*******************************************************************************
+1214          
+1215          //*******************************************************************************
+1216          //-------------------------------------------------------------------------------
+1217          //      0xF00-0xFFF   OEM RAM F
+1218          //-------------------------------------------------------------------------------
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 21  
+
+1219          //*******************************************************************************
+1220          //ANGELAS064:add start
+1221          XBYTE   nDiagInterface_CMD             _at_(OEMRAMF+0x00);  
+1222          XBYTE   nDiagInterface_DATA            _at_(OEMRAMF+0x01);                     
+1223          
+1224          XBYTE   nDiagInterface_ECRegL          _at_(OEMRAMF+0x02); //or used as EC Space offset
+1225          XBYTE   nDiagInterface_ECRegH          _at_(OEMRAMF+0x03); 
+1226          
+1227          XBYTE   nDiagInterface_DATA_High       _at_(OEMRAMF+0x04);    
+1228          
+1229          XBYTE   SMB_PRTC_Diag                              _at_(OEMRAMF+0x60);// 0x60,
+1230          XBYTE   SMB_STS_Diag                               _at_(OEMRAMF+0x61);// 0x61,
+1231          XBYTE   SMB_ADDR_Diag                          _at_(OEMRAMF+0x62);// 0x62,
+1232          XBYTE   SMB_CMD_Diag                               _at_(OEMRAMF+0x63);// 0x63,
+1233          XBYTE   SMB_DATA_Diag                              _at_(OEMRAMF+0x64);// 0x64,
+1234          //0x64~0x83  for 32 bytes max block R/W 
+1235          XBYTE   SMB_BCNT_Diag                              _at_(OEMRAMF+0x84);// 0x84,
+1236          // SBS Only Alarm registers  
+1237          XBYTE   SMB_ALRA_Diag                              _at_(OEMRAMF+0x85);// 0x85,
+1238          XBYTE   SMB_ALRD0_Diag                             _at_(OEMRAMF+0x86);// 0x86,
+1239          XBYTE   SMB_ALRD1_Diag                             _at_(OEMRAMF+0x87);// 0x87,
+1240          
+1241          XBYTE   SMB_EC_Chennel_Diag                        _at_(OEMRAMF+0x88);// 0x88,
+1242          //ANGELAS064:add end
+C51 COMPILER V8.12   OEM_MEMORY                                                            09/14/2018 11:08:25 PAGE 22  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

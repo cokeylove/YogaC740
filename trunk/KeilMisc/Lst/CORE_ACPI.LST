@@ -1,0 +1,1208 @@
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE CORE_ACPI
+OBJECT MODULE PLACED IN Code\CORE\CORE_ACPI.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\CORE\CORE_ACPI.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\
+                    -INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*----------------------------------------------------------------------------
+   2           * TITLE: CORE_ACPI.C - ACPI Handler
+   3           *
+   4           * SCI event generation.
+   5           * ACPI SMBus transfer initiated by ACPI command.
+   6           *
+   7           * Copyright (c) 1983-2007, Insyde Software Corporation. All Rights Reserved.
+   8           *
+   9           * You may not reproduce, distribute, publish, display, perform, modify, adapt,
+  10           * transmit, broadcast, present, recite, release, license or otherwise exploit
+  11           * any part of this publication in any form, by any means, without the prior
+  12           * written permission of Insyde Software Corporation.
+  13           *---------------------------------------------------------------------------*/
+  14          
+  15          #include <CORE_INCLUDE.H>
+  16          #include <OEM_INCLUDE.H>
+  17          
+  18          //----------------------------------------------------------------------------
+  19          // Process Command/Data received from System via the 2nd Host interface
+  20          //----------------------------------------------------------------------------
+  21          void service_pci2(void)
+  22          {
+  23   1          if ( IS_MASK_CLEAR(PM1STS,P_IBF) )
+  24   1          {
+  25   2                      return;
+  26   2          }
+  27   1              SetTotalBurstTime();    // Set Burst mode total time (2ms)
+  28   1              service_pci2f();                // Process Command/Data
+  29   1      }
+  30          
+  31          //----------------------------------------------------------------------------
+  32          // Process Command/Data received from System via the 2nd Host interface
+  33          //----------------------------------------------------------------------------
+  34          void service_pci2f(void)
+  35          {
+  36   1              do
+  37   1              {
+  38   2                      if ( PM1STS & P_C_D )                   // Command port
+  39   2                      {
+  40   3                              PM1Cmd  = PM1DI;                        // Load command
+  41   3                      PM1Step =0x00;
+  42   3                      if (PM1Cmd==0x80) ACPI_Cmd_80();                        
+  43   3                              else if (PM1Cmd==0x81) ACPI_Cmd_81();   
+  44   3                              else if (PM1Cmd==0x82) ACPI_Cmd_82();   
+  45   3                              else if (PM1Cmd==0x83) ACPI_Cmd_83();   
+  46   3                              else
+  47   3                          {
+  48   4                                      Core_66Port(PM1Cmd);
+  49   4                              Hook_66Port(PM1Cmd);
+  50   4                      }
+  51   3                      }
+  52   2                      else                                                    // Data port
+  53   2                      {
+  54   3                              PM1Data2 = PM1Data1;
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 2   
+
+  55   3                              PM1Data1 = PM1Data;
+  56   3                              PM1Data = PM1DI;                        // Load data
+  57   3                              if (PM1Step!=0x00)
+  58   3                              {                       
+  59   4                                      if (PM1Cmd==0x80) ACPI_Cmd_80Data();                    
+  60   4                                      else if (PM1Cmd==0x81) ACPI_Cmd_81Data();
+  61   4                                      else
+  62   4                                      {                                       
+  63   5                                              Core_62Port(PM1Cmd);    // Handle command data
+  64   5                                          Hook_62Port(PM1Cmd);
+  65   5                      } 
+  66   4                                      PM1Step--;
+  67   4                              }
+  68   3                      }
+  69   2              }while((IS_MASK_SET(PM1STS,BURST)||ECCheckBurstMode)&&(CheckBurstMode()==1));
+  70   1      
+  71   1              TR1 = 0;                        // disable timer1
+  72   1              TF1 = 0;                        // clear overflow flag
+  73   1              ET1 = 1;                        // Enable timer1 interrupt
+  74   1              EnableAllInterrupt();
+  75   1              EnablePMCIBFInt();
+  76   1              Hook_ACPICommand();
+  77   1      }
+  78          
+  79          //----------------------------------------------------------------------------
+  80          // Handle ACPI commands.
+  81          //----------------------------------------------------------------------------
+  82          //----------------------------------------------------------------------------
+  83          // Handle ACPI command 8x.
+  84          //----------------------------------------------------------------------------
+  85          void ACPI_Cmd_80(void)        // Read Embedded Controller.
+  86          {
+  87   1              ACPI_Gen_Int(ACPICmdSCI);
+  88   1              PM1Step =0x01;
+  89   1      }
+  90          
+  91          void ACPI_Cmd_81(void)        // Write Embedded Controller.
+  92          {
+  93   1              ACPI_Gen_Int(ACPICmdSCI);
+  94   1              PM1Step =0x02;
+  95   1      }
+  96          
+  97          void ACPI_Cmd_82(void)        // Burst Enable Embedded Controller.
+  98          {
+  99   1          SET_MASK(SYS_MISC1,ACPI_OS);
+ 100   1              Bioswatchdog=0;
+ 101   1              Bioswatchdogtime=0;
+ 102   1              SET_MASK(PM1STS,BURST); // PM1STS.4 Set Burst mode flag
+ 103   1              SendFromAcpi(0x90);             // Get Burst Acknowledge byte to send to Host.
+ 104   1      }
+ 105          
+ 106          void ACPI_Cmd_83(void)        // Burst Disable Embedded Controller.
+ 107          {
+ 108   1              CLEAR_MASK(PM1STS,BURST);       // PM1STS.4 Set Burst mode flag
+ 109   1              ACPI_Gen_Int(ACPICmdSCI);   // Clear Burst bit in secondary Host interface status register.
+ 110   1      }
+ 111          
+ 112          void ACPI_Cmd_84(void)        // Query Embedded Controller.
+ 113          {
+ 114   1              ITempB05 = 0x00;
+ 115   1              if (SCI_Event_Out_Index != SCI_Event_In_Index)
+ 116   1              {
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 3   
+
+ 117   2                      ITempB05 = SCI_Event_Buffer[SCI_Event_Out_Index];
+ 118   2              SCI_Event_Out_Index++;
+ 119   2              if (SCI_Event_Out_Index >= EVENT_BUFFER_SIZE)
+ 120   2                      {
+ 121   3                      SCI_Event_Out_Index = 0;
+ 122   3                      }
+ 123   2                      if (SCI_Event_Out_Index == SCI_Event_In_Index)
+ 124   2                      CLEAR_MASK(PM1STS,SCIEVT);
+ 125   2      
+ 126   2                      SendFromAcpi(ITempB05);
+ 127   2              }
+ 128   1              else
+ 129   1              {
+ 130   2                      CLEAR_MASK(PM1STS,SCIEVT);
+ 131   2              }
+ 132   1      
+ 133   1      }
+ 134          
+ 135          //----------------------------------------------------------------------------
+ 136          // Handle ACPI command 9x.
+ 137          //----------------------------------------------------------------------------
+ 138          void ACPI_Cmd_92(void)          // Oem function of reading EC external ram
+ 139          {
+ 140   1              PM1Step = 0x02;
+ 141   1      }
+ 142          
+ 143          void ACPI_Cmd_93(void)          // Oem function of writing EC external ram
+ 144          {
+ 145   1              PM1Step =0x03;
+ 146   1      }
+ 147          
+ 148          //----------------------------------------------------------------------------
+ 149          // Handle ACPI command Dx.
+ 150          //----------------------------------------------------------------------------
+ 151          void ACPI_Cmd_DC(void)
+ 152          {
+ 153   1          #if WDT_Support
+ 154   1          DisableInternalWDT();  //G64:Add disable watch dog when flash EC with CMD 0xDC.
+ 155   1          #endif
+ 156   1              ITE_Flash_Utility();    // for 8500
+ 157   1      }
+ 158          
+ 159          //----------------------------------------------------------------------------
+ 160          // Handle ACPI command Fx.
+ 161          //----------------------------------------------------------------------------
+ 162          void ACPI_Cmd_F0(void)
+ 163          {
+ 164   1              KeyScanACK = KU_ACK_Start;
+ 165   1      }
+ 166          
+ 167          //----------------------------------------------------------------------------
+ 168          // Handle ACPI command data.
+ 169          //----------------------------------------------------------------------------
+ 170          void SendFromAcpi(BYTE ecdata)
+ 171          {
+ 172   1              PM1DO = ecdata;
+ 173   1              ACPI_Gen_Int(ACPICmdSCI);
+ 174   1      }
+ 175          
+ 176          //----------------------------------------------------------------------------
+ 177          // Handle the data of ACPI command 8x
+ 178          //----------------------------------------------------------------------------
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 4   
+
+ 179          void ACPI_Cmd_80Data(void)
+ 180          {
+ 181   1              if (PM1Step == 1)
+ 182   1              {
+ 183   2                      SendFromAcpi(Hook_ReadMapECSpace(PM1Data));
+ 184   2              ECCheckBurstMode = 0;
+ 185   2              }
+ 186   1      }
+ 187          
+ 188          void ACPI_Cmd_81Data(void)
+ 189          {
+ 190   1              ACPI_Gen_Int(ACPICmdSCI);
+ 191   1              if (PM1Step == 2)
+ 192   1              {
+ 193   2              PM1Data1=PM1Data;
+ 194   2              }
+ 195   1              else if(PM1Step == 1)
+ 196   1              {
+ 197   2                      Hook_WriteMapECSpace(PM1Data1,PM1Data);
+ 198   2              ECCheckBurstMode = 0;
+ 199   2              }
+ 200   1      }
+ 201          
+ 202          void ACPI_Cmd_82Data(void)
+ 203          {
+ 204   1      
+ 205   1      }
+ 206          
+ 207          void ACPI_Cmd_83Data(void)
+ 208          {
+ 209   1      
+ 210   1      }
+ 211          
+ 212          void ACPI_Cmd_84Data(void)
+ 213          {
+ 214   1      
+ 215   1      }
+ 216          
+ 217          //----------------------------------------------------------------------------
+ 218          // Handle the data of ACPI command 9x
+ 219          //----------------------------------------------------------------------------
+ 220          void ACPI_Cmd_92Data(void)
+ 221          {
+ 222   1              switch(PM1Step)
+ 223   1              {
+ 224   2                      case 2:
+ 225   2                              PM1Data1=PM1Data;               // address high
+ 226   2                              break;
+ 227   2      
+ 228   2                      case 1:
+ 229   2                              Read_External_Ram();
+ 230   2                              break;
+ 231   2      
+ 232   2                      default:
+ 233   2                              break;
+ 234   2              }
+ 235   1      }
+ 236          
+ 237          void ACPI_Cmd_93Data(void)
+ 238          {
+ 239   1              if (PM1Step==0x03)
+ 240   1              {
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 5   
+
+ 241   2                      PM1Data2=PM1Data;  // address high
+ 242   2              }
+ 243   1              else if (PM1Step==0x02)
+ 244   1              {
+ 245   2              PM1Data1=PM1Data;  // address low
+ 246   2              }
+ 247   1              else if (PM1Step==0x01)
+ 248   1              {
+ 249   2              Write_External_Ram();
+ 250   2              }
+ 251   1      }
+ 252          
+ 253          //----------------------------------------------------------------------------
+ 254          // Read external ram Space
+ 255          //----------------------------------------------------------------------------
+ 256          void Read_External_Ram()
+ 257          {
+ 258   1              Tmp_XPntr=((PM1Data1<<8)+PM1Data);
+ 259   1              PM1DO = *Tmp_XPntr;
+ 260   1      }
+ 261          
+ 262          //----------------------------------------------------------------------------
+ 263          // Write external ram Space
+ 264          //----------------------------------------------------------------------------
+ 265          void Write_External_Ram()
+ 266          {
+ 267   1              Tmp_XPntr=((PM1Data2<<8)+PM1Data1);
+ 268   1              *Tmp_XPntr=PM1Data;
+ 269   1      }
+ 270          
+ 271          //----------------------------------------------------------------------------
+ 272          // Burst mode or normal mode
+ 273          //----------------------------------------------------------------------------
+ 274          BYTE CheckBurstMode(void)
+ 275          {
+ 276   1              while(IS_MASK_CLEAR(PM1STS,P_IBF))  // wait input buffer full
+ 277   1              {
+ 278   2                      if(TF1)                                             // time-out
+ 279   2                      {
+ 280   3                  TR1 = 0;
+ 281   3                  TF1=0;
+ 282   3                          CLEAR_MASK(PM1STS,BURST);
+ 283   3                      ACPI_Gen_Int(ACPICmdSCI);
+ 284   3                  ECCheckBurstMode = 0;
+ 285   3                              return(0);
+ 286   3                      }
+ 287   2              }
+ 288   1              return(1);
+ 289   1      }
+ 290          
+ 291          //----------------------------------------------------------------------------
+ 292          // Set Burst mode total time (1ms)
+ 293          //----------------------------------------------------------------------------
+ 294          void SetTotalBurstTime(void)
+ 295          {
+ 296   1          DisableAllInterrupt();
+ 297   1              TR1 = 0;                                                // disable timer1
+ 298   1              ET1 = 0;                                                // Disable timer1 interrupt
+ 299   1          _nop_();
+ 300   1          _nop_();
+ 301   1          _nop_();
+ 302   1          _nop_();
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 6   
+
+ 303   1          TH1 = T_ACPI_BurstTime>>8;      // Set timer1 counter 2ms
+ 304   1          TL1 = T_ACPI_BurstTime;         // Set timer1 counter 2ms
+ 305   1          TF1 = 0;                                            // clear overflow flag
+ 306   1              TR1 = 1;                                                // enable timer1
+ 307   1      }
+ 308          
+ 309          /* ----------------------------------------------------------------------------
+ 310           * FUNCTION: ACPI_Gen_Int - Generate an SCI interrupt.
+ 311           *
+ 312           * For a pulsed SCI (edge triggered), the SCI signal is pulsed.
+ 313           *
+ 314           * For a level triggered SCI, the SCI signal is set or cleared.  The Host will
+ 315           * send a command to read the cause of the SCI. The signal will be deactivated
+ 316           * when no more causes exist.
+ 317           * ------------------------------------------------------------------------- */
+ 318          void ACPI_Gen_Int(BYTE Qevent)
+ 319          {
+ 320   1      //ANGELAS024:s+Modify ACPI function.
+ 321   1              if(IS_MASK_CLEAR(SYS_MISC1,ACPI_OS) || (SysPowState!=SYSTEM_S0))
+ 322   1              {
+ 323   2                      return;
+ 324   2              }
+ 325   1      //ANGELAS024:e+Modify ACPI function.
+ 326   1          if(Qevent==QeventSCI)
+ 327   1          {
+ 328   2              DisableAllInterrupt();
+ 329   2          }
+ 330   1              Hook_SCION();
+ 331   1              WNCKR = 0x00;               // Delay 15.26 us   T066A-//72JERRY079:Add delay time for SCI interrupt.
+ 332   1              WNCKR = 0x00;               // Delay 15.26 us   T066A-//72JERRY079:Add delay time for SCI interrupt.
+ 333   1              //WNCKR = 0x00;               // Delay 15.26 us   T066A-
+ 334   1              Hook_SCIOFF();
+ 335   1          if(Qevent==QeventSCI)
+ 336   1          {
+ 337   2              EnableAllInterrupt();
+ 338   2          }
+ 339   1      }
+ 340          
+ 341          //----------------------------------------------------------------------------
+ 342          // The function of processing 62 port data
+ 343          //----------------------------------------------------------------------------
+ 344          #pragma ot(8, speed)    //T084+
+ 345          void Core_62Port(BYTE PM1Data)
+ 346          {
+ 347   1          switch(PM1Data)
+ 348   1          {
+ 349   2              /* 
+ 350   2             case 0x80:
+ 351   2                      ACPI_Cmd_80Data();
+ 352   2                      break;
+ 353   2      
+ 354   2              case 0x81:
+ 355   2                      ACPI_Cmd_81Data();
+ 356   2                      break;
+ 357   2      
+ 358   2            case 0x82:
+ 359   2                      ACPI_Cmd_82Data();
+ 360   2                      break;
+ 361   2      
+ 362   2              case 0x83:
+ 363   2                      ACPI_Cmd_83Data();
+ 364   2                      break;
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 7   
+
+ 365   2              */  
+ 366   2          case 0x84:
+ 367   2              ACPI_Cmd_84Data();
+ 368   2                      break;
+ 369   2      
+ 370   2          case 0x92:
+ 371   2              ACPI_Cmd_92Data();
+ 372   2              break;
+ 373   2      
+ 374   2          case 0x93:
+ 375   2              ACPI_Cmd_93Data();
+ 376   2              break;
+ 377   2      
+ 378   2              default:
+ 379   2                  break;
+ 380   2          }
+ 381   1      }
+ 382          
+ 383          //----------------------------------------------------------------------------
+ 384          // The function of processing 66 port command.
+ 385          //----------------------------------------------------------------------------
+ 386          #pragma ot(8, speed)    //T084+
+ 387          void Core_66Port(BYTE PM1Cmd)
+ 388          {
+ 389   1          switch(PM1Cmd)
+ 390   1          {
+ 391   2              /*   //  
+ 392   2             case 0x80:
+ 393   2                      ACPI_Cmd_80();
+ 394   2                       break;
+ 395   2      
+ 396   2              case 0x81:
+ 397   2                      ACPI_Cmd_81();
+ 398   2                      break;
+ 399   2      
+ 400   2             case 0x82:
+ 401   2                      ACPI_Cmd_82();
+ 402   2                      break;
+ 403   2      
+ 404   2              case 0x83:
+ 405   2                      ACPI_Cmd_83();
+ 406   2                      break;
+ 407   2              */   //  
+ 408   2          case 0x84:
+ 409   2              ACPI_Cmd_84();
+ 410   2                  break;
+ 411   2      
+ 412   2          case 0x92:
+ 413   2              ACPI_Cmd_92();
+ 414   2              break;
+ 415   2      
+ 416   2          case 0x93:
+ 417   2              ACPI_Cmd_93();
+ 418   2              break;
+ 419   2      
+ 420   2          case 0xDC:
+ 421   2              ACPI_Cmd_DC();
+ 422   2              break;
+ 423   2      
+ 424   2          case 0xF0:
+ 425   2              ACPI_Cmd_F0();
+ 426   2              break;
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 8   
+
+ 427   2      
+ 428   2              default:
+ 429   2                  break;
+ 430   2          }
+ 431   1      }
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 9   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0054 (BEGIN)
+0000         L?0085:
+0000 EF                MOV     A,R7
+0001 FE                MOV     R6,A
+0002 7C00              MOV     R4,#00H
+0004 E4                CLR     A
+0005 2D                ADD     A,R5
+0006 FF                MOV     R7,A
+0007 EC                MOV     A,R4
+0008 3E                ADDC    A,R6
+0009 7800        E     MOV     R0,#LOW Tmp_XPntr
+000B F6                MOV     @R0,A
+000C 08                INC     R0
+000D EF                MOV     A,R7
+000E F6                MOV     @R0,A
+000F 18                DEC     R0
+0010 E6                MOV     A,@R0
+0011 FE                MOV     R6,A
+0012 08                INC     R0
+0013 E6                MOV     A,@R0
+0014 F582              MOV     DPL,A
+0016 8E83              MOV     DPH,R6
+0018 22                RET     
+0019         L?0086:
+0019 900000      E     MOV     DPTR,#SCI_Event_In_Index
+001C E0                MOVX    A,@DPTR
+001D FF                MOV     R7,A
+001E 900000      E     MOV     DPTR,#SCI_Event_Out_Index
+0021 E0                MOVX    A,@DPTR
+0022 6F                XRL     A,R7
+0023 22                RET     
+             ; FUNCTION Com0054 (END)
+
+             ; FUNCTION service_pci2 (BEGIN)
+                                           ; SOURCE LINE # 21
+                                           ; SOURCE LINE # 22
+                                           ; SOURCE LINE # 23
+0000 900000      E     MOV     DPTR,#PM1STS
+0003 E0                MOVX    A,@DPTR
+0004 30E106            JNB     ACC.1,?C0002
+                                           ; SOURCE LINE # 24
+                                           ; SOURCE LINE # 26
+0007         ?C0001:
+                                           ; SOURCE LINE # 27
+0007 120000      R     LCALL   SetTotalBurstTime
+                                           ; SOURCE LINE # 28
+000A 120000      R     LCALL   service_pci2f
+                                           ; SOURCE LINE # 29
+000D         ?C0002:
+000D 22                RET     
+             ; FUNCTION service_pci2 (END)
+
+             ; FUNCTION service_pci2f (BEGIN)
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 35
+0000         ?C0005:
+                                           ; SOURCE LINE # 37
+                                           ; SOURCE LINE # 38
+0000 900000      E     MOV     DPTR,#PM1STS
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 10  
+
+0003 E0                MOVX    A,@DPTR
+0004 30E33D            JNB     ACC.3,?C0006
+                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 40
+0007 900000      E     MOV     DPTR,#PM1DI
+000A E0                MOVX    A,@DPTR
+000B F500        E     MOV     PM1Cmd,A
+                                           ; SOURCE LINE # 41
+000D E4                CLR     A
+000E F500        E     MOV     PM1Step,A
+                                           ; SOURCE LINE # 42
+0010 E500        E     MOV     A,PM1Cmd
+0012 B48005            CJNE    A,#080H,?C0007
+0015 120000      R     LCALL   ACPI_Cmd_80
+0018 805A              SJMP    ?C0003
+001A         ?C0007:
+                                           ; SOURCE LINE # 43
+001A E500        E     MOV     A,PM1Cmd
+001C B48105            CJNE    A,#081H,?C0009
+001F 120000      R     LCALL   ACPI_Cmd_81
+0022 8050              SJMP    ?C0003
+0024         ?C0009:
+                                           ; SOURCE LINE # 44
+0024 E500        E     MOV     A,PM1Cmd
+0026 B48205            CJNE    A,#082H,?C0011
+0029 120000      R     LCALL   ACPI_Cmd_82
+002C 8046              SJMP    ?C0003
+002E         ?C0011:
+                                           ; SOURCE LINE # 45
+002E E500        E     MOV     A,PM1Cmd
+0030 B48305            CJNE    A,#083H,?C0013
+0033 120000      R     LCALL   ACPI_Cmd_83
+0036 803C              SJMP    ?C0003
+0038         ?C0013:
+                                           ; SOURCE LINE # 47
+                                           ; SOURCE LINE # 48
+0038 AF00        E     MOV     R7,PM1Cmd
+003A 120000      R     LCALL   _Core_66Port
+                                           ; SOURCE LINE # 49
+003D AF00        E     MOV     R7,PM1Cmd
+003F 120000      E     LCALL   _Hook_66Port
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 51
+0042 8030              SJMP    ?C0003
+0044         ?C0006:
+                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 54
+0044 850000      E     MOV     PM1Data2,PM1Data1
+                                           ; SOURCE LINE # 55
+0047 850000      E     MOV     PM1Data1,PM1Data
+                                           ; SOURCE LINE # 56
+004A 900000      E     MOV     DPTR,#PM1DI
+004D E0                MOVX    A,@DPTR
+004E F500        E     MOV     PM1Data,A
+                                           ; SOURCE LINE # 57
+0050 E500        E     MOV     A,PM1Step
+0052 6020              JZ      ?C0003
+                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 59
+0054 E500        E     MOV     A,PM1Cmd
+0056 B48005            CJNE    A,#080H,?C0017
+0059 120000      R     LCALL   ACPI_Cmd_80Data
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 11  
+
+005C 8014              SJMP    ?C0018
+005E         ?C0017:
+                                           ; SOURCE LINE # 60
+005E E500        E     MOV     A,PM1Cmd
+0060 B48105            CJNE    A,#081H,?C0019
+0063 120000      R     LCALL   ACPI_Cmd_81Data
+0066 800A              SJMP    ?C0018
+0068         ?C0019:
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 63
+0068 AF00        E     MOV     R7,PM1Cmd
+006A 120000      R     LCALL   _Core_62Port
+                                           ; SOURCE LINE # 64
+006D AF00        E     MOV     R7,PM1Cmd
+006F 120000      E     LCALL   _Hook_62Port
+                                           ; SOURCE LINE # 65
+0072         ?C0018:
+                                           ; SOURCE LINE # 66
+0072 1500        E     DEC     PM1Step
+                                           ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 69
+0074         ?C0003:
+0074 900000      E     MOV     DPTR,#PM1STS
+0077 E0                MOVX    A,@DPTR
+0078 20E403            JB      ACC.4,?C0022
+007B 30000B      E     JNB     ECCheckBurstMode,?C0004
+007E         ?C0022:
+007E 120000      R     LCALL   CheckBurstMode
+0081 EF                MOV     A,R7
+0082 6401              XRL     A,#01H
+0084 7003              JNZ     $ + 5H
+0086 020000      R     LJMP    ?C0005
+0089         ?C0004:
+                                           ; SOURCE LINE # 71
+0089 C28E              CLR     TR1
+                                           ; SOURCE LINE # 72
+008B C28F              CLR     TF1
+                                           ; SOURCE LINE # 73
+008D D2AB              SETB    ET1
+                                           ; SOURCE LINE # 74
+008F 120000      E     LCALL   EnableAllInterrupt
+                                           ; SOURCE LINE # 75
+0092 120000      E     LCALL   EnablePMCIBFInt
+                                           ; SOURCE LINE # 76
+0095 020000      E     LJMP    Hook_ACPICommand
+             ; FUNCTION service_pci2f (END)
+
+             ; FUNCTION ACPI_Cmd_80 (BEGIN)
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 87
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 120000      R     LCALL   _ACPI_Gen_Int
+                                           ; SOURCE LINE # 88
+0005 750001      E     MOV     PM1Step,#01H
+                                           ; SOURCE LINE # 89
+0008 22                RET     
+             ; FUNCTION ACPI_Cmd_80 (END)
+
+             ; FUNCTION ACPI_Cmd_81 (BEGIN)
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 12  
+
+                                           ; SOURCE LINE # 91
+                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 93
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 120000      R     LCALL   _ACPI_Gen_Int
+                                           ; SOURCE LINE # 94
+0005 750002      E     MOV     PM1Step,#02H
+                                           ; SOURCE LINE # 95
+0008 22                RET     
+             ; FUNCTION ACPI_Cmd_81 (END)
+
+             ; FUNCTION ACPI_Cmd_82 (BEGIN)
+                                           ; SOURCE LINE # 97
+                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 99
+0000 900000      E     MOV     DPTR,#SYS_MISC1
+0003 E0                MOVX    A,@DPTR
+0004 4480              ORL     A,#080H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 100
+0007 E4                CLR     A
+0008 900000      E     MOV     DPTR,#Bioswatchdog
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+000C 900000      E     MOV     DPTR,#Bioswatchdogtime
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 102
+0010 900000      E     MOV     DPTR,#PM1STS
+0013 E0                MOVX    A,@DPTR
+0014 4410              ORL     A,#010H
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+0017 7F90              MOV     R7,#090H
+0019 020000      R     LJMP    _SendFromAcpi
+             ; FUNCTION ACPI_Cmd_82 (END)
+
+             ; FUNCTION ACPI_Cmd_83 (BEGIN)
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 108
+0000 900000      E     MOV     DPTR,#PM1STS
+0003 E0                MOVX    A,@DPTR
+0004 54EF              ANL     A,#0EFH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+0007 E4                CLR     A
+0008 FF                MOV     R7,A
+0009 020000      R     LJMP    _ACPI_Gen_Int
+             ; FUNCTION ACPI_Cmd_83 (END)
+
+             ; FUNCTION ACPI_Cmd_84 (BEGIN)
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+0000 E4                CLR     A
+0001 F500        E     MOV     ITempB05,A
+                                           ; SOURCE LINE # 115
+0003 120000      R     LCALL   L?0086
+0006 602C              JZ      ?C0028
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 117
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 13  
+
+0008 E0                MOVX    A,@DPTR
+0009 2400        E     ADD     A,#LOW SCI_Event_Buffer
+000B F582              MOV     DPL,A
+000D E4                CLR     A
+000E 3400        E     ADDC    A,#HIGH SCI_Event_Buffer
+0010 F583              MOV     DPH,A
+0012 E0                MOVX    A,@DPTR
+0013 F500        E     MOV     ITempB05,A
+                                           ; SOURCE LINE # 118
+0015 900000      E     MOV     DPTR,#SCI_Event_Out_Index
+0018 E0                MOVX    A,@DPTR
+0019 04                INC     A
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 119
+001B E0                MOVX    A,@DPTR
+001C C3                CLR     C
+001D 9408              SUBB    A,#08H
+001F 4002              JC      ?C0029
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+0021 E4                CLR     A
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 122
+0023         ?C0029:
+                                           ; SOURCE LINE # 123
+0023 120000      R     LCALL   L?0086
+0026 7007              JNZ     ?C0030
+                                           ; SOURCE LINE # 124
+0028 900000      E     MOV     DPTR,#PM1STS
+002B E0                MOVX    A,@DPTR
+002C 54DF              ANL     A,#0DFH
+002E F0                MOVX    @DPTR,A
+002F         ?C0030:
+                                           ; SOURCE LINE # 126
+002F AF00        E     MOV     R7,ITempB05
+0031 020000      R     LJMP    _SendFromAcpi
+                                           ; SOURCE LINE # 127
+0034         ?C0028:
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+0034 900000      E     MOV     DPTR,#PM1STS
+0037 E0                MOVX    A,@DPTR
+0038 54DF              ANL     A,#0DFH
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 133
+003B         ?C0032:
+003B 22                RET     
+             ; FUNCTION ACPI_Cmd_84 (END)
+
+             ; FUNCTION ACPI_Cmd_92 (BEGIN)
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+                                           ; SOURCE LINE # 140
+0000 750002      E     MOV     PM1Step,#02H
+                                           ; SOURCE LINE # 141
+0003 22                RET     
+             ; FUNCTION ACPI_Cmd_92 (END)
+
+             ; FUNCTION ACPI_Cmd_93 (BEGIN)
+                                           ; SOURCE LINE # 143
+                                           ; SOURCE LINE # 144
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 14  
+
+                                           ; SOURCE LINE # 145
+0000 750003      E     MOV     PM1Step,#03H
+                                           ; SOURCE LINE # 146
+0003 22                RET     
+             ; FUNCTION ACPI_Cmd_93 (END)
+
+             ; FUNCTION ACPI_Cmd_DC (BEGIN)
+                                           ; SOURCE LINE # 151
+                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 154
+0000 120000      E     LCALL   DisableInternalWDT
+                                           ; SOURCE LINE # 156
+0003 020000      E     LJMP    ITE_Flash_Utility
+             ; FUNCTION ACPI_Cmd_DC (END)
+
+             ; FUNCTION ACPI_Cmd_F0 (BEGIN)
+                                           ; SOURCE LINE # 162
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+0000 900000      E     MOV     DPTR,#KeyScanACK
+0003 74FF              MOV     A,#0FFH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 165
+0006 22                RET     
+             ; FUNCTION ACPI_Cmd_F0 (END)
+
+             ; FUNCTION _SendFromAcpi (BEGIN)
+                                           ; SOURCE LINE # 170
+;---- Variable 'ecdata' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+0000 900000      E     MOV     DPTR,#PM1DO
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 173
+0005 E4                CLR     A
+0006 FF                MOV     R7,A
+0007 020000      R     LJMP    _ACPI_Gen_Int
+             ; FUNCTION _SendFromAcpi (END)
+
+             ; FUNCTION ACPI_Cmd_80Data (BEGIN)
+                                           ; SOURCE LINE # 179
+                                           ; SOURCE LINE # 180
+                                           ; SOURCE LINE # 181
+0000 E500        E     MOV     A,PM1Step
+0002 B4010A            CJNE    A,#01H,?C0039
+                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 183
+0005 AF00        E     MOV     R7,PM1Data
+0007 120000      E     LCALL   _Hook_ReadMapECSpace
+000A 120000      R     LCALL   _SendFromAcpi
+                                           ; SOURCE LINE # 184
+000D C200        E     CLR     ECCheckBurstMode
+                                           ; SOURCE LINE # 185
+                                           ; SOURCE LINE # 186
+000F         ?C0039:
+000F 22                RET     
+             ; FUNCTION ACPI_Cmd_80Data (END)
+
+             ; FUNCTION ACPI_Cmd_81Data (BEGIN)
+                                           ; SOURCE LINE # 188
+                                           ; SOURCE LINE # 189
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 15  
+
+                                           ; SOURCE LINE # 190
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 120000      R     LCALL   _ACPI_Gen_Int
+                                           ; SOURCE LINE # 191
+0005 E500        E     MOV     A,PM1Step
+0007 B40204            CJNE    A,#02H,?C0040
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 193
+000A 850000      E     MOV     PM1Data1,PM1Data
+                                           ; SOURCE LINE # 194
+000D 22                RET     
+000E         ?C0040:
+                                           ; SOURCE LINE # 195
+000E E500        E     MOV     A,PM1Step
+0010 B40109            CJNE    A,#01H,?C0043
+                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 197
+0013 AD00        E     MOV     R5,PM1Data
+0015 AF00        E     MOV     R7,PM1Data1
+0017 120000      E     LCALL   _Hook_WriteMapECSpace
+                                           ; SOURCE LINE # 198
+001A C200        E     CLR     ECCheckBurstMode
+                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 200
+001C         ?C0043:
+001C 22                RET     
+             ; FUNCTION ACPI_Cmd_81Data (END)
+
+             ; FUNCTION ACPI_Cmd_82Data (BEGIN)
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+                                           ; SOURCE LINE # 205
+0000 22                RET     
+             ; FUNCTION ACPI_Cmd_82Data (END)
+
+             ; FUNCTION ACPI_Cmd_83Data (BEGIN)
+                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 210
+0000 22                RET     
+             ; FUNCTION ACPI_Cmd_83Data (END)
+
+             ; FUNCTION ACPI_Cmd_84Data (BEGIN)
+                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 215
+0000 22                RET     
+             ; FUNCTION ACPI_Cmd_84Data (END)
+
+             ; FUNCTION ACPI_Cmd_92Data (BEGIN)
+                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+0000 E500        E     MOV     A,PM1Step
+0002 14                DEC     A
+0003 6007              JZ      ?C0049
+0005 14                DEC     A
+0006 7007              JNZ     ?C0051
+                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 224
+0008         ?C0048:
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 16  
+
+                                           ; SOURCE LINE # 225
+0008 850000      E     MOV     PM1Data1,PM1Data
+                                           ; SOURCE LINE # 226
+000B 22                RET     
+                                           ; SOURCE LINE # 228
+000C         ?C0049:
+                                           ; SOURCE LINE # 229
+000C 120000      R     LCALL   Read_External_Ram
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 234
+                                           ; SOURCE LINE # 235
+000F         ?C0051:
+000F 22                RET     
+             ; FUNCTION ACPI_Cmd_92Data (END)
+
+             ; FUNCTION ACPI_Cmd_93Data (BEGIN)
+                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 239
+0000 E500        E     MOV     A,PM1Step
+0002 B40304            CJNE    A,#03H,?C0052
+                                           ; SOURCE LINE # 240
+                                           ; SOURCE LINE # 241
+0005 850000      E     MOV     PM1Data2,PM1Data
+                                           ; SOURCE LINE # 242
+0008 22                RET     
+0009         ?C0052:
+                                           ; SOURCE LINE # 243
+0009 E500        E     MOV     A,PM1Step
+000B B40204            CJNE    A,#02H,?C0054
+                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 245
+000E 850000      E     MOV     PM1Data1,PM1Data
+                                           ; SOURCE LINE # 246
+0011 22                RET     
+0012         ?C0054:
+                                           ; SOURCE LINE # 247
+0012 E500        E     MOV     A,PM1Step
+0014 B40103            CJNE    A,#01H,?C0057
+                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 249
+0017 120000      R     LCALL   Write_External_Ram
+                                           ; SOURCE LINE # 250
+                                           ; SOURCE LINE # 251
+001A         ?C0057:
+001A 22                RET     
+             ; FUNCTION ACPI_Cmd_93Data (END)
+
+             ; FUNCTION Read_External_Ram (BEGIN)
+                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 257
+                                           ; SOURCE LINE # 258
+0000 AF00        E     MOV     R7,PM1Data1
+0002 AD00        E     MOV     R5,PM1Data
+                                           ; SOURCE LINE # 259
+0004 120000      R     LCALL   L?0085
+0007 E0                MOVX    A,@DPTR
+0008 900000      E     MOV     DPTR,#PM1DO
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 260
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 17  
+
+000C 22                RET     
+             ; FUNCTION Read_External_Ram (END)
+
+             ; FUNCTION Write_External_Ram (BEGIN)
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 267
+0000 AF00        E     MOV     R7,PM1Data2
+0002 AD00        E     MOV     R5,PM1Data1
+                                           ; SOURCE LINE # 268
+0004 120000      R     LCALL   L?0085
+0007 E500        E     MOV     A,PM1Data
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 269
+000A 22                RET     
+             ; FUNCTION Write_External_Ram (END)
+
+             ; FUNCTION CheckBurstMode (BEGIN)
+                                           ; SOURCE LINE # 274
+                                           ; SOURCE LINE # 275
+0000         ?C0060:
+                                           ; SOURCE LINE # 276
+0000 900000      E     MOV     DPTR,#PM1STS
+0003 E0                MOVX    A,@DPTR
+0004 20E115            JB      ACC.1,?C0061
+                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 278
+0007 308FF6            JNB     TF1,?C0060
+                                           ; SOURCE LINE # 279
+                                           ; SOURCE LINE # 280
+000A C28E              CLR     TR1
+                                           ; SOURCE LINE # 281
+000C C28F              CLR     TF1
+                                           ; SOURCE LINE # 282
+000E E0                MOVX    A,@DPTR
+000F 54EF              ANL     A,#0EFH
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 283
+0012 E4                CLR     A
+0013 FF                MOV     R7,A
+0014 120000      R     LCALL   _ACPI_Gen_Int
+                                           ; SOURCE LINE # 284
+0017 C200        E     CLR     ECCheckBurstMode
+                                           ; SOURCE LINE # 285
+0019 7F00              MOV     R7,#00H
+001B 22                RET     
+                                           ; SOURCE LINE # 286
+                                           ; SOURCE LINE # 287
+001C         ?C0061:
+                                           ; SOURCE LINE # 288
+001C 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 289
+001E         ?C0063:
+001E 22                RET     
+             ; FUNCTION CheckBurstMode (END)
+
+             ; FUNCTION SetTotalBurstTime (BEGIN)
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 296
+0000 120000      E     LCALL   DisableAllInterrupt
+                                           ; SOURCE LINE # 297
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 18  
+
+0003 C28E              CLR     TR1
+                                           ; SOURCE LINE # 298
+0005 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 299
+0007 00                NOP     
+                                           ; SOURCE LINE # 300
+0008 00                NOP     
+                                           ; SOURCE LINE # 301
+0009 00                NOP     
+                                           ; SOURCE LINE # 302
+000A 00                NOP     
+                                           ; SOURCE LINE # 303
+000B 758DFA            MOV     TH1,#0FAH
+                                           ; SOURCE LINE # 304
+000E 758B01            MOV     TL1,#01H
+                                           ; SOURCE LINE # 305
+0011 C28F              CLR     TF1
+                                           ; SOURCE LINE # 306
+0013 D28E              SETB    TR1
+                                           ; SOURCE LINE # 307
+0015 22                RET     
+             ; FUNCTION SetTotalBurstTime (END)
+
+             ; FUNCTION _ACPI_Gen_Int (BEGIN)
+                                           ; SOURCE LINE # 318
+0000 900000      R     MOV     DPTR,#Qevent
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 321
+0005 900000      E     MOV     DPTR,#SYS_MISC1
+0008 E0                MOVX    A,@DPTR
+0009 30E727            JNB     ACC.7,?C0067
+000C 900000      E     MOV     DPTR,#SysPowState
+000F E0                MOVX    A,@DPTR
+0010 B41020            CJNE    A,#010H,?C0067
+                                           ; SOURCE LINE # 322
+                                           ; SOURCE LINE # 324
+0013         ?C0065:
+                                           ; SOURCE LINE # 326
+0013 900000      R     MOV     DPTR,#Qevent
+0016 E0                MOVX    A,@DPTR
+0017 B40103            CJNE    A,#01H,?C0068
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+001A 120000      E     LCALL   DisableAllInterrupt
+                                           ; SOURCE LINE # 329
+001D         ?C0068:
+                                           ; SOURCE LINE # 330
+001D 120000      E     LCALL   Hook_SCION
+                                           ; SOURCE LINE # 331
+0020 E4                CLR     A
+0021 900000      E     MOV     DPTR,#WNCKR
+0024 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 332
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 334
+0026 120000      E     LCALL   Hook_SCIOFF
+                                           ; SOURCE LINE # 335
+0029 900000      R     MOV     DPTR,#Qevent
+002C E0                MOVX    A,@DPTR
+002D B40103            CJNE    A,#01H,?C0067
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 19  
+
+                                           ; SOURCE LINE # 336
+                                           ; SOURCE LINE # 337
+0030 120000      E     LCALL   EnableAllInterrupt
+                                           ; SOURCE LINE # 338
+                                           ; SOURCE LINE # 339
+0033         ?C0067:
+0033 22                RET     
+             ; FUNCTION _ACPI_Gen_Int (END)
+
+             ; FUNCTION _Core_62Port (BEGIN)
+                                           ; SOURCE LINE # 345
+;---- Variable 'PM1Data' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 346
+                                           ; SOURCE LINE # 347
+0000 EF                MOV     A,R7
+0001 246E              ADD     A,#06EH
+0003 600A              JZ      ?C0072
+0005 14                DEC     A
+0006 600A              JZ      ?C0073
+0008 240F              ADD     A,#0FH
+000A 7009              JNZ     ?C0075
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 366
+000C         ?C0071:
+                                           ; SOURCE LINE # 367
+000C 020000      R     LJMP    ACPI_Cmd_84Data
+                                           ; SOURCE LINE # 368
+                                           ; SOURCE LINE # 370
+000F         ?C0072:
+                                           ; SOURCE LINE # 371
+000F 020000      R     LJMP    ACPI_Cmd_92Data
+                                           ; SOURCE LINE # 372
+                                           ; SOURCE LINE # 374
+0012         ?C0073:
+                                           ; SOURCE LINE # 375
+0012 120000      R     LCALL   ACPI_Cmd_93Data
+                                           ; SOURCE LINE # 376
+                                           ; SOURCE LINE # 378
+                                           ; SOURCE LINE # 379
+                                           ; SOURCE LINE # 380
+                                           ; SOURCE LINE # 381
+0015         ?C0075:
+0015 22                RET     
+             ; FUNCTION _Core_62Port (END)
+
+             ; FUNCTION _Core_66Port (BEGIN)
+                                           ; SOURCE LINE # 387
+;---- Variable 'PM1Cmd' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 388
+                                           ; SOURCE LINE # 389
+0000 EF                MOV     A,R7
+0001 246E              ADD     A,#06EH
+0003 6012              JZ      ?C0078
+0005 14                DEC     A
+0006 6012              JZ      ?C0079
+0008 24B7              ADD     A,#0B7H
+000A 6011              JZ      ?C0080
+000C 24EC              ADD     A,#0ECH
+000E 6010              JZ      ?C0081
+0010 246C              ADD     A,#06CH
+0012 700F              JNZ     ?C0083
+                                           ; SOURCE LINE # 390
+C51 COMPILER V8.12   CORE_ACPI                                                             09/14/2018 11:07:47 PAGE 20  
+
+                                           ; SOURCE LINE # 408
+0014         ?C0077:
+                                           ; SOURCE LINE # 409
+0014 020000      R     LJMP    ACPI_Cmd_84
+                                           ; SOURCE LINE # 410
+                                           ; SOURCE LINE # 412
+0017         ?C0078:
+                                           ; SOURCE LINE # 413
+0017 020000      R     LJMP    ACPI_Cmd_92
+                                           ; SOURCE LINE # 414
+                                           ; SOURCE LINE # 416
+001A         ?C0079:
+                                           ; SOURCE LINE # 417
+001A 020000      R     LJMP    ACPI_Cmd_93
+                                           ; SOURCE LINE # 418
+                                           ; SOURCE LINE # 420
+001D         ?C0080:
+                                           ; SOURCE LINE # 421
+001D 020000      R     LJMP    ACPI_Cmd_DC
+                                           ; SOURCE LINE # 422
+                                           ; SOURCE LINE # 424
+0020         ?C0081:
+                                           ; SOURCE LINE # 425
+0020 120000      R     LCALL   ACPI_Cmd_F0
+                                           ; SOURCE LINE # 426
+                                           ; SOURCE LINE # 428
+                                           ; SOURCE LINE # 429
+                                           ; SOURCE LINE # 430
+                                           ; SOURCE LINE # 431
+0023         ?C0083:
+0023 22                RET     
+             ; FUNCTION _Core_66Port (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    629    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

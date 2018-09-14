@@ -1,0 +1,108 @@
+C51 COMPILER V8.12   UCS1002_PROFILES                                                      09/14/2018 11:08:49 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE UCS1002_PROFILES
+OBJECT MODULE PLACED IN Code\Oem\UCS1002_Profiles.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\UCS1002_Profiles.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code
+                    -\CORE\INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /**************************************************************************************
+   2           *  SMSC CONFIDENTIAL                                                                 *
+   3           *  Copyright (c) 2008 Standard Microsystems Corporation. All rights reserved.        *
+   4           *  This program contains proprietary and confidential information.                   *
+   5           *                                                                                    *
+   6           * THIS SOFTWARE PROVIDED BY STANDARD MICROSYSTEMS CORPORATION`("SMSC")IS SAMPLE CODE *
+   7           * INTENDED FOR EVALUATION PURPOSES ONLY.  IT IS NOT INTENDED FOR COMMERCIAL USE.     *
+   8           * THIS SOFTWARE IS PROVIDED BY SMSC "AS IS" AND ANY EXPRESS OR IMPLIED               *
+   9           * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               *
+  10           * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE EXPRESSLY AND             *
+  11           * SPECIFICALLY DISCLAIMED. IN NO EVENT SHALL SMSC BE LIABLE FOR ANY DIRECT,          *
+  12           * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES                 *
+  13           * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;       *
+  14           * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND        *
+  15           * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT         *
+  16           * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF           *
+  17           * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                  *
+  18           **************************************************************************************
+  19          
+  20                  Program Name: UCS1002 Charger Sample Program Version 1.3.
+  21                  Copyright (C) 2012 Standard Microsystems Corporation
+  22                  All rights reverved.
+  23          
+  24                  This is sample program for UCS1002 to work as a dedicated charger in DCE mode.
+  25          
+  26                  Reference:
+  27                          SMSC UCS1002 DS Rev. 1.1 (11-21-11).pdf
+  28          
+  29          ===============================================================================
+  30          Revision History:
+  31          
+  32          Date
+  33          Version         who  Comment
+  34          ----------  --- --------------------------------------------------------------
+  35          2012/03/04      jc      .Initial version.
+  36          V1.0
+  37                                          Size information reported by C51
+  38                                          MODULE INFORMATION:   STATIC OVERLAYABLE
+  39                                          CODE SIZE        =    826    ----
+  40                                          CONSTANT SIZE    =     69    ----
+  41                                          XDATA SIZE       =      8    ----
+  42                                      PDATA SIZE       =   ----       3
+  43                                          DATA SIZE        =   ----    ----
+  44                                          END OF MODULE INFORMATION.
+  45          
+  46          2012/03/15      jc      .Fine tune timing.
+  47          V1.1
+  48          
+  49          2012/03/23  jc  .Fine tune current parameters.
+  50          V1.2
+  51                                          Size information reported by C51
+  52                                          MODULE INFORMATION:   STATIC OVERLAYABLE
+  53                                          CODE SIZE        =    889    ----
+  54                                          CONSTANT SIZE    =     71    ----
+C51 COMPILER V8.12   UCS1002_PROFILES                                                      09/14/2018 11:08:49 PAGE 2   
+
+  55                                          XDATA SIZE       =     10    ----
+  56                                          PDATA SIZE       =   ----       3
+  57                                          DATA SIZE        =   ----    ----
+  58                                          IDATA SIZE       =   ----    ----
+  59                                          BIT SIZE         =   ----    ----
+  60                                          END OF MODULE INFORMATION.
+  61          
+  62          **************************************************************************************/
+  63          const   unsigned char   code    bLProfile[] =
+  64          {
+  65                  0x03,   0x05,
+  66                  0x80,   0x46, 0x48, 0x4A, 0x4C,
+  67                  0x0d,   0x0A, 0x00, 0x0A, 0x00, // Profile 2
+  68                  0x05,   0x06, 0x04, 0x29, 0x02, // Profile 1
+  69                  0x0d,   0x10, 0x05, 0x93, 0x00, // Profile 5
+  70                  0x05,   0x26, 0x02, 0x29, 0x02,
+  71                  0x05,   0x16, 0x05, 0x19, 0x05,
+  72                  //0x0d, 0x10, 0x05, 0x93, 0x00, // Profile 5
+  73                  0x0d,   0x26, 0x02, 0x09, 0x04,
+  74                  0x0d,   0x10, 0x05, 0x46, 0x00,
+  75          };
+  76          
+  77          
+C51 COMPILER V8.12   UCS1002_PROFILES                                                      09/14/2018 11:08:49 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =     42    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1199 @@
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_FLASH
+OBJECT MODULE PLACED IN Code\OEM\OEM_FLASH.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\OEM\OEM_FLASH.C LA WL(1) CD OT(8,SIZE) NOAREGS OR INCDIR(.\Code\CORE\I
+                    -NCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_FLASH.C
+   3           *
+   4           * Author : Dino
+   5           *
+   6           * Note : These functions are reference only.
+   7           *        Please follow your project software specification to do some modification.
+   8           *---------------------------------------------------------------------------*/
+   9          
+  10          #include <CORE_INCLUDE.H>
+  11          #include <OEM_INCLUDE.H>
+  12          
+  13          void SetLPCClockFreeRun(void)
+  14          {
+  15   1              GPCRH0 = OUTPUT;
+  16   1              CLEAR_MASK(GPDRH,BIT(0));
+  17   1      }
+  18          
+  19          //----------------------------------------------------------------------------
+  20          // The function of Scratch rom
+  21          //----------------------------------------------------------------------------
+  22          void RamProgram(BYTE useport)
+  23          {
+  24   1              RamCodePort = useport;
+  25   1              DisableAllInterrupt();
+  26   1      
+  27   1              Tmp_XPntr = 0x700;
+  28   1              Tmp_code_pointer = (void *)Eflash_CmdRamCode;
+  29   1      
+  30   1              for(ITempB01=0;ITempB01<255;ITempB01++)
+  31   1              {
+  32   2                      *Tmp_XPntr = *Tmp_code_pointer;
+  33   2              Tmp_XPntr++;
+  34   2                      Tmp_code_pointer++;
+  35   2              }
+  36   1              SET_MASK(FBCFG,SSMC);           // enable scatch ROM
+  37   1      
+  38   1          _nop_();
+  39   1              _nop_();
+  40   1              _nop_();
+  41   1              _nop_();
+  42   1              _nop_();
+  43   1              _nop_();
+  44   1              _nop_();
+  45   1              _nop_();
+  46   1      
+  47   1              RamCode();
+  48   1      }
+  49          
+  50          //----------------------------------------------------------------------------
+  51          // Host send idle command to EC
+  52          //----------------------------------------------------------------------------
+  53          
+  54          void Eflash_CmdRamCode(void)
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 2   
+
+  55          {
+  56   1              RamcodeCmd = 0x00;
+  57   1              DisableInternalWDT();
+  58   1              SET_MASK(SMECCS,HOSTWA);        // Host write allow
+  59   1              KBHIKDOR = 0xFA;
+  60   1              while(1)
+  61   1              {
+  62   2      //              BRAM31++;
+  63   2                      if( IS_MASK_CLEAR(KBHISR,IBF)) continue;
+  64   2                      if( IS_MASK_CLEAR(KBHISR,C_D)) continue;
+  65   2                      RamcodeCmd = KBHIDIR;
+  66   2              if (RamcodeCmd == 0x8F)// || (BRAM31==0x55))    // EC exit follow mode
+  67   2              {
+  68   3                              WinFlashMark = 0x33;
+  69   3                  WinFlashMark2 = 0x88;
+  70   3                              break;
+  71   3                      }
+  72   2                      else if (RamcodeCmd == 0x9F)
+  73   2                      {
+  74   3                              CKCON &= 0x3F;                  // set 26 bit counter // bit7-6 00=14ms,01=113ms, 10=911ms, 11(1/9.2MHz)*2'26=7.2S
+  75   3                              CKCON |= 0x10;                  // set 26 bit counter // bit7-6 00=14ms,01=113ms, 10=911ms, 11(1/9.2MHz)*2'26=7.2S
+  76   3                  WDTCON|=0x01;               /* WDTRST = 1 Reset watch dog timer.*/
+  77   3                  WDTCON|=0x02;               /* WDTEN  = 1 Enable watch dog.     */
+  78   3                  while(1);                   /* Wait for watch dog time-out      */
+  79   3                      }
+  80   2              }
+  81   1              CLEAR_MASK(SMECCS,HOSTWA);  // Host write not allow
+  82   1              _nop_();
+  83   1              main();
+  84   1      }
+  85          
+  86          
+  87          #pragma ot(8, speed)
+  88          void FSCEHighLevel( BYTE SpiCmd )
+  89          {
+  90   1          ECINDAR3 = 0x4F;//0xFF        // Enter follow mode
+  91   1          ECINDAR2 = 0xFF;
+  92   1          ECINDAR1 = 0xFE;
+  93   1          ECINDAR0 = 0x00;
+  94   1          ECINDDR  = 0xFF;        // SCE# high level
+  95   1      
+  96   1          ECINDDR  = 0xFF;        // SCE# high level
+  97   1          ECINDAR1 = 0xFD;        // Address:FD00h
+  98   1          ECINDDR  = SpiCmd;      // SPI Command
+  99   1      
+ 100   1      }
+ 101          
+ 102          #pragma ot(8, speed)
+ 103          void FSPIRomCheckBusy(void)
+ 104          {
+ 105   1          while(1)
+ 106   1          {
+ 107   2              FSCEHighLevel( 0x05 );  // Read Status Reg (05h)
+ 108   2              if( ~ECINDDR & 0x01 )
+ 109   2              {
+ 110   3                  break;
+ 111   3              }
+ 112   2          }
+ 113   1      }
+ 114          //cwy modified the write eflash enable 
+ 115          #if 0
+              #pragma ot(8, speed)
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 3   
+
+              void FSPIRomWriteEnable(void)
+              {
+                      SET_MASK(SMECCS,HOSTWA);
+                  ECINDAR3 = 0x4F;        // Enter follow mode
+                  ECINDAR2 = 0xFF;
+                  ECINDAR0 = 0x00;        // SCE# high level
+              
+              
+                  FSCEHighLevel( 0x01 );      // write status register (01h)
+                  ECINDDR = 0x00;             // clear all protect
+              
+                  FSCEHighLevel( 0x06 );      // write enable (06h)
+                  while(1)
+                  {
+                      FSCEHighLevel( 0x05 );  // Read Status Reg (05h)
+                      if( ECINDDR & 0x02 )
+                      {
+                          break;
+                      }
+                  }
+              }
+              
+              #pragma ot(8, speed)
+              void FSPIRomWriteDisable(void)
+              {
+                  FSCEHighLevel( 0x04 );
+                  ECINDAR3 = 0x40;        //Exit follow mode
+                  ECINDAR2 = 0x00;
+                  CLEAR_MASK(SMECCS,HOSTWA);
+              }
+              
+              #endif  
+ 149          
+ 150          
+ 151          void FSPIRomWriteEnable(void)
+ 152          {
+ 153   1              ECINDAR3 = 0x4F; 
+ 154   1              ECINDAR2 = 0xFF;
+ 155   1              ECINDAR0 = 0x00;                                // FFFFExx = 0xFF  
+ 156   1              ECINDAR1 = 0xFE;
+ 157   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 158   1              ECINDAR1 = 0xFD;
+ 159   1              ECINDDR = SPICmd_ReadStatus;    // Read Status Register
+ 160   1              while(1)                                                // waiting spi free
+ 161   1              {
+ 162   2                      if((ECINDDR&SPIStatus_BUSY)==0x00)
+ 163   2              {
+ 164   3                  break;
+ 165   3              } 
+ 166   2              }                                                               
+ 167   1              ECINDAR1 = 0xFE;
+ 168   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 169   1              ECINDAR1 = 0xFD;
+ 170   1              ECINDDR = SPICmd_WREN;                  // Write enable 
+ 171   1          if(SPIID==SSTID)
+ 172   1          {
+ 173   2              ECINDAR1 = 0xFE;
+ 174   2              ECINDDR = 0xFF;                         // SCE# high level
+ 175   2              ECINDAR1 = 0xFD;
+ 176   2              ECINDDR = SPICmd_EWSR;          // Enable Write Status Register
+ 177   2          }
+ 178   1              ECINDAR1 = 0xFE;
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 4   
+
+ 179   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 180   1              ECINDAR1 = 0xFD;
+ 181   1              ECINDDR = SPICmd_ReadStatus;    // Read Status Register
+ 182   1              while(1)                                                // waiting spi free
+ 183   1              {
+ 184   2                      if((ECINDDR&(SPIStatus_WEL+SPIStatus_BUSY))==0x02) // Check write enable and spi not busy
+ 185   2              {
+ 186   3                  break;
+ 187   3              } 
+ 188   2              }
+ 189   1              ECINDAR3 = 0x40;        //:00 to 40 //Exit follow mode
+ 190   1              ECINDAR2 = 0x00;
+ 191   1      }
+ 192          void FSPIRomWriteDisable(void)
+ 193          {
+ 194   1              ECINDAR3 = 0x4F; 
+ 195   1              ECINDAR2 = 0xFF;
+ 196   1              ECINDAR0 = 0x00;                                // FFFFExx = 0xFF  
+ 197   1              ECINDAR1 = 0xFE;
+ 198   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 199   1              ECINDAR1 = 0xFD;
+ 200   1              ECINDDR = SPICmd_ReadStatus;    // Read Status Register
+ 201   1              while(1)                                                // waiting spi free
+ 202   1              {
+ 203   2                      if((ECINDDR&SPIStatus_BUSY)==0x00)
+ 204   2              {
+ 205   3                  break;
+ 206   3              } 
+ 207   2              }                                                               
+ 208   1              ECINDAR1 = 0xFE;
+ 209   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 210   1              ECINDAR1 = 0xFD;
+ 211   1              ECINDDR = SPICmd_WRDI;                  // Write disable        
+ 212   1              ECINDAR1 = 0xFE;
+ 213   1              ECINDDR = 0xFF;                                 // SCE# high level
+ 214   1              ECINDAR1 = 0xFD;
+ 215   1              ECINDDR = SPICmd_ReadStatus;    // Read Status Register
+ 216   1              while(1)                                                // waiting spi free
+ 217   1              {
+ 218   2                      if((ECINDDR&(SPIStatus_WEL+SPIStatus_BUSY))==0x00) // Check write disable and spi not busy
+ 219   2              {
+ 220   3                  break;
+ 221   3              } 
+ 222   2              }
+ 223   1              ECINDAR3 = 0x40;                //:00 to 40  //Exit follow mode
+ 224   1              ECINDAR2 = 0x00;
+ 225   1      }
+ 226          
+ 227          
+ 228          #pragma ot(8, speed)
+ 229          void Write_Eflash_1Byte(BYTE FA2,BYTE FA1,BYTE FA0,BYTE OneByte)
+ 230          {
+ 231   1          FSPIRomWriteEnable();
+ 232   1          FSCEHighLevel( 0x02 );    // Others Page program
+ 233   1          ECINDDR = FA2;            // A2
+ 234   1          ECINDDR = FA1;            // A1
+ 235   1          ECINDDR = FA0;            // A0
+ 236   1          ECINDDR = OneByte;
+ 237   1          FSPIRomCheckBusy();
+ 238   1          FSPIRomWriteDisable();
+ 239   1      
+ 240   1          eFlashVarifyOK = 0x78;
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 5   
+
+ 241   1      }
+ 242          
+ 243          #pragma ot(8, speed)
+ 244          //*************************************************************************
+ 245          BYTE Erase_Eflash_1K(BYTE FA2,BYTE FA1,BYTE FA0)
+ 246          {
+ 247   1          FSPIRomWriteEnable();
+ 248   1          FSCEHighLevel( 0xD7 );  // erase command 0x20:Sector 0xD8:Block
+ 249   1          ECINDDR = FA2;        // A2
+ 250   1          ECINDDR = FA1;        // A1
+ 251   1          ECINDDR = FA0;        // A0
+ 252   1          FSPIRomCheckBusy();
+ 253   1          FSPIRomWriteDisable();
+ 254   1      
+ 255   1              return (0x01);
+ 256   1      }
+ 257          
+ 258          
+ 259          //#pragma ot(8, speed)
+ 260          void Copy_Eflash_1K(BYTE SFA2,BYTE SFA1,BYTE SFA0, BYTE DFA2, BYTE DFA1, BYTE DFA0)
+ 261          {
+ 262   1      
+ 263   1      }
+ 264          void Eflash_Write_1Byte(void)
+ 265          {
+ 266   1          ECINDAR3 = 0x4F; 
+ 267   1          ECINDAR2 = 0xFF;
+ 268   1          ECINDAR0 = 0x00;                        // FFFFExx = 0xFF  
+ 269   1          ECINDAR1 = 0xFE;
+ 270   1          ECINDDR = 0xFF;                         // SCE# high level
+ 271   1          ECINDAR1 = 0xFD;
+ 272   1          ECINDDR = SPICmd_ReadStatus;            // Read Status Register
+ 273   1          while(1)                                // waiting spi free
+ 274   1          {
+ 275   2              if((ECINDDR&SPIStatus_BUSY)==0x00)
+ 276   2              {
+ 277   3                  break;
+ 278   3              } 
+ 279   2          }                                                               
+ 280   1          ECINDAR1 = 0xFE;
+ 281   1          ECINDDR = 0xFF;                         // SCE# high level
+ 282   1          ECINDAR1 = 0xFD;
+ 283   1          ECINDDR = SPICmd_BYTEProgram;           // Send Program One Data Byte command
+ 284   1          ECINDDR = SPIAddrCycle[0];              // For 256 bytes function limite
+ 285   1          ECINDDR = SPIAddrCycle[1];
+ 286   1          ECINDDR = SPIAddrCycle[2];
+ 287   1          SPIIndex = 0x00;
+ 288   1          ECINDDR = SPIIDBuf[0];
+ 289   1          ECINDAR1 = 0xFE;
+ 290   1          ECINDDR = 0xFF;                         // SCE# high level
+ 291   1          ECINDAR1 = 0xFD;
+ 292   1          ECINDDR = SPICmd_ReadStatus;            // Read Status Register
+ 293   1          while(1)                                // waiting spi free
+ 294   1          {
+ 295   2              if((ECINDDR&SPIStatus_BUSY)==0x00)
+ 296   2              {
+ 297   3                  break;
+ 298   3              } 
+ 299   2          }       
+ 300   1          ECINDAR3 = 0x40;  //:00 to 40                 // Exit follow mode
+ 301   1          ECINDAR2 = 0x00;                           // 
+ 302   1      }
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 6   
+
+ 303          
+ 304          
+ 305          //#pragma ot(8, speed)
+ 306          BYTE Read_Eflash_Byte(BYTE FA2,BYTE FA1,BYTE FA0)
+ 307          {
+ 308   1          ECINDAR3 = 0x40; // 0
+ 309   1              ECINDAR2 = FA2;
+ 310   1              ECINDAR1 = FA1;
+ 311   1              ECINDAR0 = FA0;
+ 312   1              return ECINDDR;
+ 313   1      }
+ 314          
+ 315          #pragma ot(7, speed)
+ 316          void Do_Eflash_Write_1Byte(BYTE OneByte,BYTE Addr2,BYTE Addr1,BYTE Addr0)
+ 317          {
+ 318   1          SPIIDBuf[0] = OneByte;
+ 319   1          SPIAddrCycle[0] = Addr2;
+ 320   1          SPIAddrCycle[1] = Addr1;
+ 321   1          SPIAddrCycle[2] = Addr0;
+ 322   1          DisableAllInterrupt();                   // Disable all interrupt
+ 323   1          LoadSPIFucnToRam(FSPIRomWriteEnable);
+ 324   1          SET_MASK(FBCFG,SSMC);                    // enable scatch ROM
+ 325   1          FuncAt_0xFE00();                         // do function in extern ram 0x600
+ 326   1          EnableAllInterrupt();                    // Enable all interrupt 
+ 327   1          CLEAR_MASK(FBCFG,SSMC);                  // disable scatch ROM
+ 328   1          LoadSPIFucnToRam(Eflash_Write_1Byte);    // Load function to ram
+ 329   1          SET_MASK(FBCFG,SSMC);                    // enable scatch ROM
+ 330   1          FuncAt_0xFE00();                         // do function in extern ram 0x600
+ 331   1          EnableAllInterrupt();                    // Enable all interrupt 
+ 332   1          CLEAR_MASK(FBCFG,SSMC);                  // disable scatch ROM
+ 333   1          LoadSPIFucnToRam(FSPIRomWriteDisable);   // Load function to ram
+ 334   1          SET_MASK(FBCFG,SSMC);                    // enable scatch ROM
+ 335   1          FuncAt_0xFE00();                         // do function in extern ram 0x600
+ 336   1          EnableAllInterrupt();                    // Enable all interrupt 
+ 337   1          CLEAR_MASK(FBCFG,SSMC);                  // disable scatch ROM
+ 338   1      }
+ 339          
+ 340          
+ 341          
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 7   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION SetLPCClockFreeRun (BEGIN)
+                                           ; SOURCE LINE # 13
+                                           ; SOURCE LINE # 14
+                                           ; SOURCE LINE # 15
+0000 900000      E     MOV     DPTR,#GPCRH0
+0003 7440              MOV     A,#040H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 16
+0006 900000      E     MOV     DPTR,#GPDRH
+0009 E0                MOVX    A,@DPTR
+000A 54FE              ANL     A,#0FEH
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 17
+000D 22                RET     
+             ; FUNCTION SetLPCClockFreeRun (END)
+
+             ; FUNCTION _RamProgram (BEGIN)
+                                           ; SOURCE LINE # 22
+;---- Variable 'useport' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 23
+                                           ; SOURCE LINE # 24
+0000 900000      E     MOV     DPTR,#RamCodePort
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 25
+0005 120000      E     LCALL   DisableAllInterrupt
+                                           ; SOURCE LINE # 27
+0008 7800        E     MOV     R0,#LOW Tmp_XPntr
+000A 7607              MOV     @R0,#07H
+000C 08                INC     R0
+000D 7600              MOV     @R0,#00H
+                                           ; SOURCE LINE # 28
+000F 750000      R     MOV     Tmp_code_pointer,#HIGH Eflash_CmdRamCode
+0012 750000      R     MOV     Tmp_code_pointer+01H,#LOW Eflash_CmdRamCode
+                                           ; SOURCE LINE # 30
+0015 E4                CLR     A
+0016 F500        E     MOV     ITempB01,A
+0018         ?C0002:
+                                           ; SOURCE LINE # 31
+                                           ; SOURCE LINE # 32
+0018 850082      E     MOV     DPL,Tmp_code_pointer+01H
+001B 850083      E     MOV     DPH,Tmp_code_pointer
+001E E4                CLR     A
+001F 93                MOVC    A,@A+DPTR
+0020 FF                MOV     R7,A
+0021 7800        E     MOV     R0,#LOW Tmp_XPntr
+0023 E6                MOV     A,@R0
+0024 FC                MOV     R4,A
+0025 08                INC     R0
+0026 E6                MOV     A,@R0
+0027 F582              MOV     DPL,A
+0029 8C83              MOV     DPH,R4
+002B EF                MOV     A,R7
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 33
+002D 06                INC     @R0
+002E E6                MOV     A,@R0
+002F 18                DEC     R0
+0030 7001              JNZ     ?C0048
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 8   
+
+0032 06                INC     @R0
+0033         ?C0048:
+                                           ; SOURCE LINE # 34
+0033 0500        E     INC     Tmp_code_pointer+01H
+0035 E500        E     MOV     A,Tmp_code_pointer+01H
+0037 7002              JNZ     ?C0049
+0039 0500        E     INC     Tmp_code_pointer
+003B         ?C0049:
+                                           ; SOURCE LINE # 35
+003B 0500        E     INC     ITempB01
+003D E500        E     MOV     A,ITempB01
+003F B4FFD6            CJNE    A,#0FFH,?C0002
+0042         ?C0003:
+                                           ; SOURCE LINE # 36
+0042 900000      E     MOV     DPTR,#FBCFG
+0045 E0                MOVX    A,@DPTR
+0046 4480              ORL     A,#080H
+0048 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 38
+0049 00                NOP     
+                                           ; SOURCE LINE # 39
+004A 00                NOP     
+                                           ; SOURCE LINE # 40
+004B 00                NOP     
+                                           ; SOURCE LINE # 41
+004C 00                NOP     
+                                           ; SOURCE LINE # 42
+004D 00                NOP     
+                                           ; SOURCE LINE # 43
+004E 00                NOP     
+                                           ; SOURCE LINE # 44
+004F 00                NOP     
+                                           ; SOURCE LINE # 45
+0050 00                NOP     
+                                           ; SOURCE LINE # 47
+0051 020000      E     LJMP    RamCode
+             ; FUNCTION _RamProgram (END)
+
+             ; FUNCTION Eflash_CmdRamCode (BEGIN)
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+                                           ; SOURCE LINE # 56
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#RamcodeCmd
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 57
+0005 120000      E     LCALL   DisableInternalWDT
+                                           ; SOURCE LINE # 58
+0008 900000      E     MOV     DPTR,#SMECCS
+000B E0                MOVX    A,@DPTR
+000C 4420              ORL     A,#020H
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 59
+000F 900000      E     MOV     DPTR,#KBHIKDOR
+0012 74FA              MOV     A,#0FAH
+0014 F0                MOVX    @DPTR,A
+0015         ?C0006:
+                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 63
+0015 900000      E     MOV     DPTR,#KBHISR
+0018 E0                MOVX    A,@DPTR
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 9   
+
+0019 30E1F9            JNB     ACC.1,?C0006
+001C         ?C0008:
+                                           ; SOURCE LINE # 64
+001C 900000      E     MOV     DPTR,#KBHISR
+001F E0                MOVX    A,@DPTR
+0020 30E3F2            JNB     ACC.3,?C0006
+0023         ?C0009:
+                                           ; SOURCE LINE # 65
+0023 900000      E     MOV     DPTR,#KBHIDIR
+0026 E0                MOVX    A,@DPTR
+0027 900000      E     MOV     DPTR,#RamcodeCmd
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 66
+002B E0                MOVX    A,@DPTR
+002C B48F0E            CJNE    A,#08FH,?C0010
+                                           ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+002F 900000      E     MOV     DPTR,#WinFlashMark
+0032 7433              MOV     A,#033H
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+0035 900000      E     MOV     DPTR,#WinFlashMark2
+0038 7488              MOV     A,#088H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 70
+003B 8015              SJMP    ?C0007
+                                           ; SOURCE LINE # 71
+003D         ?C0010:
+                                           ; SOURCE LINE # 72
+003D 900000      E     MOV     DPTR,#RamcodeCmd
+0040 E0                MOVX    A,@DPTR
+0041 B49FD1            CJNE    A,#09FH,?C0006
+                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 74
+0044 538E3F            ANL     CKCON,#03FH
+                                           ; SOURCE LINE # 75
+0047 438E10            ORL     CKCON,#010H
+                                           ; SOURCE LINE # 76
+004A 43D801            ORL     WDTCON,#01H
+                                           ; SOURCE LINE # 77
+004D 43D802            ORL     WDTCON,#02H
+0050         ?C0013:
+                                           ; SOURCE LINE # 78
+0050 80FE              SJMP    ?C0013
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+0052         ?C0007:
+                                           ; SOURCE LINE # 81
+0052 900000      E     MOV     DPTR,#SMECCS
+0055 E0                MOVX    A,@DPTR
+0056 54DF              ANL     A,#0DFH
+0058 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+0059 00                NOP     
+                                           ; SOURCE LINE # 83
+005A 020000      E     LJMP    main
+             ; FUNCTION Eflash_CmdRamCode (END)
+
+             ; FUNCTION _FSCEHighLevel (BEGIN)
+                                           ; SOURCE LINE # 88
+;---- Variable 'SpiCmd' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 89
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 10  
+
+                                           ; SOURCE LINE # 90
+0000 900000      E     MOV     DPTR,#ECINDAR3
+0003 744F              MOV     A,#04FH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 91
+0006 900000      E     MOV     DPTR,#ECINDAR2
+0009 74FF              MOV     A,#0FFH
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 92
+000C 900000      E     MOV     DPTR,#ECINDAR1
+000F 14                DEC     A
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 93
+0011 E4                CLR     A
+0012 900000      E     MOV     DPTR,#ECINDAR0
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 94
+0016 900000      E     MOV     DPTR,#ECINDDR
+0019 74FF              MOV     A,#0FFH
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 96
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 97
+001D 900000      E     MOV     DPTR,#ECINDAR1
+0020 74FD              MOV     A,#0FDH
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+0023 900000      E     MOV     DPTR,#ECINDDR
+0026 EF                MOV     A,R7
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 100
+0028 22                RET     
+             ; FUNCTION _FSCEHighLevel (END)
+
+             ; FUNCTION FSPIRomCheckBusy (BEGIN)
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 104
+0000         ?C0017:
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+0000 7F05              MOV     R7,#05H
+0002 120000      R     LCALL   _FSCEHighLevel
+                                           ; SOURCE LINE # 108
+0005 900000      E     MOV     DPTR,#ECINDDR
+0008 E0                MOVX    A,@DPTR
+0009 F4                CPL     A
+000A 30E0F3            JNB     ACC.0,?C0017
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 113
+000D         ?C0020:
+000D 22                RET     
+             ; FUNCTION FSPIRomCheckBusy (END)
+
+             ; FUNCTION FSPIRomWriteEnable (BEGIN)
+                                           ; SOURCE LINE # 151
+                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 153
+0000 900000      E     MOV     DPTR,#ECINDAR3
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 11  
+
+0003 744F              MOV     A,#04FH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 154
+0006 900000      E     MOV     DPTR,#ECINDAR2
+0009 74FF              MOV     A,#0FFH
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 155
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#ECINDAR0
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 156
+0011 900000      E     MOV     DPTR,#ECINDAR1
+0014 74FE              MOV     A,#0FEH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 157
+0017 900000      E     MOV     DPTR,#ECINDDR
+001A 04                INC     A
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+001C 900000      E     MOV     DPTR,#ECINDAR1
+001F 74FD              MOV     A,#0FDH
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 159
+0022 900000      E     MOV     DPTR,#ECINDDR
+0025 7405              MOV     A,#05H
+0027 F0                MOVX    @DPTR,A
+0028         ?C0021:
+                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 161
+                                           ; SOURCE LINE # 162
+0028 900000      E     MOV     DPTR,#ECINDDR
+002B E0                MOVX    A,@DPTR
+002C 20E0F9            JB      ACC.0,?C0021
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 166
+002F         ?C0022:
+                                           ; SOURCE LINE # 167
+002F 900000      E     MOV     DPTR,#ECINDAR1
+0032 74FE              MOV     A,#0FEH
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+0035 900000      E     MOV     DPTR,#ECINDDR
+0038 04                INC     A
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 169
+003A 900000      E     MOV     DPTR,#ECINDAR1
+003D 74FD              MOV     A,#0FDH
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+0040 900000      E     MOV     DPTR,#ECINDDR
+0043 7406              MOV     A,#06H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 171
+0046 900000      E     MOV     DPTR,#SPIID
+0049 E0                MOVX    A,@DPTR
+004A B4BF17            CJNE    A,#0BFH,?C0024
+                                           ; SOURCE LINE # 172
+                                           ; SOURCE LINE # 173
+004D 900000      E     MOV     DPTR,#ECINDAR1
+0050 74FE              MOV     A,#0FEH
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 12  
+
+0052 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 174
+0053 900000      E     MOV     DPTR,#ECINDDR
+0056 04                INC     A
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 175
+0058 900000      E     MOV     DPTR,#ECINDAR1
+005B 74FD              MOV     A,#0FDH
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 176
+005E 900000      E     MOV     DPTR,#ECINDDR
+0061 7450              MOV     A,#050H
+0063 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 177
+0064         ?C0024:
+                                           ; SOURCE LINE # 178
+0064 900000      E     MOV     DPTR,#ECINDAR1
+0067 74FE              MOV     A,#0FEH
+0069 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 179
+006A 900000      E     MOV     DPTR,#ECINDDR
+006D 04                INC     A
+006E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 180
+006F 900000      E     MOV     DPTR,#ECINDAR1
+0072 74FD              MOV     A,#0FDH
+0074 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 181
+0075 900000      E     MOV     DPTR,#ECINDDR
+0078 7405              MOV     A,#05H
+007A F0                MOVX    @DPTR,A
+007B         ?C0025:
+                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 183
+                                           ; SOURCE LINE # 184
+007B 900000      E     MOV     DPTR,#ECINDDR
+007E E0                MOVX    A,@DPTR
+007F 5403              ANL     A,#03H
+0081 FF                MOV     R7,A
+0082 BF02F6            CJNE    R7,#02H,?C0025
+                                           ; SOURCE LINE # 185
+                                           ; SOURCE LINE # 186
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 188
+0085         ?C0026:
+                                           ; SOURCE LINE # 189
+0085 900000      E     MOV     DPTR,#ECINDAR3
+0088 7440              MOV     A,#040H
+008A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 190
+008B E4                CLR     A
+008C 900000      E     MOV     DPTR,#ECINDAR2
+008F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 191
+0090 22                RET     
+             ; FUNCTION FSPIRomWriteEnable (END)
+
+             ; FUNCTION FSPIRomWriteDisable (BEGIN)
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 193
+                                           ; SOURCE LINE # 194
+0000 900000      E     MOV     DPTR,#ECINDAR3
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 13  
+
+0003 744F              MOV     A,#04FH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 195
+0006 900000      E     MOV     DPTR,#ECINDAR2
+0009 74FF              MOV     A,#0FFH
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 196
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#ECINDAR0
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 197
+0011 900000      E     MOV     DPTR,#ECINDAR1
+0014 74FE              MOV     A,#0FEH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 198
+0017 900000      E     MOV     DPTR,#ECINDDR
+001A 04                INC     A
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 199
+001C 900000      E     MOV     DPTR,#ECINDAR1
+001F 74FD              MOV     A,#0FDH
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 200
+0022 900000      E     MOV     DPTR,#ECINDDR
+0025 7405              MOV     A,#05H
+0027 F0                MOVX    @DPTR,A
+0028         ?C0029:
+                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+0028 900000      E     MOV     DPTR,#ECINDDR
+002B E0                MOVX    A,@DPTR
+002C 20E0F9            JB      ACC.0,?C0029
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 207
+002F         ?C0030:
+                                           ; SOURCE LINE # 208
+002F 900000      E     MOV     DPTR,#ECINDAR1
+0032 74FE              MOV     A,#0FEH
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 209
+0035 900000      E     MOV     DPTR,#ECINDDR
+0038 04                INC     A
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 210
+003A 900000      E     MOV     DPTR,#ECINDAR1
+003D 74FD              MOV     A,#0FDH
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 211
+0040 900000      E     MOV     DPTR,#ECINDDR
+0043 7404              MOV     A,#04H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 212
+0046 900000      E     MOV     DPTR,#ECINDAR1
+0049 74FE              MOV     A,#0FEH
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 213
+004C 900000      E     MOV     DPTR,#ECINDDR
+004F 04                INC     A
+0050 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 14  
+
+                                           ; SOURCE LINE # 214
+0051 900000      E     MOV     DPTR,#ECINDAR1
+0054 74FD              MOV     A,#0FDH
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 215
+0057 900000      E     MOV     DPTR,#ECINDDR
+005A 7405              MOV     A,#05H
+005C F0                MOVX    @DPTR,A
+005D         ?C0032:
+                                           ; SOURCE LINE # 216
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 218
+005D 900000      E     MOV     DPTR,#ECINDDR
+0060 E0                MOVX    A,@DPTR
+0061 5403              ANL     A,#03H
+0063 70F8              JNZ     ?C0032
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+0065         ?C0033:
+                                           ; SOURCE LINE # 223
+0065 900000      E     MOV     DPTR,#ECINDAR3
+0068 7440              MOV     A,#040H
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+006B E4                CLR     A
+006C 900000      E     MOV     DPTR,#ECINDAR2
+006F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 225
+0070 22                RET     
+             ; FUNCTION FSPIRomWriteDisable (END)
+
+             ; FUNCTION _Write_Eflash_1Byte (BEGIN)
+                                           ; SOURCE LINE # 229
+;---- Variable 'FA2' assigned to Register 'R6' ----
+0000 CE                XCH     A,R6
+0001 EF                MOV     A,R7
+0002 CE                XCH     A,R6
+;---- Variable 'FA0' assigned to Register 'R3' ----
+;---- Variable 'FA1' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 231
+0003 120000      R     LCALL   FSPIRomWriteEnable
+                                           ; SOURCE LINE # 232
+0006 7F02              MOV     R7,#02H
+0008 120000      R     LCALL   _FSCEHighLevel
+                                           ; SOURCE LINE # 233
+000B 900000      E     MOV     DPTR,#ECINDDR
+000E EE                MOV     A,R6
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 234
+0010 ED                MOV     A,R5
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 235
+0012 EB                MOV     A,R3
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+0014 900000      R     MOV     DPTR,#OneByte
+0017 E0                MOVX    A,@DPTR
+0018 900000      E     MOV     DPTR,#ECINDDR
+001B F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 15  
+
+                                           ; SOURCE LINE # 237
+001C 120000      R     LCALL   FSPIRomCheckBusy
+                                           ; SOURCE LINE # 238
+001F 120000      R     LCALL   FSPIRomWriteDisable
+                                           ; SOURCE LINE # 240
+0022 900000      E     MOV     DPTR,#eFlashVarifyOK
+0025 7478              MOV     A,#078H
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+0028 22                RET     
+             ; FUNCTION _Write_Eflash_1Byte (END)
+
+             ; FUNCTION _Erase_Eflash_1K (BEGIN)
+                                           ; SOURCE LINE # 245
+;---- Variable 'FA2' assigned to Register 'R6' ----
+0000 CE                XCH     A,R6
+0001 EF                MOV     A,R7
+0002 CE                XCH     A,R6
+;---- Variable 'FA0' assigned to Register 'R3' ----
+;---- Variable 'FA1' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 247
+0003 120000      R     LCALL   FSPIRomWriteEnable
+                                           ; SOURCE LINE # 248
+0006 7FD7              MOV     R7,#0D7H
+0008 120000      R     LCALL   _FSCEHighLevel
+                                           ; SOURCE LINE # 249
+000B 900000      E     MOV     DPTR,#ECINDDR
+000E EE                MOV     A,R6
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 250
+0010 ED                MOV     A,R5
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 251
+0012 EB                MOV     A,R3
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 252
+0014 120000      R     LCALL   FSPIRomCheckBusy
+                                           ; SOURCE LINE # 253
+0017 120000      R     LCALL   FSPIRomWriteDisable
+                                           ; SOURCE LINE # 255
+001A 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 256
+001C         ?C0037:
+001C 22                RET     
+             ; FUNCTION _Erase_Eflash_1K (END)
+
+             ; FUNCTION _Copy_Eflash_1K (BEGIN)
+                                           ; SOURCE LINE # 260
+0000 900000      R     MOV     DPTR,#SFA2
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 ED                MOV     A,R5
+0007 F0                MOVX    @DPTR,A
+0008 A3                INC     DPTR
+0009 EB                MOV     A,R3
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 261
+                                           ; SOURCE LINE # 263
+000B 22                RET     
+             ; FUNCTION _Copy_Eflash_1K (END)
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 16  
+
+
+             ; FUNCTION Eflash_Write_1Byte (BEGIN)
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 266
+0000 900000      E     MOV     DPTR,#ECINDAR3
+0003 744F              MOV     A,#04FH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 267
+0006 900000      E     MOV     DPTR,#ECINDAR2
+0009 74FF              MOV     A,#0FFH
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 268
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#ECINDAR0
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 269
+0011 900000      E     MOV     DPTR,#ECINDAR1
+0014 74FE              MOV     A,#0FEH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 270
+0017 900000      E     MOV     DPTR,#ECINDDR
+001A 04                INC     A
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 271
+001C 900000      E     MOV     DPTR,#ECINDAR1
+001F 74FD              MOV     A,#0FDH
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 272
+0022 900000      E     MOV     DPTR,#ECINDDR
+0025 7405              MOV     A,#05H
+0027 F0                MOVX    @DPTR,A
+0028         ?C0039:
+                                           ; SOURCE LINE # 273
+                                           ; SOURCE LINE # 274
+                                           ; SOURCE LINE # 275
+0028 900000      E     MOV     DPTR,#ECINDDR
+002B E0                MOVX    A,@DPTR
+002C 20E0F9            JB      ACC.0,?C0039
+                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+002F         ?C0040:
+                                           ; SOURCE LINE # 280
+002F 900000      E     MOV     DPTR,#ECINDAR1
+0032 74FE              MOV     A,#0FEH
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 281
+0035 900000      E     MOV     DPTR,#ECINDDR
+0038 04                INC     A
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 282
+003A 900000      E     MOV     DPTR,#ECINDAR1
+003D 74FD              MOV     A,#0FDH
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 283
+0040 900000      E     MOV     DPTR,#ECINDDR
+0043 7402              MOV     A,#02H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+0046 900000      E     MOV     DPTR,#SPIAddrCycle
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 17  
+
+0049 E0                MOVX    A,@DPTR
+004A 900000      E     MOV     DPTR,#ECINDDR
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 285
+004E 900000      E     MOV     DPTR,#SPIAddrCycle+01H
+0051 E0                MOVX    A,@DPTR
+0052 900000      E     MOV     DPTR,#ECINDDR
+0055 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 286
+0056 900000      E     MOV     DPTR,#SPIAddrCycle+02H
+0059 E0                MOVX    A,@DPTR
+005A 900000      E     MOV     DPTR,#ECINDDR
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 287
+005E E4                CLR     A
+005F 900000      E     MOV     DPTR,#SPIIndex
+0062 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 288
+0063 900000      E     MOV     DPTR,#SPIIDBuf
+0066 E0                MOVX    A,@DPTR
+0067 900000      E     MOV     DPTR,#ECINDDR
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 289
+006B 900000      E     MOV     DPTR,#ECINDAR1
+006E 74FE              MOV     A,#0FEH
+0070 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 290
+0071 900000      E     MOV     DPTR,#ECINDDR
+0074 04                INC     A
+0075 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 291
+0076 900000      E     MOV     DPTR,#ECINDAR1
+0079 74FD              MOV     A,#0FDH
+007B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 292
+007C 900000      E     MOV     DPTR,#ECINDDR
+007F 7405              MOV     A,#05H
+0081 F0                MOVX    @DPTR,A
+0082         ?C0042:
+                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 295
+0082 900000      E     MOV     DPTR,#ECINDDR
+0085 E0                MOVX    A,@DPTR
+0086 20E0F9            JB      ACC.0,?C0042
+                                           ; SOURCE LINE # 296
+                                           ; SOURCE LINE # 297
+                                           ; SOURCE LINE # 298
+                                           ; SOURCE LINE # 299
+0089         ?C0043:
+                                           ; SOURCE LINE # 300
+0089 900000      E     MOV     DPTR,#ECINDAR3
+008C 7440              MOV     A,#040H
+008E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 301
+008F E4                CLR     A
+0090 900000      E     MOV     DPTR,#ECINDAR2
+0093 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 302
+0094 22                RET     
+             ; FUNCTION Eflash_Write_1Byte (END)
+
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 18  
+
+             ; FUNCTION _Read_Eflash_Byte (BEGIN)
+                                           ; SOURCE LINE # 306
+;---- Variable 'FA2' assigned to Register 'R7' ----
+;---- Variable 'FA0' assigned to Register 'R3' ----
+;---- Variable 'FA1' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 308
+0000 900000      E     MOV     DPTR,#ECINDAR3
+0003 7440              MOV     A,#040H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 309
+0006 900000      E     MOV     DPTR,#ECINDAR2
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 310
+000B 900000      E     MOV     DPTR,#ECINDAR1
+000E ED                MOV     A,R5
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 311
+0010 900000      E     MOV     DPTR,#ECINDAR0
+0013 EB                MOV     A,R3
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 312
+0015 900000      E     MOV     DPTR,#ECINDDR
+0018 E0                MOVX    A,@DPTR
+0019 FF                MOV     R7,A
+                                           ; SOURCE LINE # 313
+001A         ?C0046:
+001A 22                RET     
+             ; FUNCTION _Read_Eflash_Byte (END)
+
+             ; FUNCTION _Do_Eflash_Write_1Byte (BEGIN)
+                                           ; SOURCE LINE # 316
+;---- Variable 'OneByte' assigned to Register 'R7' ----
+;---- Variable 'Addr1' assigned to Register 'R3' ----
+;---- Variable 'Addr2' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 317
+                                           ; SOURCE LINE # 318
+0000 900000      E     MOV     DPTR,#SPIIDBuf
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 319
+0005 900000      E     MOV     DPTR,#SPIAddrCycle
+0008 ED                MOV     A,R5
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+000A A3                INC     DPTR
+000B EB                MOV     A,R3
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 321
+000D 900000      R     MOV     DPTR,#Addr0
+0010 E0                MOVX    A,@DPTR
+0011 900000      E     MOV     DPTR,#SPIAddrCycle+02H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 322
+0015 120000      E     LCALL   DisableAllInterrupt
+                                           ; SOURCE LINE # 323
+0018 7E00        R     MOV     R6,#HIGH FSPIRomWriteEnable
+001A 7F00        R     MOV     R7,#LOW FSPIRomWriteEnable
+001C 120000      E     LCALL   _LoadSPIFucnToRam
+                                           ; SOURCE LINE # 324
+001F 900000      E     MOV     DPTR,#FBCFG
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 19  
+
+0022 E0                MOVX    A,@DPTR
+0023 4480              ORL     A,#080H
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 325
+0026 120000      E     LCALL   FuncAt_0xFE00
+                                           ; SOURCE LINE # 326
+0029 120000      E     LCALL   EnableAllInterrupt
+                                           ; SOURCE LINE # 327
+002C 900000      E     MOV     DPTR,#FBCFG
+002F E0                MOVX    A,@DPTR
+0030 547F              ANL     A,#07FH
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 328
+0033 7E00        R     MOV     R6,#HIGH Eflash_Write_1Byte
+0035 7F00        R     MOV     R7,#LOW Eflash_Write_1Byte
+0037 120000      E     LCALL   _LoadSPIFucnToRam
+                                           ; SOURCE LINE # 329
+003A 900000      E     MOV     DPTR,#FBCFG
+003D E0                MOVX    A,@DPTR
+003E 4480              ORL     A,#080H
+0040 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 330
+0041 120000      E     LCALL   FuncAt_0xFE00
+                                           ; SOURCE LINE # 331
+0044 120000      E     LCALL   EnableAllInterrupt
+                                           ; SOURCE LINE # 332
+0047 900000      E     MOV     DPTR,#FBCFG
+004A E0                MOVX    A,@DPTR
+004B 547F              ANL     A,#07FH
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 333
+004E 7E00        R     MOV     R6,#HIGH FSPIRomWriteDisable
+0050 7F00        R     MOV     R7,#LOW FSPIRomWriteDisable
+0052 120000      E     LCALL   _LoadSPIFucnToRam
+                                           ; SOURCE LINE # 334
+0055 900000      E     MOV     DPTR,#FBCFG
+0058 E0                MOVX    A,@DPTR
+0059 4480              ORL     A,#080H
+005B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 335
+005C 120000      E     LCALL   FuncAt_0xFE00
+                                           ; SOURCE LINE # 336
+005F 120000      E     LCALL   EnableAllInterrupt
+                                           ; SOURCE LINE # 337
+0062 900000      E     MOV     DPTR,#FBCFG
+0065 E0                MOVX    A,@DPTR
+0066 547F              ANL     A,#07FH
+0068 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 338
+0069 22                RET     
+             ; FUNCTION _Do_Eflash_Write_1Byte (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    868    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      14
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V8.12   OEM_FLASH                                                             09/14/2018 11:08:20 PAGE 20  
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

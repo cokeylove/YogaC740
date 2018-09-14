@@ -1,0 +1,1251 @@
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_INIT
+OBJECT MODULE PLACED IN Code\Oem\OEM_INIT.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_INIT.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\IN
+                    -CLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_INIT.C
+   3           *
+   4           * Author : Dino
+   5           *
+   6           * Note : These functions are reference only.
+   7           *        Please follow your project software specification to do some modification.
+   8           *---------------------------------------------------------------------------*/
+   9          
+  10          #include <CORE_INCLUDE.H>
+  11          #include <OEM_INCLUDE.H>
+  12          
+  13          //----------------------------------------------------------------------------
+  14          // Oem_StartUp
+  15          //----------------------------------------------------------------------------
+  16          void Oem_StartUp(void)
+  17          {
+  18   1      
+  19   1      }
+  20          
+  21          //----------------------------------------------------------------------------
+  22          // The function of init. registers
+  23          //----------------------------------------------------------------------------
+  24          //const struct REG_INIT_DEF code reg_init_table[] =
+  25          const sREG_INIT_DEF code reg_init_table[] =
+  26          {
+  27          // ADC
+  28                  { &ADCSTS       ,AINITB             },  // Enable Analog accuracy initialization
+  29              //{ &ADCSTS         ,0                              },      // Stop adc accuracy initialization
+  30              { &ADCSTS           ,0x80                   },  // Stop adc accuracy initialization
+  31                  { &ADCCFG       ,0x21                   },  //
+  32              { &KDCTL            ,AHCE               },  // Enable Hardware Callibration
+  33                  //{ &ADCCFG     ,DFILEN                         },      // Enable Digital Filter enable,
+  34                  { &ADCCTL               ,0x15                           },
+  35          
+  36          // DAC
+  37              { &DACPWRDN         ,0x00               },  //
+  38          
+  39          //PWM
+  40                  { &ZTIER                ,0x00                           },      // Disable
+  41                  { &C0CPRS               ,0x23                           },      // Channel 0 Clock Prescaler Register 
+  42                  { &CTR                  ,0xFF                           },      // Cycle Time 0
+  43                  //{ &DCR0               ,0xFF                           },      // Channel 0 PWM Duty Cycle
+  44                  { &DCR1                 ,0xFF                           },      // Channel 1 PWM Duty Cycle
+  45                  { &DCR2                 ,0xFF                           },      // Channel 2 PWM Duty Cycle
+  46                  { &DCR3                 ,0x00                           },      // Channel 3 PWM Duty Cycle
+  47                  { &DCR4                 ,0x00                           },      // Channel 4 PWM Duty Cycle
+  48                  { &DCR5                 ,0x00                           },      // Channel 5 PWM Duty Cycle
+  49                  //{ &DCR6               ,0x00                           },      // Channel 6 PWM Duty Cycle
+  50                  { &DCR7                 ,0x00                           },      // Channel 7 PWM Duty Cycle
+  51                  { &PWMPOL               ,0x00                           },      // PWM Polarity
+  52                  { &PCFSR                ,0x05                           },      // bit7=1: Disable CR256 channel 1 output. bit0-bit3: 0 => select 32.768 kHz, 1=> s
+             -elect EC clock frequency
+  53                  { &PCSSGL               ,0x1F                           },      // Select channel 0-3 GroupG36 //HEGANGS042:Modify the led behavior follow new spe
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 2   
+
+             -c
+  54                  { &PCSSGH               ,0xCA                           },      // Select channel 4-7 Group
+  55                  { &CR256PCSSG   ,0x80                           },      // CR256 Prescaler Clock Source Select Group
+  56                  { &PCSGR                ,0x00                           },      // Prescaler Clock Source Gating Register
+  57                  { &C4CPRS               ,0xE3                           },      // Channel 4 Clock Prescaler Register
+  58                  { &C4MCPRS              ,0x00                           },      // Channel 4 Clock Prescaler MSB Register
+  59                  { &C6CPRS               ,0x01                           },      // 23KHz Channel 6 Clock Prescaler Register for fan
+  60                  { &C6MCPRS              ,0x00                           },      // 23KHz Channel 6 Clock Prescaler MSB Register
+  61                  { &C7CPRS               ,0x00                           },      // Channel 7 Clock Prescaler Register G36  //MEILING030:change 0xE0 to 0x00.
+  62                  { &C7MCPRS              ,0x00                           },      // Channel 7 Clock Prescaler MSB Register
+  63                  { &CLK6MSEL             ,0x10                           },      // PWM Clock 6MHz Select Register G36
+  64                  { &CTR1                 ,0xFF                           },      // Cycle Time 1
+  65                  { &CTR2                 ,0xC8                           },      // 23KHz Cycle Time 2(Fan used)
+  66                  { &CTR3                 ,0xFF                           },      // Cycle Time 3(Panel used)
+  67                  { &PWMODENR             ,0x06                           },      // PWM output open-drain  //cwy
+  68                  { &TSWCTRL              ,0x0A                           },      // Enable TACH0A,TACH1A speed.
+  69                  { &ZTIER                ,0x02                           },      // Enable
+  70                  //{ &GCR19        ,0x00                         },      
+  71                  { &GCR15                ,0xC0                           },  // Tony: Fix the issue of black screen when plug out 80port.
+  72                  { &PWM0LCR1     ,0x35                           },  // MEILING030:add.
+  73                  { &PWM0LCR2     ,0x50                           },  // MEILING030:add.
+  74                  { &PWM1LCR1     ,0x35                           },  //HEGANGS042:Modify the led behavior follow new spec
+  75                  { &PWM1LCR2     ,0x50                           },  
+  76          };
+  77          
+  78          void Init_Regs(void)
+  79          {
+  80   1              BYTE index = 0x00;
+  81   1          while(index < (sizeof(reg_init_table)/sizeof(sREG_INIT_DEF)))
+  82   1          {
+  83   2              Tmp_XPntr = reg_init_table[index].address;
+  84   2              *Tmp_XPntr = reg_init_table[index].initdata;
+  85   2              index ++;
+  86   2          }
+  87   1              //RamDebug(0xAA);
+  88   1      }
+  89          
+  90          
+  91          //for initial PWM setting
+  92          const sREG_INIT_DEF code Init_SMBus_table[] =
+  93          {
+  94          // SMBus
+  95            { &SMB4P7USL          ,0x28           },      // 100K
+  96            { &SMB4P0USH          ,0x25           },
+  97            { &SMB300NS           ,0x03           },
+  98            { &SMB250NS           ,0x05           },//:modify SMBUS date step from 0x02 to 0x03// G62:Modify SMBUS date step 
+             -from 0x03 to 0x05.
+  99            { &SMB25MS            ,0x19           },
+ 100            { &SMB45P3USL         ,0xA5           },
+ 101            { &SMBS4P3USH         ,0x01           },
+ 102            { &SMB4P7A4P0H        ,0x00           },
+ 103          
+ 104            { &HOCTL2_A           ,0x01           },
+ 105            { &HOCTL_A            ,0x03           },
+ 106            { &HOCTL_A            ,0x01           },
+ 107            { &HOSTA_A            ,0xFF           },
+ 108          
+ 109            { &HOCTL2_B           ,0x01           },
+ 110            { &HOCTL_B            ,0x03           },
+ 111            { &HOCTL_B            ,0x01           },
+ 112            { &HOSTA_B            ,0xFF           },
+ 113          
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 3   
+
+ 114            { &HOCTL2_C           ,0x01           },
+ 115            { &HOCTL_C            ,0x03           },
+ 116            { &HOCTL_C            ,0x01           },
+ 117            { &HOSTA_C            ,0xFF           },
+ 118          };
+ 119          //ITE Smart update for initial SMBUS
+ 120          void Init_SMBus_Regs(void)
+ 121          {
+ 122   1          BYTE index = 0x00;
+ 123   1          while(index < (sizeof(Init_SMBus_table)/sizeof(sREG_INIT_DEF)))
+ 124   1          {
+ 125   2              Tmp_XPntr = Init_SMBus_table[index].address;
+ 126   2                      *Tmp_XPntr = Init_SMBus_table[index].initdata;
+ 127   2              index ++;
+ 128   2          }
+ 129   1      }
+ 130          
+ 131          
+ 132          //----------------------------------------------------------------------------
+ 133          // Oem_Initialization - Initialize the registers, data variables, and oem
+ 134          // functions after kernel init. function.
+ 135          //----------------------------------------------------------------------------
+ 136          void Oem_Initialization(void)
+ 137          {
+ 138   1      
+ 139   1              ECBIOSVersionH = REV0_BYTE0;
+ 140   1              ECBIOSVersionL = REV0_BYTE1;
+ 141   1              ECBIOSUbSVersion = REV0_BYTE3;
+ 142   1          
+ 143   1          TP_Type =0xFF; //T071A+
+ 144   1          // GPCRM4=0X02;
+ 145   1              //CheckKSO1617Support();//72JERRY004: Remove KSO16 and KSO17 init.
+ 146   1              Init_Regs();
+ 147   1              Init_SMBus_Regs();      // initial SMBUS
+ 148   1              //8586 BX test  ChangePLLFrequency(0x07);
+ 149   1              InitSysMemory2ECRam();          // H2RAM function
+ 150   1              Init_ADC();
+ 151   1              Init_PECI();//:Change PECI initialize after S0 states.
+ 152   1              InitChargerIC();//ANGELAS016:Change charge IC option setting.
+ 153   1              //SetPowerBatteryparameter();
+ 154   1              Init_VC(3);     // Init All VC Channel. // CMW 20121022
+ 155   1              //LID_readytime = 11; //ANGELAS007:Optimize power on sequence.
+ 156   1      
+ 157   1              eEEPROMData = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07) ,0xE4);   // read USB charger status of EEPRO
+             -M 0x0001B7E4
+ 158   1      #if Support_AOU5_V1_2
+ 159   1                      if (IS_MASK_SET(eEEPROMData,b1SetUSBChgEn))
+ 160   1              {
+ 161   2                      SET_MASK(EMStatusBit,b1SetUSBChgEn);    // Enable Charger in S4/S5.
+ 162   2                      CLR_MASK(LENOVOPMFW_Temp,b5EC_ON_EN);   // EC not turn off USB.
+ 163   2              }
+ 164   1              else
+ 165   1              { CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }      // Disable Charger in S4/S5.
+ 166   1              #endif   ////72JERRY008:
+ 167   1      #if Support_USB_Charge  //T19+
+                  #if UCS1022_Support
+                      //UCS1002ID = ReadUCS1022ID();
+                      UCS1002ID = SMSC_UCS1002ID;
+                      //SET_MASK(EMStatusBit, b1SetUSBChgEn);
+                      if (IS_MASK_SET(eEEPROMData,b1SetUSBChgEn))
+                      {
+                              SET_MASK(EMStatusBit,b1SetUSBChgEn);    // Enable Charger in S4/S5.
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 4   
+
+                              /*//ANGELAS007:Optimize power on sequence.
+                              //ANGELAS005:s+ Support UMA SKU EC_ON pin design.
+                              if(NTC_V1>682)
+                              {
+                                      GPCRF0 = OUTPUT;
+                                      SET_MASK(GPDRF,BIT(0));
+                              }
+                              else
+                              //ANGELAS005:e+ Support UMA SKU EC_ON pin design.
+                              *///ANGELAS007:Optimize power on sequence.
+                              //EC_ON_HI(); //ANGELAS038:remove 
+                              //EC_ON2_HI();
+                              CLR_MASK(LENOVOPMFW_Temp,b5EC_ON_EN);   // EC not turn off USB.
+                      }
+                      else
+                      { CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }      // Disable Charger in S4/S5.
+                  #else
+                      if (IS_MASK_SET(eEEPROMData,b1SetUSBChgEn))     // Check S4/S5 feature.
+                      {
+                              SET_MASK(EMStatusBit,b1SetUSBChgEn);    // Enable Charger in S4/S5.
+                              /*//ANGELAS007:Optimize power on sequence.
+                              //ANGELAS005:s+ Support UMA SKU EC_ON pin design.
+                              if(NTC_V1>682)
+                              {
+                                      GPCRF0 = OUTPUT;
+                                      SET_MASK(GPDRF,BIT(0));
+                              }
+                              else
+                              //ANGELAS005:e+ Support UMA SKU EC_ON pin design.
+                              *///ANGELAS007:Optimize power on sequence.
+                              //EC_ON_HI(); //ANGELAS038:remove 
+                              //EC_ON2_HI();
+                              CLR_MASK(LENOVOPMFW_Temp,b5EC_ON_EN);   // EC not turn off USB.
+                      }
+                      else
+                      { CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }      // Disable Charger in S4/S5.
+                  #endif      // UCS1022_Support
+              #endif                           // Support_USB_Charge      
+ 213   1              CheckECCHIPVer();
+ 214   1              NOVO_COUNTER = T_PSWOFF;//Hang check
+ 215   1      }
+ 216          
+ 217          void CheckECCHIPVer(void)
+ 218          {
+ 219   1              if( (ECHIPID1==0x85) && (ECHIPID2==0x86) )
+ 220   1              {
+ 221   2                      if( ECHIPVER == 0x05 )
+ 222   2                      {
+ 223   3                              cCHIPType = 0x01;
+ 224   3                      }
+ 225   2              }
+ 226   1      }
+ 227          
+ 228          //----------------------------------------------------------------------------
+ 229          // The function of clearing external ram for OEM code
+ 230          // Clear external ram (0x100~0xFFF)
+ 231          //----------------------------------------------------------------------------
+ 232          void Init_ClearRam(void)
+ 233          {
+ 234   1          PORT_BYTE_PNTR byte_register_pntr;
+ 235   1      
+ 236   1          byte_register_pntr=0x100;
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 5   
+
+ 237   1          while(byte_register_pntr<0x1000)// Clear external ram (0x100~0xFFF)
+ 238   1          {
+ 239   2              *byte_register_pntr=0;
+ 240   2                byte_register_pntr ++;
+ 241   2          }
+ 242   1      
+ 243   1          byte_register_pntr=0x2200;
+ 244   1          //while(byte_register_pntr<0x2280)// Clear Batt ram BANK0 (0x2200~0x227F)  //MEILING009:remove.
+ 245   1          while(byte_register_pntr<0x2270) //MEILING009:add.
+ 246   1          {
+ 247   2              *byte_register_pntr=0;
+ 248   2                byte_register_pntr ++;
+ 249   2          }
+ 250   1      }
+ 251          
+ 252          void Clear_RAM_Range(WORD nAddr, WORD nSize)
+ 253          {
+ 254   1          Tmp_XPntr = (unsigned int*)nAddr;
+ 255   1          for( ITempW01=0; ITempW01<=nSize; ITempW01++ )
+ 256   1          {
+ 257   2              *Tmp_XPntr = 0;
+ 258   2              Tmp_XPntr++;
+ 259   2          }
+ 260   1      }
+ 261          
+ 262          void RAM_travel(WORD sour, WORD targ, BYTE count)
+ 263          {
+ 264   1          Tmp_XPntr = (unsigned int*)sour;
+ 265   1          Tmp_XPntr1 = (unsigned int*)targ;
+ 266   1          while(count) 
+ 267   1          {
+ 268   2              *Tmp_XPntr1++ = *Tmp_XPntr++;
+ 269   2              count--;
+ 270   2          };
+ 271   1      }
+ 272          
+ 273          
+ 274          //----------------------------------------------------------------------------
+ 275          // The function of DMA for scratch sram
+ 276          //----------------------------------------------------------------------------
+ 277          const sDMAScratchSRAM code asDMAScratchSRAM[]=
+ 278          {
+ 279                  {       &SCRA1H,        &SCRA1M,        &SCRA1L },              // 1024 bytes (externl ram 0x800 ~ 0xBFF)
+ 280                  {       &SCRA2H,        &SCRA2M,        &SCRA2L },              // 512 bytes  (externl ram 0xC00 ~ 0xDFF)
+ 281                  {       &SCRA3H,        &SCRA3M,        &SCRA3L },              // 256 bytes  (externl ram 0xE00 ~ 0xEFF)
+ 282                  {       &SCRA4H,        &SCRA4M,        &SCRA4L }               // 256 bytes  (externl ram 0xF00 ~ 0xFFF)
+ 283          
+ 284          };
+ 285          void  CacheDma(BYTE sramnum,WORD addr)
+ 286          {
+ 287   1              *asDMAScratchSRAM[sramnum].scarh = 0x80;
+ 288   1              *asDMAScratchSRAM[sramnum].scarm = (WORD) addr >> 8;    // high byte of function address
+ 289   1              *asDMAScratchSRAM[sramnum].scarl = (WORD) addr & 0xff;  // low byte of function address
+ 290   1              *asDMAScratchSRAM[sramnum].scarh = 0x00;        // start cache dma
+ 291   1      }
+ 292          
+ 293          
+ 294          
+ 295          //----------------------------------------------------------------------------
+ 296          // Hook_ECExitFollowMode
+ 297          //----------------------------------------------------------------------------
+ 298          void Hook_ECExitFollowMode(void)
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 6   
+
+ 299          {
+ 300   1              CLEAR_MASK(nStopChgStat3H, ECFLASH);
+ 301   1      }
+ 302          
+ 303          //----------------------------------------------------------------------------
+ 304          // EC leaves follow mode or EC scatch ROM and jump to main function
+ 305          //  Note:
+ 306          //      1. Before jump to main function if want to keep EC setting [return(0x33);] is necessary.
+ 307          //      2. If you don't understand the use of Hook_ECRetunrMainFuncKeepCondition function,
+ 308          //          don't change anything.
+ 309          //      3. Always at bank0 (0x9000)
+ 310          //----------------------------------------------------------------------------
+ 311          BYTE Hook_ECRetunrMainFuncKeepCondition(void)
+ 312          {
+ 313   1          if(WinFlashMark==0x33 && WinFlashMark2==0x88)
+ 314   1          {
+ 315   2              return(0x33);
+ 316   2          }
+ 317   1          else
+ 318   1          {
+ 319   2              return(0x00);
+ 320   2          }
+ 321   1      }
+ 322          
+ 323          void Check_Mirror_Occurs(void)
+ 324          {
+ 325   1              if(IS_MASK_SET(FLHCTRL3R,BIT7))
+ 326   1              {
+ 327   2                      SET_MASK(FLHCTRL3R,BIT7);
+ 328   2                      SET_MASK(FLHCTRL3R,BIT0);
+ 329   2                      SET_MASK(HINSTC1,BIT6);
+ 330   2              }
+ 331   1      }
+ 332          
+ 333          const sCharger chargerInitTable[] =
+ 334          {
+ 335                  {C_ChargerMode,                &CHGIC_WriteCmd0x12L     },//JIMAPLO009:Update charge IC from 24780 to 24780s. 
+ 336                  {C_ChargeVoltage,              &nChargingVoltL          },
+ 337                  {C_ChargeCurrent,          &nBattCharCurrentL       },     
+ 338                  {C_ChargerMode1,           &CHGIC_ReadCmd0x3BL          },      
+ 339                  {C_InputCurrent,               &CHGIC_InputCurrentL             },
+ 340                  {C_ChargerProchot,             &CHGIC_ReadCmd0x3CL              },
+ 341                  {C_ChargerProchot1,        &CHGIC_ReadCmd0x3DL          },
+ 342                  {C_ChargerDischargeCurrent, &CHGIC_ReadCmd0x39L         },      
+ 343                  {C_ChargerMode2,           &CHGIC_WriteCmd0x38L         },       
+ 344                  {C_ChargerMode3,           &CHGIC_WriteCmd0x37L         }, 
+ 345          };
+ 346          void InitChargerIC(void)
+ 347          {
+ 348   1              Chk_Hybrid_STPP_min_BattGasgauge = 10;
+ 349   1              chargerInitIndex=0;
+ 350   1              CHGIC_WriteCmd0x12L=0x18;
+ 351   1              
+ 352   1              if((SystemNotS0)&&(IS_MASK_CLEAR(SYS_STATUS,AC_ADP)))//DC only not s0
+ 353   1                      CHGIC_WriteCmd0x12H=0xE1;
+ 354   1              else
+ 355   1                      CHGIC_WriteCmd0x12H=0x61; 
+ 356   1      
+ 357   1              CHGIC_ReadCmd0x3BL=0x10; 
+ 358   1              CHGIC_ReadCmd0x3BH=0x46;
+ 359   1      
+ 360   1              CHGIC_WriteCmd0x38L=0x84;
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 7   
+
+ 361   1              CHGIC_WriteCmd0x38H=0x03;
+ 362   1      
+ 363   1              CHGIC_WriteCmd0x37L=0xC4;//Modify power setting follow table 0822
+ 364   1              CHGIC_WriteCmd0x37H=0x86;
+ 365   1      
+ 366   1              CHGIC_ReadCmd0x3CL=0x56;
+ 367   1              CHGIC_ReadCmd0x3CH=0x4C; // HEGANGS008£ºMofify power setting
+ 368   1      
+ 369   1              if(IS_MASK_CLEAR(SYS_STATUS,AC_ADP)) 
+ 370   1                      CHGIC_ReadCmd0x3DL=0x3C; //DC only : ACOK Disable
+ 371   1              else
+ 372   1                      CHGIC_ReadCmd0x3DL=0x0D; //AC ONLY or AC+DC : ACOK Enable
+ 373   1              if(IS_MASK_CLEAR(SYS_STATUS,AC_ADP)&&(CellCount==3))
+ 374   1                      CHGIC_ReadCmd0x3DH=0x31;        
+ 375   1              else
+ 376   1                      CHGIC_ReadCmd0x3DH=0x71; 
+ 377   1              
+ 378   1              nChargingVoltL=0x60;//8.8V
+ 379   1              nChargingVoltH=0x22; 
+ 380   1              
+ 381   1              nBattCharCurrentL = 0x00;// 256mA  
+ 382   1              nBattCharCurrentH = 0x01;            
+ 383   1      
+ 384   1              if(IS_MASK_CLEAR(SEL_STATE0,PRESENT_A))//AC only // HEGANGS032:Modify power setting
+ 385   1              {
+ 386   2                      CHGIC_InputCurrentL=0x00;//
+ 387   2                      CHGIC_InputCurrentH=0x0B;
+ 388   2              }
+ 389   1              else  //AC+DC
+ 390   1              {
+ 391   2                      if(nBattGasgauge >= 10)
+ 392   2                      {
+ 393   3                              CHGIC_InputCurrentL=0x80;//
+ 394   3                              CHGIC_InputCurrentH=0x0B;
+ 395   3                      }
+ 396   2                      else
+ 397   2                      {
+ 398   3                              CHGIC_InputCurrentL=0x00;//
+ 399   3                              CHGIC_InputCurrentH=0x0B;
+ 400   3                      }
+ 401   2              }
+ 402   1              //CHGIC_InputCurrentL=0x00;//Input current register 1.85A
+ 403   1              //CHGIC_InputCurrentH=0x08;
+ 404   1      
+ 405   1              CHGIC_ReadCmd0x39L=0x00; //12A
+ 406   1              CHGIC_ReadCmd0x39H=0x28; //
+ 407   1      
+ 408   1              while(chargerInitIndex < (sizeof(chargerInitTable)/sizeof(sCharger)))
+ 409   1              {
+ 410   2                      bRWSMBus(SMbusCh2, SMbusWW, Charger_Addr, chargerInitTable[chargerInitIndex].Cmd, 
+ 411   2                      chargerInitTable[chargerInitIndex].Var,SMBus_NoPEC);
+ 412   2                      chargerInitIndex++;
+ 413   2              }
+ 414   1        
+ 415   1      }
+ 416          
+ 417          
+ 418          
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 8   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0034 (BEGIN)
+0000         L?0053:
+0000 EB                MOV     A,R3
+0001 75F006            MOV     B,#06H
+0004 A4                MUL     AB
+0005 2400        R     ADD     A,#LOW asDMAScratchSRAM
+0007 F582              MOV     DPL,A
+0009 E4                CLR     A
+000A 3400        R     ADDC    A,#HIGH asDMAScratchSRAM
+000C F583              MOV     DPH,A
+000E E4                CLR     A
+000F 93                MOVC    A,@A+DPTR
+0010 FE                MOV     R6,A
+0011 7401              MOV     A,#01H
+0013 93                MOVC    A,@A+DPTR
+0014 F582              MOV     DPL,A
+0016 8E83              MOV     DPH,R6
+0018 22                RET     
+0019         L?0054:
+0019 F583              MOV     DPH,A
+001B E4                CLR     A
+001C 93                MOVC    A,@A+DPTR
+001D FC                MOV     R4,A
+001E 7401              MOV     A,#01H
+0020 93                MOVC    A,@A+DPTR
+0021 FD                MOV     R5,A
+0022 7800        E     MOV     R0,#LOW Tmp_XPntr
+0024 EC                MOV     A,R4
+0025 F6                MOV     @R0,A
+0026 08                INC     R0
+0027 ED                MOV     A,R5
+0028 F6                MOV     @R0,A
+0029 EF                MOV     A,R7
+002A 75F003            MOV     B,#03H
+002D A4                MUL     AB
+002E 22                RET     
+002F         L?0055:
+002F 7800        E     MOV     R0,#LOW Tmp_XPntr
+0031         L?0056:
+0031 E0                MOVX    A,@DPTR
+0032 FF                MOV     R7,A
+0033 A3                INC     DPTR
+0034 E0                MOVX    A,@DPTR
+0035 CF                XCH     A,R7
+0036 F6                MOV     @R0,A
+0037 08                INC     R0
+0038 EF                MOV     A,R7
+0039 F6                MOV     @R0,A
+003A 22                RET     
+003B         L?0057:
+003B F583              MOV     DPH,A
+003D E4                CLR     A
+003E 93                MOVC    A,@A+DPTR
+003F FC                MOV     R4,A
+0040 7401              MOV     A,#01H
+0042 93                MOVC    A,@A+DPTR
+0043         L?0058:
+0043 F582              MOV     DPL,A
+0045 8C83              MOV     DPH,R4
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 9   
+
+0047 EF                MOV     A,R7
+0048 F0                MOVX    @DPTR,A
+0049 22                RET     
+004A         L?0059:
+004A F583              MOV     DPH,A
+004C E4                CLR     A
+004D 93                MOVC    A,@A+DPTR
+004E 8D82              MOV     DPL,R5
+0050 8C83              MOV     DPH,R4
+0052 F0                MOVX    @DPTR,A
+0053 0F                INC     R7
+0054 EF                MOV     A,R7
+0055 22                RET     
+             ; FUNCTION Com0034 (END)
+
+             ; FUNCTION Oem_StartUp (BEGIN)
+                                           ; SOURCE LINE # 16
+                                           ; SOURCE LINE # 17
+                                           ; SOURCE LINE # 19
+0000 22                RET     
+             ; FUNCTION Oem_StartUp (END)
+
+             ; FUNCTION Init_Regs (BEGIN)
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+;---- Variable 'index' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002         ?C0002:
+                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 83
+0002 EF                MOV     A,R7
+0003 75F003            MOV     B,#03H
+0006 A4                MUL     AB
+0007 2400        R     ADD     A,#LOW reg_init_table
+0009 F582              MOV     DPL,A
+000B E4                CLR     A
+000C 3400        R     ADDC    A,#HIGH reg_init_table
+                                           ; SOURCE LINE # 84
+000E 120000      R     LCALL   L?0054
+0011 2400        R     ADD     A,#LOW reg_init_table+02H
+0013 F582              MOV     DPL,A
+0015 E4                CLR     A
+0016 3400        R     ADDC    A,#HIGH reg_init_table+02H
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 86
+0018 120000      R     LCALL   L?0059
+001B B427E4            CJNE    A,#027H,?C0002
+                                           ; SOURCE LINE # 88
+001E         ?C0004:
+001E 22                RET     
+             ; FUNCTION Init_Regs (END)
+
+             ; FUNCTION Init_SMBus_Regs (BEGIN)
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 122
+;---- Variable 'index' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 10  
+
+0002         ?C0005:
+                                           ; SOURCE LINE # 123
+                                           ; SOURCE LINE # 124
+                                           ; SOURCE LINE # 125
+0002 EF                MOV     A,R7
+0003 75F003            MOV     B,#03H
+0006 A4                MUL     AB
+0007 2400        R     ADD     A,#LOW Init_SMBus_table
+0009 F582              MOV     DPL,A
+000B E4                CLR     A
+000C 3400        R     ADDC    A,#HIGH Init_SMBus_table
+                                           ; SOURCE LINE # 126
+000E 120000      R     LCALL   L?0054
+0011 2400        R     ADD     A,#LOW Init_SMBus_table+02H
+0013 F582              MOV     DPL,A
+0015 E4                CLR     A
+0016 3400        R     ADDC    A,#HIGH Init_SMBus_table+02H
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 128
+0018 120000      R     LCALL   L?0059
+001B B414E4            CJNE    A,#014H,?C0005
+                                           ; SOURCE LINE # 129
+001E         ?C0007:
+001E 22                RET     
+             ; FUNCTION Init_SMBus_Regs (END)
+
+             ; FUNCTION Oem_Initialization (BEGIN)
+                                           ; SOURCE LINE # 136
+                                           ; SOURCE LINE # 137
+                                           ; SOURCE LINE # 139
+0000 900000      E     MOV     DPTR,#ECBIOSVersionH
+0003 7401              MOV     A,#01H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 140
+0006 900000      E     MOV     DPTR,#ECBIOSVersionL
+0009 741E              MOV     A,#01EH
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 141
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#ECBIOSUbSVersion
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 143
+0011 900000      E     MOV     DPTR,#TP_Type
+0014 74FF              MOV     A,#0FFH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 146
+0017 120000      R     LCALL   Init_Regs
+                                           ; SOURCE LINE # 147
+001A 120000      R     LCALL   Init_SMBus_Regs
+                                           ; SOURCE LINE # 149
+001D 120000      E     LCALL   InitSysMemory2ECRam
+                                           ; SOURCE LINE # 150
+0020 120000      E     LCALL   Init_ADC
+                                           ; SOURCE LINE # 151
+0023 120000      E     LCALL   Init_PECI
+                                           ; SOURCE LINE # 152
+0026 120000      R     LCALL   InitChargerIC
+                                           ; SOURCE LINE # 154
+0029 7F03              MOV     R7,#03H
+002B 120000      E     LCALL   _Init_VC
+                                           ; SOURCE LINE # 157
+002E 7BE4              MOV     R3,#0E4H
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 11  
+
+0030 7DB7              MOV     R5,#0B7H
+0032 7F01              MOV     R7,#01H
+0034 120000      E     LCALL   _Read_Eflash_Byte
+0037 900000      E     MOV     DPTR,#eEEPROMData
+003A EF                MOV     A,R7
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 159
+003C E0                MOVX    A,@DPTR
+003D 900000      E     MOV     DPTR,#EMStatusBit
+0040 30E10D            JNB     ACC.1,?C0008
+                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 161
+0043 E0                MOVX    A,@DPTR
+0044 4402              ORL     A,#02H
+0046 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 162
+0047 900000      E     MOV     DPTR,#LENOVOPMFW_Temp
+004A E0                MOVX    A,@DPTR
+004B 54DF              ANL     A,#0DFH
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 163
+004E 8004              SJMP    ?C0009
+0050         ?C0008:
+                                           ; SOURCE LINE # 165
+0050 E0                MOVX    A,@DPTR
+0051 54FD              ANL     A,#0FDH
+0053 F0                MOVX    @DPTR,A
+0054         ?C0009:
+                                           ; SOURCE LINE # 213
+0054 120000      R     LCALL   CheckECCHIPVer
+                                           ; SOURCE LINE # 214
+0057 900000      E     MOV     DPTR,#NOVO_COUNTER
+005A 7401              MOV     A,#01H
+005C F0                MOVX    @DPTR,A
+005D A3                INC     DPTR
+005E 74F4              MOV     A,#0F4H
+0060 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 215
+0061 22                RET     
+             ; FUNCTION Oem_Initialization (END)
+
+             ; FUNCTION CheckECCHIPVer (BEGIN)
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 218
+                                           ; SOURCE LINE # 219
+0000 900000      E     MOV     DPTR,#ECHIPID1
+0003 E0                MOVX    A,@DPTR
+0004 B48514            CJNE    A,#085H,?C0013
+0007 900000      E     MOV     DPTR,#ECHIPID2
+000A E0                MOVX    A,@DPTR
+000B B4860D            CJNE    A,#086H,?C0013
+                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 221
+000E 900000      E     MOV     DPTR,#ECHIPVER
+0011 E0                MOVX    A,@DPTR
+0012 B40506            CJNE    A,#05H,?C0013
+                                           ; SOURCE LINE # 222
+                                           ; SOURCE LINE # 223
+0015 900000      E     MOV     DPTR,#cCHIPType
+0018 7401              MOV     A,#01H
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 12  
+
+                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 226
+001B         ?C0013:
+001B 22                RET     
+             ; FUNCTION CheckECCHIPVer (END)
+
+             ; FUNCTION Init_ClearRam (BEGIN)
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 236
+;---- Variable 'byte_register_pntr' assigned to Register 'DPTR' ----
+0000 900100            MOV     DPTR,#0100H
+0003         ?C0014:
+                                           ; SOURCE LINE # 237
+0003 AE83              MOV     R6,DPH
+0005 C3                CLR     C
+0006 EE                MOV     A,R6
+0007 9410              SUBB    A,#010H
+0009 5005              JNC     ?C0015
+                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 239
+000B E4                CLR     A
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 240
+000D A3                INC     DPTR
+                                           ; SOURCE LINE # 241
+000E 80F3              SJMP    ?C0014
+0010         ?C0015:
+                                           ; SOURCE LINE # 243
+0010 902200            MOV     DPTR,#02200H
+0013         ?C0016:
+                                           ; SOURCE LINE # 245
+0013 AF82              MOV     R7,DPL
+0015 AE83              MOV     R6,DPH
+0017 C3                CLR     C
+0018 EF                MOV     A,R7
+0019 9470              SUBB    A,#070H
+001B EE                MOV     A,R6
+001C 9422              SUBB    A,#022H
+001E 5005              JNC     ?C0018
+                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 247
+0020 E4                CLR     A
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 248
+0022 A3                INC     DPTR
+                                           ; SOURCE LINE # 249
+0023 80EE              SJMP    ?C0016
+                                           ; SOURCE LINE # 250
+0025         ?C0018:
+0025 22                RET     
+             ; FUNCTION Init_ClearRam (END)
+
+             ; FUNCTION _Clear_RAM_Range (BEGIN)
+                                           ; SOURCE LINE # 252
+0000 900000      R     MOV     DPTR,#nAddr
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+0008 900000      R     MOV     DPTR,#nSize
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 13  
+
+000B EC                MOV     A,R4
+000C F0                MOVX    @DPTR,A
+000D A3                INC     DPTR
+000E ED                MOV     A,R5
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 254
+0010 900000      R     MOV     DPTR,#nAddr
+0013 120000      R     LCALL   L?0055
+                                           ; SOURCE LINE # 255
+0016 E4                CLR     A
+0017 F500        E     MOV     ITempW01,A
+0019 F500        E     MOV     ITempW01+01H,A
+001B         ?C0019:
+001B C3                CLR     C
+001C 900000      R     MOV     DPTR,#nSize+01H
+001F E0                MOVX    A,@DPTR
+0020 9500        E     SUBB    A,ITempW01+01H
+0022 900000      R     MOV     DPTR,#nSize
+0025 E0                MOVX    A,@DPTR
+0026 9500        E     SUBB    A,ITempW01
+0028 401C              JC      ?C0022
+                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 257
+002A 7800        E     MOV     R0,#LOW Tmp_XPntr
+002C E6                MOV     A,@R0
+002D FE                MOV     R6,A
+002E 08                INC     R0
+002F E6                MOV     A,@R0
+0030 F582              MOV     DPL,A
+0032 8E83              MOV     DPH,R6
+0034 E4                CLR     A
+0035 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+0036 06                INC     @R0
+0037 E6                MOV     A,@R0
+0038 18                DEC     R0
+0039 7001              JNZ     ?C0046
+003B 06                INC     @R0
+003C         ?C0046:
+                                           ; SOURCE LINE # 259
+003C 0500        E     INC     ITempW01+01H
+003E E500        E     MOV     A,ITempW01+01H
+0040 70D9              JNZ     ?C0019
+0042 0500        E     INC     ITempW01
+0044         ?C0047:
+0044 80D5              SJMP    ?C0019
+                                           ; SOURCE LINE # 260
+0046         ?C0022:
+0046 22                RET     
+             ; FUNCTION _Clear_RAM_Range (END)
+
+             ; FUNCTION _RAM_travel (BEGIN)
+                                           ; SOURCE LINE # 262
+0000 900000      R     MOV     DPTR,#sour
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+0008 900000      R     MOV     DPTR,#targ
+000B EC                MOV     A,R4
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 14  
+
+000C F0                MOVX    @DPTR,A
+000D A3                INC     DPTR
+000E ED                MOV     A,R5
+000F F0                MOVX    @DPTR,A
+;---- Variable 'count' assigned to Register 'R3' ----
+                                           ; SOURCE LINE # 263
+                                           ; SOURCE LINE # 264
+0010 900000      R     MOV     DPTR,#sour
+0013 120000      R     LCALL   L?0055
+                                           ; SOURCE LINE # 265
+0016 900000      R     MOV     DPTR,#targ
+0019 7800        E     MOV     R0,#LOW Tmp_XPntr1
+001B 120000      R     LCALL   L?0056
+001E         ?C0023:
+                                           ; SOURCE LINE # 266
+001E EB                MOV     A,R3
+001F 6026              JZ      ?C0025
+                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 268
+0021 7800        E     MOV     R0,#LOW Tmp_XPntr
+0023 08                INC     R0
+0024 06                INC     @R0
+0025 E6                MOV     A,@R0
+0026 18                DEC     R0
+0027 CE                XCH     A,R6
+0028 E6                MOV     A,@R0
+0029 CE                XCH     A,R6
+002A 7001              JNZ     ?C0048
+002C 06                INC     @R0
+002D         ?C0048:
+002D 14                DEC     A
+002E F582              MOV     DPL,A
+0030 8E83              MOV     DPH,R6
+0032 E0                MOVX    A,@DPTR
+0033 FF                MOV     R7,A
+0034 7800        E     MOV     R0,#LOW Tmp_XPntr1
+0036 08                INC     R0
+0037 06                INC     @R0
+0038 E6                MOV     A,@R0
+0039 18                DEC     R0
+003A CC                XCH     A,R4
+003B E6                MOV     A,@R0
+003C CC                XCH     A,R4
+003D 7001              JNZ     ?C0049
+003F 06                INC     @R0
+0040         ?C0049:
+0040 14                DEC     A
+0041 120000      R     LCALL   L?0058
+                                           ; SOURCE LINE # 269
+0044 1B                DEC     R3
+                                           ; SOURCE LINE # 270
+0045 80D7              SJMP    ?C0023
+                                           ; SOURCE LINE # 271
+0047         ?C0025:
+0047 22                RET     
+             ; FUNCTION _RAM_travel (END)
+
+             ; FUNCTION _CacheDma (BEGIN)
+                                           ; SOURCE LINE # 285
+0000 900000      R     MOV     DPTR,#addr
+0003 EC                MOV     A,R4
+0004 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 15  
+
+0005 A3                INC     DPTR
+0006 ED                MOV     A,R5
+0007 F0                MOVX    @DPTR,A
+;---- Variable 'sramnum' assigned to Register 'R3' ----
+0008 CB                XCH     A,R3
+0009 EF                MOV     A,R7
+000A CB                XCH     A,R3
+                                           ; SOURCE LINE # 286
+                                           ; SOURCE LINE # 287
+000B 120000      R     LCALL   L?0053
+000E 7480              MOV     A,#080H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 288
+0011 900000      R     MOV     DPTR,#addr
+0014 E0                MOVX    A,@DPTR
+0015 FF                MOV     R7,A
+0016 EB                MOV     A,R3
+0017 75F006            MOV     B,#06H
+001A A4                MUL     AB
+001B 2400        R     ADD     A,#LOW asDMAScratchSRAM+02H
+001D F582              MOV     DPL,A
+001F E4                CLR     A
+0020 3400        R     ADDC    A,#HIGH asDMAScratchSRAM+02H
+0022 120000      R     LCALL   L?0057
+                                           ; SOURCE LINE # 289
+0025 900000      R     MOV     DPTR,#addr
+0028 E0                MOVX    A,@DPTR
+0029 A3                INC     DPTR
+002A E0                MOVX    A,@DPTR
+002B FF                MOV     R7,A
+002C EB                MOV     A,R3
+002D 75F006            MOV     B,#06H
+0030 A4                MUL     AB
+0031 2400        R     ADD     A,#LOW asDMAScratchSRAM+04H
+0033 F582              MOV     DPL,A
+0035 E4                CLR     A
+0036 3400        R     ADDC    A,#HIGH asDMAScratchSRAM+04H
+0038 120000      R     LCALL   L?0057
+                                           ; SOURCE LINE # 290
+003B 120000      R     LCALL   L?0053
+003E E4                CLR     A
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 291
+0040 22                RET     
+             ; FUNCTION _CacheDma (END)
+
+             ; FUNCTION Hook_ECExitFollowMode (BEGIN)
+                                           ; SOURCE LINE # 298
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+0000 900000      E     MOV     DPTR,#nStopChgStat3H
+0003 E0                MOVX    A,@DPTR
+0004 54EF              ANL     A,#0EFH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 301
+0007 22                RET     
+             ; FUNCTION Hook_ECExitFollowMode (END)
+
+             ; FUNCTION Hook_ECRetunrMainFuncKeepCondition (BEGIN)
+                                           ; SOURCE LINE # 311
+                                           ; SOURCE LINE # 312
+                                           ; SOURCE LINE # 313
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 16  
+
+0000 900000      E     MOV     DPTR,#WinFlashMark
+0003 E0                MOVX    A,@DPTR
+0004 B4330A            CJNE    A,#033H,?C0028
+0007 900000      E     MOV     DPTR,#WinFlashMark2
+000A E0                MOVX    A,@DPTR
+000B B48803            CJNE    A,#088H,?C0028
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+000E 7F33              MOV     R7,#033H
+0010 22                RET     
+                                           ; SOURCE LINE # 316
+0011         ?C0028:
+                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 319
+0011 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 321
+0013         ?C0029:
+0013 22                RET     
+             ; FUNCTION Hook_ECRetunrMainFuncKeepCondition (END)
+
+             ; FUNCTION Check_Mirror_Occurs (BEGIN)
+                                           ; SOURCE LINE # 323
+                                           ; SOURCE LINE # 324
+                                           ; SOURCE LINE # 325
+0000 900000      E     MOV     DPTR,#FLHCTRL3R
+0003 E0                MOVX    A,@DPTR
+0004 30E70F            JNB     ACC.7,?C0032
+                                           ; SOURCE LINE # 326
+                                           ; SOURCE LINE # 327
+0007 E0                MOVX    A,@DPTR
+0008 4480              ORL     A,#080H
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 328
+000B E0                MOVX    A,@DPTR
+000C 4401              ORL     A,#01H
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 329
+000F 900000      E     MOV     DPTR,#HINSTC1
+0012 E0                MOVX    A,@DPTR
+0013 4440              ORL     A,#040H
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 330
+                                           ; SOURCE LINE # 331
+0016         ?C0032:
+0016 22                RET     
+             ; FUNCTION Check_Mirror_Occurs (END)
+
+             ; FUNCTION InitChargerIC (BEGIN)
+                                           ; SOURCE LINE # 346
+                                           ; SOURCE LINE # 347
+                                           ; SOURCE LINE # 348
+0000 900000      E     MOV     DPTR,#Chk_Hybrid_STPP_min_BattGasgauge
+0003 740A              MOV     A,#0AH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 349
+0006 E4                CLR     A
+0007 900000      E     MOV     DPTR,#chargerInitIndex
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 350
+000B 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x12L
+000E 7418              MOV     A,#018H
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 17  
+
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 352
+0011 900000      E     MOV     DPTR,#SysPowState
+0014 E0                MOVX    A,@DPTR
+0015 6410              XRL     A,#010H
+0017 600F              JZ      ?C0033
+0019 900000      E     MOV     DPTR,#SYS_STATUS
+001C E0                MOVX    A,@DPTR
+001D 20E708            JB      ACC.7,?C0033
+                                           ; SOURCE LINE # 353
+0020 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x12H
+0023 74E1              MOV     A,#0E1H
+0025 F0                MOVX    @DPTR,A
+0026 8006              SJMP    ?C0034
+0028         ?C0033:
+                                           ; SOURCE LINE # 355
+0028 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x12H
+002B 7461              MOV     A,#061H
+002D F0                MOVX    @DPTR,A
+002E         ?C0034:
+                                           ; SOURCE LINE # 357
+002E 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3BL
+0031 7410              MOV     A,#010H
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 358
+0034 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3BH
+0037 7446              MOV     A,#046H
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 360
+003A 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x38L
+003D 7484              MOV     A,#084H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 361
+0040 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x38H
+0043 7403              MOV     A,#03H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 363
+0046 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x37L
+0049 74C4              MOV     A,#0C4H
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 364
+004C 900000      E     MOV     DPTR,#CHGIC_WriteCmd0x37H
+004F 7486              MOV     A,#086H
+0051 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 366
+0052 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3CL
+0055 7456              MOV     A,#056H
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 367
+0058 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3CH
+005B 744C              MOV     A,#04CH
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 369
+005E 900000      E     MOV     DPTR,#SYS_STATUS
+0061 E0                MOVX    A,@DPTR
+0062 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3DL
+0065 20E705            JB      ACC.7,?C0035
+                                           ; SOURCE LINE # 370
+0068 743C              MOV     A,#03CH
+006A F0                MOVX    @DPTR,A
+006B 8003              SJMP    ?C0036
+006D         ?C0035:
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 18  
+
+                                           ; SOURCE LINE # 372
+006D 740D              MOV     A,#0DH
+006F F0                MOVX    @DPTR,A
+0070         ?C0036:
+                                           ; SOURCE LINE # 373
+0070 900000      E     MOV     DPTR,#SYS_STATUS
+0073 E0                MOVX    A,@DPTR
+0074 20E70F            JB      ACC.7,?C0037
+0077 900000      E     MOV     DPTR,#CellCount
+007A E0                MOVX    A,@DPTR
+007B B40308            CJNE    A,#03H,?C0037
+                                           ; SOURCE LINE # 374
+007E 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3DH
+0081 7431              MOV     A,#031H
+0083 F0                MOVX    @DPTR,A
+0084 8006              SJMP    ?C0038
+0086         ?C0037:
+                                           ; SOURCE LINE # 376
+0086 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x3DH
+0089 7471              MOV     A,#071H
+008B F0                MOVX    @DPTR,A
+008C         ?C0038:
+                                           ; SOURCE LINE # 378
+008C 900000      E     MOV     DPTR,#nChargingVoltL
+008F 7460              MOV     A,#060H
+0091 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 379
+0092 900000      E     MOV     DPTR,#nChargingVoltH
+0095 7422              MOV     A,#022H
+0097 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 381
+0098 E4                CLR     A
+0099 900000      E     MOV     DPTR,#nBattCharCurrentL
+009C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 382
+009D 900000      E     MOV     DPTR,#nBattCharCurrentH
+00A0 04                INC     A
+00A1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 384
+00A2 900000      E     MOV     DPTR,#SEL_STATE0
+00A5 E0                MOVX    A,@DPTR
+00A6 20E006            JB      ACC.0,?C0039
+                                           ; SOURCE LINE # 385
+                                           ; SOURCE LINE # 386
+00A9 E4                CLR     A
+00AA 900000      E     MOV     DPTR,#CHGIC_InputCurrentL
+                                           ; SOURCE LINE # 387
+                                           ; SOURCE LINE # 388
+00AD 8014              SJMP    ?C0051
+00AF         ?C0039:
+                                           ; SOURCE LINE # 390
+                                           ; SOURCE LINE # 391
+00AF 900000      E     MOV     DPTR,#nBattGasgauge
+00B2 E0                MOVX    A,@DPTR
+00B3 C3                CLR     C
+00B4 940A              SUBB    A,#0AH
+00B6 4007              JC      ?C0041
+                                           ; SOURCE LINE # 392
+                                           ; SOURCE LINE # 393
+00B8 900000      E     MOV     DPTR,#CHGIC_InputCurrentL
+00BB 7480              MOV     A,#080H
+                                           ; SOURCE LINE # 394
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 19  
+
+                                           ; SOURCE LINE # 395
+00BD 8004              SJMP    ?C0050
+00BF         ?C0041:
+                                           ; SOURCE LINE # 397
+                                           ; SOURCE LINE # 398
+00BF E4                CLR     A
+00C0 900000      E     MOV     DPTR,#CHGIC_InputCurrentL
+00C3         ?C0050:
+00C3         ?C0051:
+00C3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 399
+00C4 900000      E     MOV     DPTR,#CHGIC_InputCurrentH
+00C7 740B              MOV     A,#0BH
+00C9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 400
+                                           ; SOURCE LINE # 401
+00CA         ?C0040:
+                                           ; SOURCE LINE # 405
+00CA E4                CLR     A
+00CB 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x39L
+00CE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 406
+00CF 900000      E     MOV     DPTR,#CHGIC_ReadCmd0x39H
+00D2 7428              MOV     A,#028H
+00D4 F0                MOVX    @DPTR,A
+00D5         ?C0043:
+                                           ; SOURCE LINE # 408
+00D5 900000      E     MOV     DPTR,#chargerInitIndex
+00D8 E0                MOVX    A,@DPTR
+00D9 C3                CLR     C
+00DA 940A              SUBB    A,#0AH
+00DC 504A              JNC     ?C0045
+                                           ; SOURCE LINE # 409
+                                           ; SOURCE LINE # 410
+00DE E0                MOVX    A,@DPTR
+00DF 25E0              ADD     A,ACC
+00E1 25E0              ADD     A,ACC
+00E3 2400        R     ADD     A,#LOW chargerInitTable
+00E5 F582              MOV     DPL,A
+00E7 E4                CLR     A
+00E8 3400        R     ADDC    A,#HIGH chargerInitTable
+00EA F583              MOV     DPH,A
+00EC E0                MOVX    A,@DPTR
+00ED FF                MOV     R7,A
+00EE 900000      E     MOV     DPTR,#chargerInitIndex
+00F1 E0                MOVX    A,@DPTR
+00F2 25E0              ADD     A,ACC
+00F4 25E0              ADD     A,ACC
+00F6 2400        R     ADD     A,#LOW chargerInitTable+01H
+00F8 F582              MOV     DPL,A
+00FA E4                CLR     A
+00FB 3400        R     ADDC    A,#HIGH chargerInitTable+01H
+00FD F583              MOV     DPH,A
+00FF 120000      E     LCALL   ?C?PLDXDATA
+0102 CD                XCH     A,R5
+0103 E9                MOV     A,R1
+0104 CD                XCH     A,R5
+0105 900000      E     MOV     DPTR,#?_bRWSMBus?BYTE+04H
+0108 EA                MOV     A,R2
+0109 F0                MOVX    @DPTR,A
+010A A3                INC     DPTR
+010B ED                MOV     A,R5
+C51 COMPILER V8.12   OEM_INIT                                                              09/14/2018 11:08:22 PAGE 20  
+
+010C F0                MOVX    @DPTR,A
+010D 900000      E     MOV     DPTR,#?_bRWSMBus?BYTE+03H
+0110 EF                MOV     A,R7
+0111 F0                MOVX    @DPTR,A
+0112 E4                CLR     A
+0113 900000      E     MOV     DPTR,#?_bRWSMBus?BYTE+06H
+0116 F0                MOVX    @DPTR,A
+0117 7B12              MOV     R3,#012H
+0119 7D8C              MOV     R5,#08CH
+011B 7F01              MOV     R7,#01H
+011D 120000      E     LCALL   _bRWSMBus
+                                           ; SOURCE LINE # 412
+0120 900000      E     MOV     DPTR,#chargerInitIndex
+0123 E0                MOVX    A,@DPTR
+0124 04                INC     A
+0125 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 413
+0126 80AD              SJMP    ?C0043
+                                           ; SOURCE LINE # 415
+0128         ?C0045:
+0128 22                RET     
+             ; FUNCTION InitChargerIC (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    869    ----
+   CONSTANT SIZE    =    201    ----
+   XDATA SIZE       =     40      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,1439 @@
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE CORE_HOSTIF
+OBJECT MODULE PLACED IN Code\CORE\CORE_HOSTIF.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\CORE\CORE_HOSTIF.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\COR
+                    -E\INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: CORE_HOSTIF.C - Host Interface Handler
+   3           *
+   4           * Copyright (c) 1983-2007, Insyde Software Corporation. All Rights Reserved.
+   5           *
+   6           * You may not reproduce, distribute, publish, display, perform, modify, adapt,
+   7           * transmit, broadcast, present, recite, release, license or otherwise exploit
+   8           * any part of this publication in any form, by any means, without the prior
+   9           * written permission of Insyde Software Corporation.
+  10           *---------------------------------------------------------------------------*/
+  11          
+  12          #include <CORE_INCLUDE.H>
+  13          #include <OEM_INCLUDE.H>
+  14          
+  15          /* ----------------------------------------------------------------------------
+  16           * FUNCTION: Data_To_Host
+  17           *
+  18           * Clear error bits in the Host Interface status port and sends a command
+  19           * response byte or a byte of keyboard data to the Host.  Generate Host IRQ1
+  20           * if keyboard interrupts are enabled in controller command byte.
+  21           *
+  22           * Input:  data to send to Host.
+  23           * ------------------------------------------------------------------------- */
+  24           //BROOKE0000: add start
+  25          void Data_To_Port(BYTE data_byte)
+  26          {
+  27   1              KBHIKDOR = data_byte;
+  28   1      }
+  29          
+  30          void Data_To_Port_nWait(BYTE data_byte)
+  31          {
+  32   1          Data_To_Port(data_byte);
+  33   1      
+  34   1          TR1 = 0;                    // Disable timer1
+  35   1          ET1 = 0;                    // Disable timer1 interrupt
+  36   1          _nop_();
+  37   1          _nop_();
+  38   1          _nop_();
+  39   1          _nop_();
+  40   1          TH1 = Timer_26ms>>8;        // Set timer1 counter 26ms
+  41   1          TL1 = Timer_26ms;           // Set timer1 counter 26ms
+  42   1          TF1 = 0;                    // Clear overflow flag
+  43   1          TR1 = 1;                    // Enable timer1
+  44   1      
+  45   1              while (!TF1)
+  46   1              {
+  47   2                  if(IS_MASK_CLEAR(KBHISR, OBF))
+  48   2              {
+  49   3                  break;
+  50   3              }
+  51   2              if(IS_MASK_SET(KBHISR, IBF))
+  52   2              {
+  53   3                  break;
+  54   3              }
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 2   
+
+  55   2              }
+  56   1      
+  57   1          TR1 = 0;                    // disable timer1
+  58   1              TF1 = 0;                        // clear overflow flag
+  59   1              ET1 = 1;                        // Enable timer1 interrupt
+  60   1      }
+  61          //BROOKE0000: add end
+  62          void Data_To_Host(BYTE data_byte)
+  63          {
+  64   1          //SET_MASK(KBHISR,KEYL);
+  65   1          //CLEAR_MASK(KBHISR,AOBF);
+  66   1          KBHISR &= 0x0F;
+  67   1              SET_MASK(KBHISR,KEYL);
+  68   1      
+  69   1          KBHICR &= 0xFC;
+  70   1                      //BROOKE0000: add start
+  71   1              KBIRQR &= 0xFE;
+  72   1              _nop_();
+  73   1              _nop_();
+  74   1              //BROOKE0000: add end
+  75   1          if ( Ccb42_INTR_KEY )
+  76   1          {
+  77   2                      SET_MASK(KBHICR,OBFKIE);
+  78   2              }
+  79   1      
+  80   1          KBHIKDOR = data_byte;
+  81   1      }
+  82          
+  83          void Data_To_Host_nWait(BYTE data_byte)
+  84          {
+  85   1          Data_To_Host(data_byte);
+  86   1      
+  87   1          TR1 = 0;                    // Disable timer1
+  88   1          ET1 = 0;                    // Disable timer1 interrupt
+  89   1          _nop_();
+  90   1          _nop_();
+  91   1          _nop_();
+  92   1          _nop_();
+  93   1          TH1 = Timer_26ms>>8;        // Set timer1 counter 26ms
+  94   1          TL1 = Timer_26ms;           // Set timer1 counter 26ms
+  95   1          TF1 = 0;                    // Clear overflow flag
+  96   1          TR1 = 1;                    // Enable timer1
+  97   1      
+  98   1              while (!TF1)
+  99   1              {
+ 100   2                  if(IS_MASK_CLEAR(KBHISR, OBF))
+ 101   2              {
+ 102   3                  break;
+ 103   3              }
+ 104   2              if(IS_MASK_SET(KBHISR, IBF))
+ 105   2              {
+ 106   3                  break;
+ 107   3              }
+ 108   2              }
+ 109   1      
+ 110   1          TR1 = 0;                    // disable timer1
+ 111   1              TF1 = 0;                        // clear overflow flag
+ 112   1              ET1 = 1;                        // Enable timer1 interrupt
+ 113   1      }
+ 114          
+ 115          //-----------------------------------------------------------------------------
+ 116          //
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 3   
+
+ 117          //-----------------------------------------------------------------------------
+ 118          void KBC_DataPending(BYTE nPending)
+ 119          {
+ 120   1           if( KBPendingRXCount >= 6 )  return; //BROOKE0000: modify > to >=
+ 121   1      
+ 122   1          KBDataPending[KBPendingRXCount] = nPending;
+ 123   1          KBPendingRXCount++;
+ 124   1          SetServiceSendFlag();
+ 125   1      }
+ 126          
+ 127          //-----------------------------------------------------------------------------
+ 128          //
+ 129          //-----------------------------------------------------------------------------
+ 130          BYTE GetKB_PendingData(void)
+ 131          {
+ 132   1          BYTE buffer_data;
+ 133   1          buffer_data=KBDataPending[KBPendingTXCount];
+ 134   1          KBPendingTXCount++;
+ 135   1          if( KBPendingTXCount >= KBPendingRXCount )
+ 136   1          {
+ 137   2              KBPendingTXCount = 0;
+ 138   2              KBPendingRXCount = 0;
+ 139   2                      if (scan.kbf_head == scan.kbf_tail)
+ 140   2              {
+ 141   3                      Timer_B.fbit.SEND_ENABLE = 0;
+ 142   3                      }
+ 143   2          }
+ 144   1          return buffer_data;
+ 145   1      }
+ 146          
+ 147          //-----------------------------------------------------------------------------
+ 148          //
+ 149          //-----------------------------------------------------------------------------
+ 150          void KBC_DataToHost(BYTE nKBData)
+ 151          {
+ 152   1          if(IS_MASK_SET(KBHISR,OBF)||IS_MASK_SET(KBHISR,IBF))
+ 153   1              //if(IS_MASK_SET(KBHISR,OBF))
+ 154   1              {
+ 155   2                      KBC_DataPending(nKBData);
+ 156   2              }
+ 157   1              else
+ 158   1              {
+ 159   2                      Data_To_Host(nKBData ); // Send data to host.
+ 160   2              }
+ 161   1      }
+ 162          
+ 163          /* ----------------------------------------------------------------------------
+ 164           * FUNCTION: Aux_Data_To_Host - Send auxiliary device (mouse) data to the Host.
+ 165           *
+ 166           * Clear error bits in the Host Interface status port and sends a byte of
+ 167           * aux device (mouse) data to the Host.  Generates Host IRQ12 if aux device
+ 168           * (mouse) interrupts are enabled in controller command byte.
+ 169           *
+ 170           * Input: data to send to Host.
+ 171           * ------------------------------------------------------------------------- */
+ 172          void Aux_Data_To_Host(BYTE data_byte)
+ 173          {
+ 174   1          KBHISR &= 0x0F;
+ 175   1              SET_MASK(KBHISR,AOBF);
+ 176   1      
+ 177   1              //if (Ccb42_SYS_FLAG)           // Put system flag bit in Status Reg.
+ 178   1              //      SET_MASK(KBHISR,SYSF);
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 4   
+
+ 179   1              //else
+ 180   1              //      CLEAR_MASK(KBHISR,SYSF);
+ 181   1      
+ 182   1              KBHICR &= 0xFC;
+ 183   1              KBIRQR &= 0xFE; //BROOKE0000: add
+ 184   1          if ( Ccb42_INTR_AUX )
+ 185   1          {
+ 186   2              SET_MASK(KBHICR,OBFMIE);
+ 187   2          }
+ 188   1      
+ 189   1              KBHIMDOR = data_byte;
+ 190   1      }
+ 191          
+ 192          //----------------------------------------------------------------------------
+ 193          //
+ 194          //----------------------------------------------------------------------------
+ 195          void SetServiceSendFlag(void)
+ 196          {
+ 197   1          Load_Timer_B();
+ 198   1              Timer_B.fbit.SEND_ENABLE = 1;
+ 199   1      }
+ 200          
+ 201          /* ----------------------------------------------------------------------------
+ 202           * FUNCTION: service_send
+ 203           *
+ 204           * Send data from the scanner keyboard or from multibyte command responses to
+ 205           * the Host.
+ 206           *
+ 207           * Send scan codes from scanner keyboard to the Host.  Also handle multiple
+ 208           * byte transmissions for standard commands and extended commands that return
+ 209           * more than one byte to the Host.
+ 210           *
+ 211           * When sending multiple bytes, the 1st byte is sent immediately, but the
+ 212           * remaining bytes are sent by generating another send request via the
+ 213           * function "handle_unlock" which will call "Start_Scan_Transmission".
+ 214           * If more bytes are to be sent, "Start_Scan_Transmission" will start Timer A,
+ 215           * and the Timer A interrupt handler will generate the send request when the
+ 216           * response timer has expired!
+ 217           * ------------------------------------------------------------------------- */
+ 218          void service_send(void)
+ 219          {
+ 220   1          BYTE temp_flag, send;
+ 221   1          BYTE data_word;
+ 222   1          send = FALSE;
+ 223   1      
+ 224   1              //Load_Timer_B();
+ 225   1              //Timer_B.fbit.SEND_ENABLE = 1;
+ 226   1              SetServiceSendFlag();
+ 227   1          
+ 228   1              /*   //
+ 229   1              if ( PM1PendingRXCount > 0 ) 
+ 230   1              {
+ 231   1                      if(IS_MASK_SET(PM1STS,OBF)) return;
+ 232   1                      Data_To_PM1(GetPM1_PendingData());
+ 233   1                      return;
+ 234   1              }
+ 235   1              */   //
+ 236   1      
+ 237   1          if ( PM2PendingRXCount > 0 ) {
+ 238   2              if(IS_MASK_SET(PM2STS,OBF)) return;
+ 239   2              Data_To_PM2(GetPM2_PendingData());
+ 240   2              return;
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 5   
+
+ 241   2          }
+ 242   1      
+ 243   1          if( IS_MASK_SET(KBHISR,OBF) || IS_MASK_SET(KBHISR,IBF) )
+ 244   1          //if(IS_MASK_SET(KBHISR,OBF))
+ 245   1          {
+ 246   2              return;
+ 247   2          }
+ 248   1      
+ 249   1          if ( KBPendingRXCount > 0 )
+ 250   1          {
+ 251   2              Data_To_Host(GetKB_PendingData());
+ 252   2              return;
+ 253   2          }
+ 254   1      
+ 255   1              if((Ccb42_DISAB_KEY == 1)|| IS_MASK_SET(KBHISR,IBF))
+ 256   1              {
+ 257   2                      return;
+ 258   2              }
+ 259   1      
+ 260   1          data_word = Get_Buffer();
+ 261   1          if (data_word == 0xFF)
+ 262   1          {
+ 263   2                  Timer_B.fbit.SEND_ENABLE = 0;
+ 264   2          }
+ 265   1          else
+ 266   1          {
+ 267   2              send = TRUE;
+ 268   2          }
+ 269   1      
+ 270   1              if (send)                                                       // Send it
+ 271   1          {
+ 272   2                      temp_flag = Gen_Info_BREAK_SCAN;
+ 273   2              Gen_Info_BREAK_SCAN = 0;
+ 274   2      
+ 275   2              if (send_to_pc(data_word, temp_flag))
+ 276   2                      {
+ 277   3                  Gen_Info_BREAK_SCAN = 1;    // Break prefix code.
+ 278   3              }
+ 279   2          }
+ 280   1      }
+ 281          
+ 282          /* ----------------------------------------------------------------------------
+ 283           * FUNCTION: get_response
+ 284           *
+ 285           * Gets data required for scanner keyboard responses to keyboard commands sent
+ 286           * from Host.
+ 287           *
+ 288           * Input: Kbd_Response has response code.
+ 289           *        This is called when Kbd_Response_CMD_RESPONSE == 0.
+ 290           *
+ 291           * Return: data to send.
+ 292           * ------------------------------------------------------------------------- */
+ 293          /* This table has commands that the keyboard may send to the Host in response
+ 294             to transmissions, etc. */
+ 295          const BYTE code response_table[] =
+ 296          {
+ 297              0x00,   /* 0 Undefined. */
+ 298              0xFA,   /* 1 Manufacurer ID. */
+ 299              0xAB,   /* 2 Byte 1 of keyboard ID. */
+ 300              0xAA,   /* 3 BAT completion. */
+ 301              0xFC,   /* 4 BAT failure. */
+ 302              0xEE,   /* 5 Echo. */
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 6   
+
+ 303              0xFA,   /* 6 Acknowledge. */
+ 304              0xFE,   /* 7 Resend. */
+ 305              0xFA,   /* 8 Return scan code 2. */
+ 306              0x83,   /* 9 Byte 2 of U.S. keyboard ID. */
+ 307              0xFA,   /* A reset ack. */
+ 308              0xEE,   /* B Echo command. */
+ 309              0xAA,   /* C First response. */
+ 310              0xFA,   /* D Return scan code 2. */
+ 311              0x02,   /* E. */
+ 312              0x84    /* F Byte 2 of Japanese keyboard ID. */
+ 313          };
+ 314          
+ 315          extern BYTE get_response(void)
+ 316          {
+ 317   1          BYTE result, code_word;
+ 318   1          code_word = 0;
+ 319   1      
+ 320   1          switch (Kbd_Response & maskKBD_RESPONSE_CODE)
+ 321   1          {
+ 322   2              case 2:
+ 323   2                  if (Get_Kbd_Type() == 0)
+ 324   2                              {
+ 325   3                      code_word = 9;   // U.S. keyboard.
+ 326   3                  }
+ 327   2                  else
+ 328   2                              {
+ 329   3                      code_word = 0xF; // Japanese keyboard.
+ 330   3                  }
+ 331   2                  break;
+ 332   2          }
+ 333   1      
+ 334   1          result = response_table[Kbd_Response & maskKBD_RESPONSE_CODE];
+ 335   1          Kbd_Response = (Kbd_Response & ~maskKBD_RESPONSE_CODE) | code_word;
+ 336   1      
+ 337   1          return(result);
+ 338   1      }
+ 339          
+ 340          
+ 341          /* ----------------------------------------------------------------------------
+ 342           * FUNCTION: get_multibyte
+ 343           *
+ 344           * Get multiple bytes in response to a command that requires multiple bytes to
+ 345           * be returned to Host.  These commands include the "standard" "AC" command
+ 346           * and the extended command "85".  Only 1 byte at a time is returned from this
+ 347           * function, it keeps track of the last byte it sent by maintaining a pointer
+ 348           * to the "data packet" that contains the multiple bytes it is supposed to
+ 349           * retrieve.  The next time it's called it will return the next byte in the
+ 350           * packet until all bytes are sent.
+ 351           *
+ 352           * Input: Kbd_Response has multibyte response code.
+ 353           *        This is called when Kbd_Response_CMD_RESPONSE == 1.
+ 354           *
+ 355           * Return: data to send.
+ 356           * ------------------------------------------------------------------------- */
+ 357          #if 0
+              static BYTE get_multibyte(void)
+              {
+                  //WORD data_word;
+                  BYTE data_word;
+              
+                  switch (Kbd_Response & maskKBD_RESPONSE_CODE)
+                  {
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 7   
+
+                      case (respCMD_AC & maskKBD_RESPONSE_CODE):
+                      /* Process command "AC".  Bit[7:1] of Tmp_Byte[0] is the address offset
+                         of data "packet" (initially 0). */
+                          //data_word = Version[Tmp_Byte[0]>>1];
+                          Tmp_Byte[0]++;
+                          if (data_word == 0xAA) /* Keep going if not end of table. */
+                          {   /* Otherwise, stop by clearing. */
+                              Kbd_Response = Kbd_Response & ~maskKBD_RESPONSE_CODE;
+                              Kbd_Response_CMD_RESPONSE = 0;
+                          }
+                          break;
+              
+                      case (respCMD_CFG & maskKBD_RESPONSE_CODE):
+                      /* Process Read Configuration Table command.  Config_Table_Offset has
+                         address offset of the first byte to send.  Config_Data_Length has
+                         the number of bytes to send.  Tmp_Load holds the number of bytes
+                         sent and is also used as the index. */
+                         // Dino 20070517
+                                      //data_word = Read_Config_Table(Config_Table_Offset + (WORD) Tmp_Load);
+                          Tmp_Load++; /* Bump number of bytes sent. */
+                          if (Tmp_Load == Config_Data_Length) /* Keep going if not finished. */
+                          {   /* Otherwise, stop by clearing. */
+                              Kbd_Response = Kbd_Response & ~maskKBD_RESPONSE_CODE;
+                              Kbd_Response_CMD_RESPONSE = 0;
+                          }
+                          break;
+              
+                      case (respARRAY & maskKBD_RESPONSE_CODE):
+                      /* Send data from an array.
+                         Tmp_Pntr has address of byte to send.
+                         Tmp_Load has number of bytes to send. */
+                          data_word = *Tmp_Pntr++;
+                          Tmp_Load--;
+                          if (Tmp_Load == 0)   /* Keep going if not end of array. */
+                          {   /* Otherwise, stop by clearing. */
+                              Kbd_Response = Kbd_Response & ~maskKBD_RESPONSE_CODE;
+                              Kbd_Response_CMD_RESPONSE = 0;
+                          }
+                          break;
+              
+                      default:  /* Look for an OEM response code if not CORE. */
+                         //data_word = Gen_Hookc_Get_Multibyte();
+                         data_word = 0x00;
+                         break;
+                  } /* switch (Kbd_Response & maskKBD_RESPONSE_CODE) */
+              
+                  return(data_word);
+              }
+              #endif
+ 414          
+ 415          /* ----------------------------------------------------------------------------
+ 416           * FUNCTION: send_ext_to_pc, send_to_pc
+ 417           *
+ 418           * send_ext_to_pc is just a 'pre-entry' to the original send_to_pc
+ 419           * routine.  It's sole purpose is to check auxiliary keyboard entries
+ 420           * for external hotkey functions.  This allows it to set flags for
+ 421           * CTRL and ALT states, then if BOTH are set, hotkeys can be checked.
+ 422           *
+ 423           * Send data to Host.  If password is enabled, the data
+ 424           * will not be sent until the password is entered correctly.
+ 425           *
+ 426           * Input: data - Data to send to PC.
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 8   
+
+ 427           *        break_prefix_flag - TRUE if last scan code was a break prefix.
+ 428           *
+ 429           * Returns: TRUE if translation mode is enabled and
+ 430           *          scan code was a break prefix.
+ 431           * ----------------------------------------------------------------------------*/
+ 432          static BYTE send_to_pc(BYTE data_word, BYTE break_prefix_flag)
+ 433          {
+ 434   1          return(common_send_to_pc(data_word, break_prefix_flag));
+ 435   1      }
+ 436          
+ 437          static BYTE common_send_to_pc(BYTE data_word, BYTE break_prefix_flag)
+ 438          {
+ 439   1              BYTE    send_it = FALSE;
+ 440   1      
+ 441   1              if (Ccb42_XLATE_PC == 0)                         // Send data as is.
+ 442   1              {
+ 443   2              send_it = TRUE;
+ 444   2              break_prefix_flag = FALSE;
+ 445   2              }
+ 446   1              else                                                            // Translation mode is enabled.
+ 447   1              {
+ 448   2              data_word = translate_to_pc(data_word, break_prefix_flag);
+ 449   2              if (data_word == 0xFF)
+ 450   2              {
+ 451   3                      break_prefix_flag = TRUE;       // Don't send break code prefix.
+ 452   3              }
+ 453   2                      else if(data_word == 0x00)
+ 454   2                      {
+ 455   3                      break_prefix_flag = TRUE;;      // Don't send break code prefix.
+ 456   3              }
+ 457   2              else
+ 458   2              {
+ 459   3                      break_prefix_flag = FALSE;
+ 460   3                              send_it = TRUE;
+ 461   3              }
+ 462   2              }
+ 463   1      
+ 464   1              if (send_it) {Data_To_Host(data_word);}
+ 465   1      
+ 466   1              return(break_prefix_flag);
+ 467   1      }
+ 468          
+ 469          /* ----------------------------------------------------------------------------
+ 470           * FUNCTION: translate_to_pc
+ 471           *
+ 472           * Translate scan code from "set 2 scan code" to "set 1 scan code".
+ 473           *
+ 474           * Input: data - scan code received from aux keyboard or local keyboard.
+ 475           *        break_prefix_flag - TRUE if last scan code was a break prefix.
+ 476           *
+ 477           * Return: a value with all bits set if data is break prefix (0xF0);
+ 478           *         otherwise, returns translated key.
+ 479           * ------------------------------------------------------------------------- */
+ 480          static BYTE translate_to_pc(BYTE data_word, BYTE break_prefix_flag)
+ 481          {
+ 482   1          /* Scan code set 2 to scan code set 1 translation table.  First byte is a
+ 483   1             dummy entry because scan code "0" is not translated. */
+ 484   1          static const BYTE code scan2_table[] =
+ 485   1          {
+ 486   1              0x00, 0x43, 0x41, 0x3F, 0x3D, 0x3B, 0x3C, 0x58, // 00 ~ 07 0x00~0x07
+ 487   1              0x64, 0x44, 0x42, 0x40, 0x3E, 0x0F, 0x29, 0x59, // 08 ~ 15
+ 488   1              0x65, 0x38, 0x2A, 0x70, 0x1D, 0x10, 0x02, 0x5A, // 16 ~ 23 0x10~0x17
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 9   
+
+ 489   1              0x66, 0x71, 0x2C, 0x1F, 0x1E, 0x11, 0x03, 0x5B, // 24 ~ 31 0x18~0x1F
+ 490   1              0x67, 0x2E, 0x2D, 0x20, 0x12, 0x05, 0x04, 0x5C, // 32 ~ 39 0x20~0x27
+ 491   1              0x68, 0x39, 0x2F, 0x21, 0x14, 0x13, 0x06, 0x5D, // 40 ~ 47
+ 492   1              0x69, 0x31, 0x30, 0x23, 0x22, 0x15, 0x07, 0x5E, // 48 ~ 55
+ 493   1              0x6A, 0x72, 0x32, 0x24, 0x16, 0x08, 0x09, 0x5F, // 56 ~ 63
+ 494   1              0x6B, 0x33, 0x25, 0x17, 0x18, 0x0B, 0x0A, 0x60, // 64 ~ 71
+ 495   1              0x6C, 0x34, 0x35, 0x26, 0x27, 0x19, 0x0C, 0x61, // 72 ~ 79
+ 496   1              0x6D, 0x73, 0x28, 0x74, 0x1A, 0x0D, 0x62, 0x6E, // 80 ~ 87
+ 497   1              0x3A, 0x36, 0x1C, 0x1B, 0x75, 0x2B, 0x63, 0x76, // 88 ~ 95
+ 498   1              0x55, 0x56, 0x77, 0x78, 0x79, 0x7A, 0x0E, 0x7B, // 96 ~ 103
+ 499   1              0x7C, 0x4F, 0x7D, 0x4B, 0x47, 0x7E, 0x7F, 0x6F, // 104~ 111
+ 500   1              0x52, 0x53, 0x50, 0x4C, 0x4D, 0x48, 0x01, 0x45, // 112~ 119 0x70~0x77
+ 501   1              0x57, 0x4E, 0x51, 0x4A, 0x37, 0x49, 0x46, 0x54  // 120~ 127     0x78~0x7F
+ 502   1          };
+ 503   1      
+ 504   1          BYTE check_break_bit = FALSE;
+ 505   1      
+ 506   1          if (data_word == 0xF0)
+ 507   1          {   /* Signify that break code prefix was encountered. */
+ 508   2                      data_word = 0xFF;
+ 509   2          }
+ 510   1          else if (data_word == 0x00)
+ 511   1          {
+ 512   2              data_word = 0x00;               /* Key detection error/overrun. */
+ 513   2          }
+ 514   1          else if ((data_word & 0x80) == 0)
+ 515   1          {   /* Translate codes 01 thru 7F. */
+ 516   2              /* The variable "data" has scan code (set 2) to translate.
+ 517   2                 Set "data" to the translated (to set 1) scan code. */
+ 518   2              data_word = scan2_table[data_word];
+ 519   2              check_break_bit = TRUE;
+ 520   2          }
+ 521   1          else if (data_word == 0x83)         /* ID code for 101/102 keys. */
+ 522   1          {
+ 523   2              data_word = 0x41;               /* Translate ID code. */
+ 524   2              check_break_bit = TRUE;
+ 525   2          }
+ 526   1          else if (data_word == 0x84)     /* ID code for 84 keys. */
+ 527   1          {
+ 528   2              data_word = 0x54;               /* Translate ID code. */
+ 529   2              check_break_bit = TRUE;
+ 530   2          }
+ 531   1      
+ 532   1          if (check_break_bit && break_prefix_flag)
+ 533   1          {   /* Last code received by this routine was the break prefix.  This must
+ 534   2                 be a break code.  Set high bit to indicate that this is a break code. */
+ 535   2              data_word |= 0x80;
+ 536   2          }
+ 537   1      
+ 538   1          return(data_word);
+ 539   1      }
+ 540          
+ 541          //----------------------------------------------------------------------------
+ 542          // Kernel Init super IO function
+ 543          //----------------------------------------------------------------------------
+ 544          const BYTE code Core_initsio_table[]=
+ 545          {
+ 546                                          // Configure and Enable Logical Device 06h(KBD)
+ 547                  0x07 ,0x06,     // Select Logical Device 06h(KBD)
+ 548                  0x70 ,0x01,     // Set IRQ=01h for Logical Device 06h(KBD)
+ 549                  0x30 ,0x01,     // Enable Logical Device 06h(Mouse)
+ 550                                          // Configure and Enable Logical Device 05h(Mouse)
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 10  
+
+ 551                  0x07 ,0x05,     // Select Logical Device 05h(Mouse)
+ 552                  0x70 ,0x0C,     // Set IRQ=0Ch for Logical Device 05h(Mouse)
+ 553                  0x30 ,0x01,     // Enable Logical Device 05h(Mouse)
+ 554                                          // Configure and Enable Logical Device 11h(PM1)
+ 555                  0x07 ,0x11,     // Select Logical Device 11h(PM1)
+ 556                  0x70 ,0x00,     // Clear IRQ=0 for  Logical Device 11h(PM1)
+ 557                  0x30 ,0x01,     // Enable Logical Device 11h(PM1)
+ 558                                          // Configure and Enable Logical Device 0Fh(Shared Memory)
+ 559                  0x07 ,0x0F,     // Logical Device 0Fh(Shared Memory)
+ 560                  0x30 ,0x01,     // Enable Logical Device 0Fh(Shared Memory)
+ 561          };
+ 562          
+ 563          void Core_InitSio(void)
+ 564          {
+ 565   1          BYTE code * data_pntr;
+ 566   1          BYTE cnt;
+ 567   1      
+ 568   1              SET_MASK(LSIOHA,LKCFG);
+ 569   1              SET_MASK(IBMAE,CFGAE);
+ 570   1              SET_MASK(IBCTL,CSAE);
+ 571   1      
+ 572   1          cnt=0;
+ 573   1          data_pntr=Core_initsio_table;
+ 574   1          while(cnt < (sizeof(Core_initsio_table)/2) )
+ 575   1          {
+ 576   2              IHIOA=0;              // Set indirect Host I/O Address
+ 577   2              IHD=*data_pntr;
+ 578   2              while( IS_MASK_SET(IBCTL,CWIB));
+ 579   2              data_pntr ++;
+ 580   2      
+ 581   2              IHIOA=1;              // Set indirect Host I/O Address
+ 582   2              IHD=*data_pntr;
+ 583   2              while( IS_MASK_SET(IBCTL,CWIB));
+ 584   2              data_pntr ++;
+ 585   2              cnt ++;
+ 586   2          }
+ 587   1      
+ 588   1              CLEAR_MASK(LSIOHA,LKCFG);
+ 589   1              CLEAR_MASK(IBMAE,CFGAE);
+ 590   1              CLEAR_MASK(IBCTL,CSAE);
+ 591   1      }
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 11  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0048 (BEGIN)
+0000         L?0073:
+0000 F0                MOVX    @DPTR,A
+0001 900000      E     MOV     DPTR,#KBHICR
+0004 E0                MOVX    A,@DPTR
+0005 54FC              ANL     A,#0FCH
+0007 F0                MOVX    @DPTR,A
+0008 900000      E     MOV     DPTR,#KBIRQR
+000B E0                MOVX    A,@DPTR
+000C 54FE              ANL     A,#0FEH
+000E F0                MOVX    @DPTR,A
+000F 22                RET     
+0010         L?0074:
+0010 CD                XCH     A,R5
+0011 EF                MOV     A,R7
+0012 CD                XCH     A,R5
+0013 900000      E     MOV     DPTR,#KBHISR
+0016 E0                MOVX    A,@DPTR
+0017 540F              ANL     A,#0FH
+0019 F0                MOVX    @DPTR,A
+001A E0                MOVX    A,@DPTR
+001B 22                RET     
+001C         L?0075:
+001C 758DB2            MOV     TH1,#0B2H
+001F 758B19            MOV     TL1,#019H
+0022 C28F              CLR     TF1
+0024 D28E              SETB    TR1
+0026 22                RET     
+0027         L?0076:
+0027 E0                MOVX    A,@DPTR
+0028 2400        E     ADD     A,#LOW KBDataPending
+002A F582              MOV     DPL,A
+002C E4                CLR     A
+002D 3400        E     ADDC    A,#HIGH KBDataPending
+002F F583              MOV     DPH,A
+0031 22                RET     
+             ; FUNCTION Com0048 (END)
+
+             ; FUNCTION _Data_To_Port (BEGIN)
+                                           ; SOURCE LINE # 25
+;---- Variable 'data_byte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+0000 900000      E     MOV     DPTR,#KBHIKDOR
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 28
+0005 22                RET     
+             ; FUNCTION _Data_To_Port (END)
+
+             ; FUNCTION _Data_To_Port_nWait (BEGIN)
+                                           ; SOURCE LINE # 30
+;---- Variable 'data_byte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 31
+                                           ; SOURCE LINE # 32
+0000 120000      R     LCALL   _Data_To_Port
+                                           ; SOURCE LINE # 34
+0003 C28E              CLR     TR1
+                                           ; SOURCE LINE # 35
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 12  
+
+0005 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 36
+0007 00                NOP     
+                                           ; SOURCE LINE # 37
+0008 00                NOP     
+                                           ; SOURCE LINE # 38
+0009 00                NOP     
+                                           ; SOURCE LINE # 39
+000A 00                NOP     
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 41
+                                           ; SOURCE LINE # 42
+                                           ; SOURCE LINE # 43
+000B 120000      R     LCALL   L?0075
+000E         ?C0002:
+                                           ; SOURCE LINE # 45
+000E 208F0E            JB      TF1,?C0003
+                                           ; SOURCE LINE # 46
+                                           ; SOURCE LINE # 47
+0011 900000      E     MOV     DPTR,#KBHISR
+0014 E0                MOVX    A,@DPTR
+0015 30E007            JNB     ACC.0,?C0003
+                                           ; SOURCE LINE # 48
+                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 50
+0018         ?C0004:
+                                           ; SOURCE LINE # 51
+0018 900000      E     MOV     DPTR,#KBHISR
+001B E0                MOVX    A,@DPTR
+001C 30E1EF            JNB     ACC.1,?C0002
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+001F         ?C0003:
+                                           ; SOURCE LINE # 57
+001F C28E              CLR     TR1
+                                           ; SOURCE LINE # 58
+0021 C28F              CLR     TF1
+                                           ; SOURCE LINE # 59
+0023 D2AB              SETB    ET1
+                                           ; SOURCE LINE # 60
+0025 22                RET     
+             ; FUNCTION _Data_To_Port_nWait (END)
+
+             ; FUNCTION _Data_To_Host (BEGIN)
+                                           ; SOURCE LINE # 62
+;---- Variable 'data_byte' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 66
+                                           ; SOURCE LINE # 67
+0000 120000      R     LCALL   L?0074
+0003 4410              ORL     A,#010H
+                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 71
+0005 120000      R     LCALL   L?0073
+                                           ; SOURCE LINE # 72
+0008 00                NOP     
+                                           ; SOURCE LINE # 73
+0009 00                NOP     
+                                           ; SOURCE LINE # 75
+000A 300007      E     JNB     Ccb42_INTR_KEY,?C0007
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 13  
+
+                                           ; SOURCE LINE # 76
+                                           ; SOURCE LINE # 77
+000D 900000      E     MOV     DPTR,#KBHICR
+0010 E0                MOVX    A,@DPTR
+0011 4401              ORL     A,#01H
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 78
+0014         ?C0007:
+                                           ; SOURCE LINE # 80
+0014 900000      E     MOV     DPTR,#KBHIKDOR
+0017 ED                MOV     A,R5
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 81
+0019 22                RET     
+             ; FUNCTION _Data_To_Host (END)
+
+             ; FUNCTION _Data_To_Host_nWait (BEGIN)
+                                           ; SOURCE LINE # 83
+;---- Variable 'data_byte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+0000 120000      R     LCALL   _Data_To_Host
+                                           ; SOURCE LINE # 87
+0003 C28E              CLR     TR1
+                                           ; SOURCE LINE # 88
+0005 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 89
+0007 00                NOP     
+                                           ; SOURCE LINE # 90
+0008 00                NOP     
+                                           ; SOURCE LINE # 91
+0009 00                NOP     
+                                           ; SOURCE LINE # 92
+000A 00                NOP     
+                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+000B 120000      R     LCALL   L?0075
+000E         ?C0009:
+                                           ; SOURCE LINE # 98
+000E 208F0E            JB      TF1,?C0010
+                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 100
+0011 900000      E     MOV     DPTR,#KBHISR
+0014 E0                MOVX    A,@DPTR
+0015 30E007            JNB     ACC.0,?C0010
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 103
+0018         ?C0011:
+                                           ; SOURCE LINE # 104
+0018 900000      E     MOV     DPTR,#KBHISR
+001B E0                MOVX    A,@DPTR
+001C 30E1EF            JNB     ACC.1,?C0009
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 108
+001F         ?C0010:
+                                           ; SOURCE LINE # 110
+001F C28E              CLR     TR1
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 14  
+
+                                           ; SOURCE LINE # 111
+0021 C28F              CLR     TF1
+                                           ; SOURCE LINE # 112
+0023 D2AB              SETB    ET1
+                                           ; SOURCE LINE # 113
+0025 22                RET     
+             ; FUNCTION _Data_To_Host_nWait (END)
+
+             ; FUNCTION _KBC_DataPending (BEGIN)
+                                           ; SOURCE LINE # 118
+;---- Variable 'nPending' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 120
+0000 900000      E     MOV     DPTR,#KBPendingRXCount
+0003 E0                MOVX    A,@DPTR
+0004 C3                CLR     C
+0005 9406              SUBB    A,#06H
+0007 5011              JNC     ?C0015
+0009         ?C0014:
+                                           ; SOURCE LINE # 122
+0009 900000      E     MOV     DPTR,#KBPendingRXCount
+000C 120000      R     LCALL   L?0076
+000F EF                MOV     A,R7
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+0011 900000      E     MOV     DPTR,#KBPendingRXCount
+0014 E0                MOVX    A,@DPTR
+0015 04                INC     A
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+0017 120000      R     LCALL   SetServiceSendFlag
+                                           ; SOURCE LINE # 125
+001A         ?C0015:
+001A 22                RET     
+             ; FUNCTION _KBC_DataPending (END)
+
+             ; FUNCTION GetKB_PendingData (BEGIN)
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 133
+0000 900000      E     MOV     DPTR,#KBPendingTXCount
+0003 120000      R     LCALL   L?0076
+0006 E0                MOVX    A,@DPTR
+0007 FF                MOV     R7,A
+;---- Variable 'buffer_data' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 134
+0008 900000      E     MOV     DPTR,#KBPendingTXCount
+000B E0                MOVX    A,@DPTR
+000C 04                INC     A
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 135
+000E 900000      E     MOV     DPTR,#KBPendingRXCount
+0011 E0                MOVX    A,@DPTR
+0012 FE                MOV     R6,A
+0013 900000      E     MOV     DPTR,#KBPendingTXCount
+0016 E0                MOVX    A,@DPTR
+0017 C3                CLR     C
+0018 9E                SUBB    A,R6
+0019 401B              JC      ?C0016
+                                           ; SOURCE LINE # 136
+                                           ; SOURCE LINE # 137
+001B E4                CLR     A
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 15  
+
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 138
+001D 900000      E     MOV     DPTR,#KBPendingRXCount
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 139
+0021 AE00        E     MOV     R6,scan
+0023 EE                MOV     A,R6
+0024 C4                SWAP    A
+0025 540F              ANL     A,#0FH
+0027 FE                MOV     R6,A
+0028 E500        E     MOV     A,scan
+002A 540F              ANL     A,#0FH
+002C 6E                XRL     A,R6
+002D 7007              JNZ     ?C0016
+                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 141
+002F AE00        E     MOV     R6,Timer_B
+0031 EE                MOV     A,R6
+0032 54EF              ANL     A,#0EFH
+0034 F500        E     MOV     Timer_B,A
+                                           ; SOURCE LINE # 142
+                                           ; SOURCE LINE # 143
+0036         ?C0016:
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 145
+0036         ?C0018:
+0036 22                RET     
+             ; FUNCTION GetKB_PendingData (END)
+
+             ; FUNCTION _KBC_DataToHost (BEGIN)
+                                           ; SOURCE LINE # 150
+0000 900000      R     MOV     DPTR,#nKBData
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 151
+                                           ; SOURCE LINE # 152
+0005 900000      E     MOV     DPTR,#KBHISR
+0008 E0                MOVX    A,@DPTR
+0009 20E004            JB      ACC.0,?C0020
+000C E0                MOVX    A,@DPTR
+000D 30E108            JNB     ACC.1,?C0019
+0010         ?C0020:
+                                           ; SOURCE LINE # 154
+                                           ; SOURCE LINE # 155
+0010 900000      R     MOV     DPTR,#nKBData
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+0015 020000      R     LJMP    _KBC_DataPending
+                                           ; SOURCE LINE # 156
+0018         ?C0019:
+                                           ; SOURCE LINE # 158
+                                           ; SOURCE LINE # 159
+0018 900000      R     MOV     DPTR,#nKBData
+001B E0                MOVX    A,@DPTR
+001C FF                MOV     R7,A
+001D 120000      R     LCALL   _Data_To_Host
+                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 161
+0020         ?C0022:
+0020 22                RET     
+             ; FUNCTION _KBC_DataToHost (END)
+
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 16  
+
+             ; FUNCTION _Aux_Data_To_Host (BEGIN)
+                                           ; SOURCE LINE # 172
+;---- Variable 'data_byte' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 173
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+0000 120000      R     LCALL   L?0074
+0003 4420              ORL     A,#020H
+                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 183
+0005 120000      R     LCALL   L?0073
+                                           ; SOURCE LINE # 184
+0008 300007      E     JNB     Ccb42_INTR_AUX,?C0023
+                                           ; SOURCE LINE # 185
+                                           ; SOURCE LINE # 186
+000B 900000      E     MOV     DPTR,#KBHICR
+000E E0                MOVX    A,@DPTR
+000F 4402              ORL     A,#02H
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 187
+0012         ?C0023:
+                                           ; SOURCE LINE # 189
+0012 900000      E     MOV     DPTR,#KBHIMDOR
+0015 ED                MOV     A,R5
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 190
+0017 22                RET     
+             ; FUNCTION _Aux_Data_To_Host (END)
+
+             ; FUNCTION SetServiceSendFlag (BEGIN)
+                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 197
+0000 120000      E     LCALL   Load_Timer_B
+                                           ; SOURCE LINE # 198
+0003 AF00        E     MOV     R7,Timer_B
+0005 EF                MOV     A,R7
+0006 4410              ORL     A,#010H
+0008 F500        E     MOV     Timer_B,A
+                                           ; SOURCE LINE # 199
+000A 22                RET     
+             ; FUNCTION SetServiceSendFlag (END)
+
+             ; FUNCTION service_send (BEGIN)
+                                           ; SOURCE LINE # 218
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 222
+0000 E4                CLR     A
+0001 900000      R     MOV     DPTR,#send
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 226
+0005 120000      R     LCALL   SetServiceSendFlag
+                                           ; SOURCE LINE # 237
+0008 900000      E     MOV     DPTR,#PM2PendingRXCount
+000B E0                MOVX    A,@DPTR
+000C D3                SETB    C
+000D 9400              SUBB    A,#00H
+000F 400D              JC      ?C0026
+                                           ; SOURCE LINE # 238
+0011 900000      E     MOV     DPTR,#PM2STS
+0014 E0                MOVX    A,@DPTR
+0015 20E056            JB      ACC.0,?C0028
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 17  
+
+0018         ?C0027:
+                                           ; SOURCE LINE # 239
+0018 120000      E     LCALL   GetPM2_PendingData
+001B 020000      E     LJMP    _Data_To_PM2
+                                           ; SOURCE LINE # 241
+001E         ?C0026:
+                                           ; SOURCE LINE # 243
+001E 900000      E     MOV     DPTR,#KBHISR
+0021 E0                MOVX    A,@DPTR
+0022 20E049            JB      ACC.0,?C0028
+0025 E0                MOVX    A,@DPTR
+0026 20E145            JB      ACC.1,?C0028
+                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 247
+0029         ?C0029:
+                                           ; SOURCE LINE # 249
+0029 900000      E     MOV     DPTR,#KBPendingRXCount
+002C E0                MOVX    A,@DPTR
+002D D3                SETB    C
+002E 9400              SUBB    A,#00H
+0030 4006              JC      ?C0031
+                                           ; SOURCE LINE # 250
+                                           ; SOURCE LINE # 251
+0032 120000      R     LCALL   GetKB_PendingData
+0035 020000      R     LJMP    _Data_To_Host
+                                           ; SOURCE LINE # 253
+0038         ?C0031:
+                                           ; SOURCE LINE # 255
+0038 200033      E     JB      Ccb42_DISAB_KEY,?C0028
+003B 900000      E     MOV     DPTR,#KBHISR
+003E E0                MOVX    A,@DPTR
+003F 20E12C            JB      ACC.1,?C0028
+                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 258
+0042         ?C0032:
+                                           ; SOURCE LINE # 260
+0042 120000      E     LCALL   Get_Buffer
+;---- Variable 'data_word' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 261
+0045 EF                MOV     A,R7
+0046 B4FF09            CJNE    A,#0FFH,?C0034
+                                           ; SOURCE LINE # 262
+                                           ; SOURCE LINE # 263
+0049 AE00        E     MOV     R6,Timer_B
+004B EE                MOV     A,R6
+004C 54EF              ANL     A,#0EFH
+004E F500        E     MOV     Timer_B,A
+                                           ; SOURCE LINE # 264
+0050 8006              SJMP    ?C0035
+0052         ?C0034:
+                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 267
+0052 900000      R     MOV     DPTR,#send
+0055 7401              MOV     A,#01H
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 268
+0058         ?C0035:
+                                           ; SOURCE LINE # 270
+0058 900000      R     MOV     DPTR,#send
+005B E0                MOVX    A,@DPTR
+005C 6010              JZ      ?C0028
+                                           ; SOURCE LINE # 271
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 18  
+
+                                           ; SOURCE LINE # 272
+005E A200        E     MOV     C,Gen_Info_BREAK_SCAN
+0060 E4                CLR     A
+0061 33                RLC     A
+0062 FE                MOV     R6,A
+;---- Variable 'temp_flag' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 273
+0063 C200        E     CLR     Gen_Info_BREAK_SCAN
+                                           ; SOURCE LINE # 275
+0065 FD                MOV     R5,A
+0066 120000      R     LCALL   _send_to_pc
+0069 EF                MOV     A,R7
+006A 6002              JZ      ?C0028
+                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 277
+006C D200        E     SETB    Gen_Info_BREAK_SCAN
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+                                           ; SOURCE LINE # 280
+006E         ?C0028:
+006E 22                RET     
+             ; FUNCTION service_send (END)
+
+             ; FUNCTION get_response (BEGIN)
+                                           ; SOURCE LINE # 315
+                                           ; SOURCE LINE # 316
+                                           ; SOURCE LINE # 318
+0000 E4                CLR     A
+0001 900000      R     MOV     DPTR,#code_word
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+0005 E500        E     MOV     A,Kbd_Response
+0007 543F              ANL     A,#03FH
+0009 24FE              ADD     A,#0FEH
+000B 7011              JNZ     ?C0038
+                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 322
+000D         ?C0039:
+                                           ; SOURCE LINE # 323
+000D 120000      E     LCALL   Get_Kbd_Type
+0010 EF                MOV     A,R7
+0011 900000      R     MOV     DPTR,#code_word
+0014 7005              JNZ     ?C0040
+                                           ; SOURCE LINE # 324
+                                           ; SOURCE LINE # 325
+0016 7409              MOV     A,#09H
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 326
+0019 8003              SJMP    ?C0038
+001B         ?C0040:
+                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 329
+001B 740F              MOV     A,#0FH
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 330
+                                           ; SOURCE LINE # 331
+                                           ; SOURCE LINE # 332
+001E         ?C0038:
+                                           ; SOURCE LINE # 334
+001E E500        E     MOV     A,Kbd_Response
+0020 543F              ANL     A,#03FH
+0022 900000      R     MOV     DPTR,#response_table
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 19  
+
+0025 93                MOVC    A,@A+DPTR
+0026 FF                MOV     R7,A
+;---- Variable 'result' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 335
+0027 E500        E     MOV     A,Kbd_Response
+0029 54C0              ANL     A,#0C0H
+002B FE                MOV     R6,A
+002C 900000      R     MOV     DPTR,#code_word
+002F E0                MOVX    A,@DPTR
+0030 4E                ORL     A,R6
+0031 F500        E     MOV     Kbd_Response,A
+                                           ; SOURCE LINE # 337
+                                           ; SOURCE LINE # 338
+0033         ?C0042:
+0033 22                RET     
+             ; FUNCTION get_response (END)
+
+             ; FUNCTION _send_to_pc (BEGIN)
+                                           ; SOURCE LINE # 432
+;---- Variable 'break_prefix_flag' assigned to Register 'R5' ----
+;---- Variable 'data_word' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 433
+                                           ; SOURCE LINE # 434
+0000 120000      R     LCALL   _common_send_to_pc
+                                           ; SOURCE LINE # 435
+0003         ?C0043:
+0003 22                RET     
+             ; FUNCTION _send_to_pc (END)
+
+             ; FUNCTION _common_send_to_pc (BEGIN)
+                                           ; SOURCE LINE # 437
+0000 900000      R     MOV     DPTR,#break_prefix_flag
+0003 ED                MOV     A,R5
+0004 F0                MOVX    @DPTR,A
+;---- Variable 'data_word' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 439
+0005 E4                CLR     A
+0006 A3                INC     DPTR
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 441
+0008 200009      E     JB      Ccb42_XLATE_PC,?C0044
+                                           ; SOURCE LINE # 442
+                                           ; SOURCE LINE # 443
+000B 04                INC     A
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 444
+000D E4                CLR     A
+000E 900000      R     MOV     DPTR,#break_prefix_flag
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 445
+0012 8026              SJMP    ?C0045
+0014         ?C0044:
+                                           ; SOURCE LINE # 447
+                                           ; SOURCE LINE # 448
+0014 900000      R     MOV     DPTR,#break_prefix_flag
+0017 E0                MOVX    A,@DPTR
+0018 FD                MOV     R5,A
+0019 120000      R     LCALL   _translate_to_pc
+                                           ; SOURCE LINE # 449
+001C EF                MOV     A,R7
+001D B4FF08            CJNE    A,#0FFH,?C0046
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 20  
+
+                                           ; SOURCE LINE # 450
+                                           ; SOURCE LINE # 451
+0020 900000      R     MOV     DPTR,#break_prefix_flag
+0023 7401              MOV     A,#01H
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 452
+0026 8012              SJMP    ?C0045
+0028         ?C0046:
+                                           ; SOURCE LINE # 453
+0028 EF                MOV     A,R7
+0029 7007              JNZ     ?C0048
+                                           ; SOURCE LINE # 454
+                                           ; SOURCE LINE # 455
+002B 900000      R     MOV     DPTR,#break_prefix_flag
+002E 04                INC     A
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 456
+0030 8008              SJMP    ?C0045
+0032         ?C0048:
+                                           ; SOURCE LINE # 458
+                                           ; SOURCE LINE # 459
+0032 E4                CLR     A
+0033 900000      R     MOV     DPTR,#break_prefix_flag
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 460
+0037 A3                INC     DPTR
+0038 04                INC     A
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 461
+                                           ; SOURCE LINE # 462
+003A         ?C0045:
+                                           ; SOURCE LINE # 464
+003A 900000      R     MOV     DPTR,#send_it
+003D E0                MOVX    A,@DPTR
+003E 6003              JZ      ?C0050
+0040 120000      R     LCALL   _Data_To_Host
+0043         ?C0050:
+                                           ; SOURCE LINE # 466
+0043 900000      R     MOV     DPTR,#break_prefix_flag
+0046 E0                MOVX    A,@DPTR
+0047 FF                MOV     R7,A
+                                           ; SOURCE LINE # 467
+0048         ?C0051:
+0048 22                RET     
+             ; FUNCTION _common_send_to_pc (END)
+
+             ; FUNCTION _translate_to_pc (BEGIN)
+                                           ; SOURCE LINE # 480
+;---- Variable 'data_word' assigned to Register 'R7' ----
+;---- Variable 'break_prefix_flag' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 481
+                                           ; SOURCE LINE # 504
+;---- Variable 'check_break_bit' assigned to Register 'R6' ----
+0000 E4                CLR     A
+0001 FE                MOV     R6,A
+                                           ; SOURCE LINE # 506
+0002 EF                MOV     A,R7
+0003 B4F004            CJNE    A,#0F0H,?C0052
+                                           ; SOURCE LINE # 507
+                                           ; SOURCE LINE # 508
+0006 7FFF              MOV     R7,#0FFH
+                                           ; SOURCE LINE # 509
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 21  
+
+0008 8025              SJMP    ?C0053
+000A         ?C0052:
+                                           ; SOURCE LINE # 510
+000A EF                MOV     A,R7
+000B 7003              JNZ     ?C0054
+                                           ; SOURCE LINE # 511
+                                           ; SOURCE LINE # 512
+000D FF                MOV     R7,A
+                                           ; SOURCE LINE # 513
+000E 801F              SJMP    ?C0053
+0010         ?C0054:
+                                           ; SOURCE LINE # 514
+0010 EF                MOV     A,R7
+0011 20E709            JB      ACC.7,?C0056
+                                           ; SOURCE LINE # 515
+                                           ; SOURCE LINE # 518
+0014 900000      R     MOV     DPTR,#scan2_table
+0017 93                MOVC    A,@A+DPTR
+0018 FF                MOV     R7,A
+                                           ; SOURCE LINE # 519
+0019 7E01              MOV     R6,#01H
+                                           ; SOURCE LINE # 520
+001B 8012              SJMP    ?C0053
+001D         ?C0056:
+                                           ; SOURCE LINE # 521
+001D EF                MOV     A,R7
+001E B48306            CJNE    A,#083H,?C0058
+                                           ; SOURCE LINE # 522
+                                           ; SOURCE LINE # 523
+0021 7F41              MOV     R7,#041H
+                                           ; SOURCE LINE # 524
+0023 7E01              MOV     R6,#01H
+                                           ; SOURCE LINE # 525
+0025 8008              SJMP    ?C0053
+0027         ?C0058:
+                                           ; SOURCE LINE # 526
+0027 EF                MOV     A,R7
+0028 B48404            CJNE    A,#084H,?C0053
+                                           ; SOURCE LINE # 527
+                                           ; SOURCE LINE # 528
+002B 7F54              MOV     R7,#054H
+                                           ; SOURCE LINE # 529
+002D 7E01              MOV     R6,#01H
+                                           ; SOURCE LINE # 530
+002F         ?C0053:
+                                           ; SOURCE LINE # 532
+002F EE                MOV     A,R6
+0030 6007              JZ      ?C0061
+0032 ED                MOV     A,R5
+0033 6004              JZ      ?C0061
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 535
+0035 EF                MOV     A,R7
+0036 4480              ORL     A,#080H
+0038 FF                MOV     R7,A
+                                           ; SOURCE LINE # 536
+0039         ?C0061:
+                                           ; SOURCE LINE # 538
+                                           ; SOURCE LINE # 539
+0039         ?C0062:
+0039 22                RET     
+             ; FUNCTION _translate_to_pc (END)
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 22  
+
+
+             ; FUNCTION Core_InitSio (BEGIN)
+                                           ; SOURCE LINE # 563
+                                           ; SOURCE LINE # 564
+                                           ; SOURCE LINE # 568
+0000 900000      E     MOV     DPTR,#LSIOHA
+0003 E0                MOVX    A,@DPTR
+0004 4401              ORL     A,#01H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 569
+0007 900000      E     MOV     DPTR,#IBMAE
+000A E0                MOVX    A,@DPTR
+000B 4401              ORL     A,#01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 570
+000E 900000      E     MOV     DPTR,#IBCTL
+0011 E0                MOVX    A,@DPTR
+0012 4401              ORL     A,#01H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 572
+;---- Variable 'cnt' assigned to Register 'R7' ----
+0015 E4                CLR     A
+0016 FF                MOV     R7,A
+                                           ; SOURCE LINE # 573
+0017 7C00        R     MOV     R4,#HIGH Core_initsio_table
+0019 7D00        R     MOV     R5,#LOW Core_initsio_table
+;---- Variable 'data_pntr' assigned to Register 'R4/R5' ----
+001B         ?C0063:
+                                           ; SOURCE LINE # 574
+                                           ; SOURCE LINE # 575
+                                           ; SOURCE LINE # 576
+001B E4                CLR     A
+001C 900000      E     MOV     DPTR,#IHIOA
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 577
+0020 8D82              MOV     DPL,R5
+0022 8C83              MOV     DPH,R4
+0024 93                MOVC    A,@A+DPTR
+0025 900000      E     MOV     DPTR,#IHD
+0028 F0                MOVX    @DPTR,A
+0029         ?C0065:
+                                           ; SOURCE LINE # 578
+0029 900000      E     MOV     DPTR,#IBCTL
+002C E0                MOVX    A,@DPTR
+002D 20E2F9            JB      ACC.2,?C0065
+0030         ?C0066:
+                                           ; SOURCE LINE # 579
+0030 0D                INC     R5
+0031 BD0001            CJNE    R5,#00H,?C0070
+0034 0C                INC     R4
+0035         ?C0070:
+                                           ; SOURCE LINE # 581
+0035 900000      E     MOV     DPTR,#IHIOA
+0038 7401              MOV     A,#01H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 582
+003B 8D82              MOV     DPL,R5
+003D 8C83              MOV     DPH,R4
+003F E4                CLR     A
+0040 93                MOVC    A,@A+DPTR
+0041 900000      E     MOV     DPTR,#IHD
+0044 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   CORE_HOSTIF                                                           09/14/2018 11:07:49 PAGE 23  
+
+0045         ?C0067:
+                                           ; SOURCE LINE # 583
+0045 900000      E     MOV     DPTR,#IBCTL
+0048 E0                MOVX    A,@DPTR
+0049 20E2F9            JB      ACC.2,?C0067
+004C         ?C0068:
+                                           ; SOURCE LINE # 584
+004C 0D                INC     R5
+004D BD0001            CJNE    R5,#00H,?C0071
+0050 0C                INC     R4
+0051         ?C0071:
+                                           ; SOURCE LINE # 585
+0051 0F                INC     R7
+                                           ; SOURCE LINE # 586
+0052 EF                MOV     A,R7
+0053 B40BC5            CJNE    A,#0BH,?C0063
+0056         ?C0064:
+                                           ; SOURCE LINE # 588
+0056 900000      E     MOV     DPTR,#LSIOHA
+0059 E0                MOVX    A,@DPTR
+005A 54FE              ANL     A,#0FEH
+005C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 589
+005D 900000      E     MOV     DPTR,#IBMAE
+0060 E0                MOVX    A,@DPTR
+0061 54FE              ANL     A,#0FEH
+0063 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 590
+0064 900000      E     MOV     DPTR,#IBCTL
+0067 E0                MOVX    A,@DPTR
+0068 54FE              ANL     A,#0FEH
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 591
+006B 22                RET     
+             ; FUNCTION Core_InitSio (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    714    ----
+   CONSTANT SIZE    =    166    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

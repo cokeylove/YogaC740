@@ -1,0 +1,3928 @@
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE CORE_PORT6064
+OBJECT MODULE PLACED IN Code\CORE\CORE_PORT6064.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\CORE\CORE_PORT6064.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\C
+                    -ORE\INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: CORE_PORT6064.C - Standard 8042 Keyboard Controller Commands
+   3           *
+   4           * Copyright (c) 1983-2007, Insyde Software Corporation. All Rights Reserved.
+   5           *
+   6           * You may not reproduce, distribute, publish, display, perform, modify, adapt,
+   7           * transmit, broadcast, present, recite, release, license or otherwise exploit
+   8           * any part of this publication in any form, by any means, without the prior
+   9           * written permission of Insyde Software Corporation.
+  10           *---------------------------------------------------------------------------*/
+  11          
+  12          #include <CORE_INCLUDE.H>
+  13          #include <OEM_INCLUDE.H>
+  14          
+  15          //-----------------------------------------------------------------------
+  16          // Process Command/Data received from System via the KBC interface
+  17          //-----------------------------------------------------------------------
+  18          void service_pci1(void)
+  19          {
+  20   1          if ( IS_MASK_CLEAR(KBHISR,IBF) )
+  21   1          {
+  22   2                      return;
+  23   2          }
+  24   1      
+  25   1          if ( KBHISR & C_D )                         // command
+  26   1          {
+  27   2              KBHIStep = 0;                           // command start
+  28   2              KbdNeedResponseFlag = 0;
+  29   2                      KBHICmd  = KBHIDIR;
+  30   2      
+  31   2              Core_64Port(KBHICmd);
+  32   2              Hook_64Port(KBHICmd);
+  33   2              
+  34   2               if ( KbdNeedResponseFlag )
+  35   2               {
+  36   3                  KbdNeedResponseFlag = 0;
+  37   3                  KBC_DataToHost(KBHIReponse);
+  38   3              }
+  39   2          }
+  40   1          else                                                // data
+  41   1          {
+  42   2              KBHIData2 = KBHIData1;
+  43   2              KBHIData1 = KBHIData;
+  44   2              KBHIData  = KBHIDIR;
+  45   2         
+  46   2      
+  47   2               if(FastA20)
+  48   2               {
+  49   3                  if((KBHIData&0x02)!= 0x00)
+  50   3                  {
+  51   4                      Hook_A20ON();
+  52   4                  }
+  53   3                  else
+  54   3                  {
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 2   
+
+  55   4                  Hook_A20OFF();
+  56   4                  }
+  57   3                  FastA20=0;
+  58   3                  KBHIStep = 0;
+  59   3               }
+  60   2              else
+  61   2              {
+  62   3                  if (KBHIStep!=0x00 )        // if need data
+  63   3                   {
+  64   4                      Core_60Port(KBHICmd);
+  65   4                      Hook_60Port(KBHICmd);
+  66   4                                      KBHIStep --;
+  67   4                              if (KbdNeedResponseFlag)
+  68   4                                      {
+  69   5                                      KbdNeedResponseFlag = 0;
+  70   5                                      KBC_DataToHost(KBHIReponse);
+  71   5                              }
+  72   4                  }
+  73   3                      else
+  74   3                  {
+  75   4                      Cmd_AE();                               // Enable auxiliary keyboard.
+  76   4      
+  77   4                      #if PS2_KBCMD
+                                  #ifdef UART_Debug
+                                      printf("\nKB CMD : 0X%bX\n",KBHIData);
+                                  #endif
+                              #endif
+  82   4      
+  83   4                      KeyboardCmd(KBHIData);          // Keyboard command
+  84   4                  }
+  85   3                }
+  86   2          }
+  87   1      
+  88   1          EnableKBCIBFInt();          // enable interrupt again
+  89   1      }
+  90          
+  91          //-----------------------------------------------------------------------
+  92          // Handle 64 port command 2x.
+  93          //-----------------------------------------------------------------------
+  94          //-----------------------------------------------------------------------
+  95          // Handle command 20 - Read command byte
+  96          //-----------------------------------------------------------------------
+  97          void Cmd_20(void)
+  98          
+  99          {
+ 100   1              ResponseKBData(Ccb42);
+ 101   1      }
+ 102          
+ 103          //-----------------------------------------------------------------------
+ 104          // Handle 64 port command 3x.
+ 105          //-----------------------------------------------------------------------
+ 106          //-----------------------------------------------------------------------
+ 107          // Handle command 33 - Send Security Code On byte to host
+ 108          //-----------------------------------------------------------------------
+ 109          void Cmd_33(void)
+ 110          
+ 111          {
+ 112   1              ResponseKBData(Pass_On);
+ 113   1      }
+ 114          
+ 115          //-----------------------------------------------------------------------
+ 116          // Handle command 34 - Send Security Code Off byte to host
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 3   
+
+ 117          //-----------------------------------------------------------------------
+ 118          void Cmd_34(void)
+ 119          
+ 120          {
+ 121   1              ResponseKBData(Pass_Off);
+ 122   1      }
+ 123          
+ 124          //-----------------------------------------------------------------------
+ 125          // Handle command 36 - Send Reject make code 1 to host
+ 126          //-----------------------------------------------------------------------
+ 127          void Cmd_36(void)
+ 128          
+ 129          {
+ 130   1              ResponseKBData(Pass_Make1);
+ 131   1      }
+ 132          
+ 133          //-----------------------------------------------------------------------
+ 134          // Handle command 37 - Send Reject make code 2 to host
+ 135          //-----------------------------------------------------------------------
+ 136          void Cmd_37(void)
+ 137          
+ 138          {
+ 139   1              ResponseKBData(Pass_Make2);
+ 140   1      }
+ 141          
+ 142          //-----------------------------------------------------------------------
+ 143          // Handle 64 port command 6x.
+ 144          //-----------------------------------------------------------------------
+ 145          //-----------------------------------------------------------------------
+ 146          // Handle command 60 - Write command byte to KBC
+ 147          //-----------------------------------------------------------------------
+ 148          void Cmd_60(void)
+ 149          
+ 150          {
+ 151   1              SetHandleCmdData(1);
+ 152   1      }
+ 153          
+ 154          //-----------------------------------------------------------------------
+ 155          // Handle 64 port command 7x.
+ 156          //-----------------------------------------------------------------------
+ 157          //-----------------------------------------------------------------------
+ 158          // Handle command 73 - Write security Code On byte.
+ 159          //-----------------------------------------------------------------------
+ 160          void Cmd_73(void)
+ 161          
+ 162          {
+ 163   1              SetHandleCmdData(1);
+ 164   1      }
+ 165          
+ 166          //-----------------------------------------------------------------------
+ 167          // Handle command 74 - Write security Code Off byte.
+ 168          //-----------------------------------------------------------------------
+ 169          void Cmd_74(void)
+ 170          
+ 171          {
+ 172   1              SetHandleCmdData(1);
+ 173   1      }
+ 174          
+ 175          //-----------------------------------------------------------------------
+ 176          // Handle command 76 - Write Password Code Discard 1
+ 177          //-----------------------------------------------------------------------
+ 178          void Cmd_76(void)
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 4   
+
+ 179          
+ 180          {
+ 181   1              SetHandleCmdData(1);
+ 182   1      }
+ 183          
+ 184          //-----------------------------------------------------------------------
+ 185          // Handle command 77 - Write Password Code Discard 2
+ 186          //-----------------------------------------------------------------------
+ 187          void Cmd_77(void)
+ 188          
+ 189          {
+ 190   1              SetHandleCmdData(1);
+ 191   1      }
+ 192          
+ 193          //-----------------------------------------------------------------------
+ 194          // Handle 64 port command 9x.
+ 195          //-----------------------------------------------------------------------
+ 196          //-----------------------------------------------------------------------
+ 197          // Handle command 90 -
+ 198          //-----------------------------------------------------------------------
+ 199          void Cmd_90(void)
+ 200          
+ 201          {
+ 202   1              SetHandleCmdData(1);
+ 203   1      }
+ 204          
+ 205          //-----------------------------------------------------------------------
+ 206          // Handle command 91 -
+ 207          //-----------------------------------------------------------------------
+ 208          void Cmd_91(void)
+ 209          
+ 210          {
+ 211   1              SetHandleCmdData(1);
+ 212   1      }
+ 213          
+ 214          //-----------------------------------------------------------------------
+ 215          // Handle command 92 -
+ 216          //-----------------------------------------------------------------------
+ 217          void Cmd_92(void)
+ 218          
+ 219          {
+ 220   1              SetHandleCmdData(1);
+ 221   1      }
+ 222          
+ 223          //-----------------------------------------------------------------------
+ 224          // Handle command 93 -
+ 225          //-----------------------------------------------------------------------
+ 226          void Cmd_93(void)
+ 227          
+ 228          {
+ 229   1              SetHandleCmdData(1);
+ 230   1      }
+ 231          
+ 232          //-----------------------------------------------------------------------
+ 233          // Handle 64 port command Ax.
+ 234          //-----------------------------------------------------------------------
+ 235          //-----------------------------------------------------------------------
+ 236          // Handle command A4 - Test Password Installed
+ 237          // Return: data to send to HOST (FA or F1)
+ 238          //-----------------------------------------------------------------------
+ 239          void Cmd_A4(void)
+ 240          
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 5   
+
+ 241          {
+ 242   1          if (Flag.PASS_READY)
+ 243   1              {
+ 244   2              ResponseKBData(0xFA);   // Return FA if password is loaded
+ 245   2          }
+ 246   1          else
+ 247   1              {
+ 248   2              ResponseKBData(0xF1);   // Return F1 if password not loaded
+ 249   2          }
+ 250   1      }
+ 251          
+ 252          //-----------------------------------------------------------------------
+ 253          // Handle command A5 - Load Password
+ 254          //-----------------------------------------------------------------------
+ 255          void Cmd_A5(void)
+ 256          
+ 257          {
+ 258   1              Tmp_Load = 0x00;
+ 259   1              SetHandleCmdData(8);
+ 260   1      }
+ 261          
+ 262          //-----------------------------------------------------------------------
+ 263          // Handle command A6 - Enable Password
+ 264          //-----------------------------------------------------------------------
+ 265          void Cmd_A6(void)
+ 266          
+ 267          {
+ 268   1          if (Flag.PASS_READY)                        // At this point, a password is loaded.
+ 269   1          {                                                           // Enable inhibit switch
+ 270   2              Gen_Info_PASS_ENABLE = 1;       // Enable password
+ 271   2              Pass_Buff_Idx = 0;              // Clear password buffer index
+ 272   2              Flag.SCAN_INH = 0;              // Clear internal keyboard inhibit
+ 273   2                      ResponseKBData(Pass_On);
+ 274   2          }
+ 275   1          else
+ 276   1          {                                                           // At this point, a password is not loaded.
+ 277   2              ResponseKBData(0x00);
+ 278   2          }
+ 279   1      }
+ 280          
+ 281          //-----------------------------------------------------------------------
+ 282          // Handle command A7 - Disable Aux Device Interface
+ 283          //-----------------------------------------------------------------------
+ 284          void Cmd_A7(void)
+ 285          
+ 286          {
+ 287   1              Ccb42_DISAB_AUX = 1;   // Disable auxiliary device (mouse)
+ 288   1      }
+ 289          
+ 290          //-----------------------------------------------------------------------
+ 291          // Handle command A8 - Enable Auxiliary Device Interface
+ 292          //-----------------------------------------------------------------------
+ 293          void Cmd_A8(void)
+ 294          
+ 295          {
+ 296   1              Ccb42_DISAB_AUX = 0;    // Enable aux device (mouse)
+ 297   1      }
+ 298          
+ 299          //-----------------------------------------------------------------------
+ 300          // Handle command A9 - Test Aux Device Interface
+ 301          // Returns: test error code:
+ 302          //             0 = no error
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 6   
+
+ 303          //             1 = Clock line stuck low
+ 304          //             2 = Clock line stuck high
+ 305          //             3 = Data line stuck low
+ 306          //             4 = Data line stuck high
+ 307          //-----------------------------------------------------------------------
+ 308          void Cmd_A9(void)
+ 309          
+ 310          {
+ 311   1          MULPX_Multiplex = 0;
+ 312   1              ResponseKBData(0x00);
+ 313   1      }
+ 314          
+ 315          //-----------------------------------------------------------------------
+ 316          // Handle command AA - Self Test
+ 317          // Returns: 0x55 to signify that the test passed
+ 318          //-----------------------------------------------------------------------
+ 319          void Cmd_AA(void)
+ 320          
+ 321          {
+ 322   1          #if TouchPad_only
+ 323   1          ScanAUXDevice(ScanMouseChannel);    // Scan Mouse channel
+ 324   1          #else
+                  ScanAUXDevice(ScanAllPS2Channel);   // Scan all PS2 channels
+                  #endif
+ 327   1      
+ 328   1          MULPX_Multiplex = 0;                // Dino MUX ps2
+ 329   1      
+ 330   1          Data_To_Host(0x55 );
+ 331   1          //KBC_DataToHost(0x55);
+ 332   1      }
+ 333          
+ 334          //-----------------------------------------------------------------------
+ 335          // Handle command AB - Test Keyboard Interface
+ 336          // Returns: test error code:
+ 337          //             0 = no error
+ 338          //             1 = Clock line stuck low
+ 339          //             2 = Clock line stuck high
+ 340          //             3 = Data line stuck low
+ 341          //             4 = Data line stuck high
+ 342          //-----------------------------------------------------------------------
+ 343          void Cmd_AB(void)
+ 344          
+ 345          {
+ 346   1              ResponseKBData(0x00);
+ 347   1      }
+ 348          
+ 349          //-----------------------------------------------------------------------
+ 350          // Handle command AC - Diagnostic Dump
+ 351          //-----------------------------------------------------------------------
+ 352          void Cmd_AC(void)
+ 353          
+ 354          {
+ 355   1              //Kbd_Response = respCMD_AC;// Send multibyte sequence.
+ 356   1              //Tmp_Byte[0] = 0;                      // Tmp_Byte[0] will be used as the index for data.
+ 357   1      }
+ 358          
+ 359          //-----------------------------------------------------------------------
+ 360          // Handle command AD - Disable Keyboard Interface
+ 361          //-----------------------------------------------------------------------
+ 362          void Cmd_AD(void)
+ 363          
+ 364          {
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 7   
+
+ 365   1          Ccb42_DISAB_KEY = 1;                // Disable auxiliary keyboard.
+ 366   1          Flag.SCAN_INH = 1;          // Inhibit scanner (internal keyboard).
+ 367   1          Lock_Scan();                // Lock scanner.
+ 368   1          //Load_Timer_B();                   // Start inhibit delay timer.
+ 369   1      }
+ 370          
+ 371          //-----------------------------------------------------------------------
+ 372          // Handle command AE - Enable Keyboard Interface
+ 373          //-----------------------------------------------------------------------
+ 374          void Cmd_AE(void)
+ 375          
+ 376          {
+ 377   1              Ccb42_DISAB_KEY = 0;            // Enable auxiliary keyboard.
+ 378   1              Flag.SCAN_INH = 0;              // Enable scanner (internal keyboard).
+ 379   1      }
+ 380          
+ 381          //-----------------------------------------------------------------------
+ 382          // Handle command AF -
+ 383          //-----------------------------------------------------------------------
+ 384          void Cmd_AF(void)
+ 385          
+ 386          {
+ 387   1      
+ 388   1      }
+ 389          
+ 390          //-----------------------------------------------------------------------
+ 391          // Handle 64 port command Cx.
+ 392          // Return: Byte from input port.
+ 393          //     Bit 7 = Keyboard not inhibited via switch.
+ 394          //     Bit 6 = Monochrome adapter (0 = Color/Graphics adapter).
+ 395          //     Bit 5 = Manufacturing jumper not installed.
+ 396          //     Bit 4 = Enable 2nd 256K of system board RAM.
+ 397          //     Bit 3 =
+ 398          //     Bit 2 =
+ 399          //     Bit 1 = Auxiliary data in line (PS/2 only).
+ 400          //     Bit 0 = Keyboard data in line (PS/2 only).
+ 401          //-----------------------------------------------------------------------
+ 402          //-----------------------------------------------------------------------
+ 403          // Handle command C0 - Emulate reading the 8042 Input port and send data
+ 404          //                                              to the system
+ 405          //-----------------------------------------------------------------------
+ 406          void Cmd_C0(void)
+ 407          
+ 408          {
+ 409   1              ResponseKBData(0xBF);   //  Just return the compatibility value for now. //return (PCIN | 0x1F);
+ 410   1      }
+ 411          
+ 412          //-----------------------------------------------------------------------
+ 413          // Handle 64 port command Dx.
+ 414          //-----------------------------------------------------------------------
+ 415          //-----------------------------------------------------------------------
+ 416          // Handle command D0 - Send 8042 Output port value to the system
+ 417          //                                              (emulates data since there’s no real Output port)
+ 418          //-----------------------------------------------------------------------
+ 419          void Cmd_D0(void)
+ 420          
+ 421          {
+ 422   1              ResponseKBData(Read_Output_Port_2());
+ 423   1      }
+ 424          
+ 425          //-----------------------------------------------------------------------
+ 426          // Handle command D1 - Only set/reset GateA20 line based on the System Data bit1.
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 8   
+
+ 427          //-----------------------------------------------------------------------
+ 428          void Cmd_D1(void)
+ 429          
+ 430          {
+ 431   1              FastA20=1;
+ 432   1              //SetHandleCmdData(1);
+ 433   1      }
+ 434          
+ 435          //-----------------------------------------------------------------------
+ 436          // Handle command D2 - Send data to the system as if it came from the keyboard.
+ 437          //-----------------------------------------------------------------------
+ 438          void Cmd_D2(void)
+ 439          
+ 440          {
+ 441   1          TR1 = 0;                    // Disable timer1
+ 442   1          ET1 = 0;                    // Disable timer1 interrupt
+ 443   1          _nop_();
+ 444   1          _nop_();
+ 445   1          _nop_();
+ 446   1          _nop_();
+ 447   1          TH1 = Timer_20ms>>8;        // Set timer1 counter 20ms
+ 448   1          TL1 = Timer_20ms;           // Set timer1 counter 20ms
+ 449   1          TF1 = 0;                    // Clear overflow flag
+ 450   1          TR1 = 1;                    // Enable timer1
+ 451   1      
+ 452   1              while (!TF1)
+ 453   1              {
+ 454   2                  if(IS_MASK_SET(KBHISR,IBF))
+ 455   2                      {
+ 456   3                  if(IS_MASK_CLEAR(KBHISR,C_D))   // Data Port
+ 457   3                  {
+ 458   4                      KBHIData = KBHIDIR;
+ 459   4                      Data_To_Host(KBHIData);
+ 460   4                  }
+ 461   3                  TR1 = 0;            // Disable timer 1
+ 462   3                  TF1 = 0;                // clear overflow flag
+ 463   3                  ET1 = 1;                // Enable timer1 interrupt
+ 464   3                  return;
+ 465   3                      }
+ 466   2          }
+ 467   1      
+ 468   1          TR1 = 0;                    // Disable timer 1
+ 469   1          TF1 = 0;                            // clear overflow flag
+ 470   1          ET1 = 1;                            // Enable timer1 interrupt
+ 471   1          SetHandleCmdData(1);
+ 472   1      }
+ 473          
+ 474          //-----------------------------------------------------------------------
+ 475          // Handle command D3 - Send data to the system as if it came from the auxiliary device.
+ 476          //-----------------------------------------------------------------------
+ 477          void Cmd_D3(void)
+ 478          
+ 479          {
+ 480   1          TR1 = 0;                    // Disable timer1
+ 481   1          ET1 = 0;                    // Disable timer1 interrupt
+ 482   1          _nop_();
+ 483   1          _nop_();
+ 484   1          _nop_();
+ 485   1          _nop_();
+ 486   1          TH1 = Timer_20ms>>8;        // Set timer1 counter 20ms
+ 487   1          TL1 = Timer_20ms;           // Set timer1 counter 20ms
+ 488   1          TF1 = 0;                    // Clear overflow flag
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 9   
+
+ 489   1          TR1 = 1;                    // Enable timer1
+ 490   1      
+ 491   1              while (!TF1)
+ 492   1              {
+ 493   2                  if(IS_MASK_SET(KBHISR,IBF))
+ 494   2                      {
+ 495   3                  if(IS_MASK_CLEAR(KBHISR,C_D))   // Data Port
+ 496   3                  {
+ 497   4                      KBHIData = KBHIDIR;
+ 498   4                      #if MultiplexedModes
+                                      Aux_Data_To_Host(CheckAuxMux());
+                              #else
+ 501   4                          Aux_Data_To_Host(KBHIData);
+ 502   4                      #endif
+ 503   4                  }
+ 504   3                  TR1 = 0;            // Disable timer 1
+ 505   3                  TF1 = 0;                // clear overflow flag
+ 506   3                  ET1 = 1;                // Enable timer1 interrupt
+ 507   3                  return;
+ 508   3                      }
+ 509   2          }
+ 510   1      
+ 511   1          TR1 = 0;                    // Disable timer 1
+ 512   1          TF1 = 0;                            // clear overflow flag
+ 513   1          ET1 = 1;                            // Enable timer1 interrupt
+ 514   1          SetHandleCmdData(1);
+ 515   1      }
+ 516          
+ 517          //-----------------------------------------------------------------------
+ 518          // Handle command D4 - Output next received byte of data from system to auxiliary device.
+ 519          //-----------------------------------------------------------------------
+ 520          void Cmd_D4(void)
+ 521          
+ 522          {
+ 523   1              SetHandleCmdData(1);
+ 524   1              MULPX_Multiplex = 0;            // Dino MUX ps2
+ 525   1      }
+ 526          
+ 527          //-----------------------------------------------------------------------
+ 528          // Handle 64 port command Ex.
+ 529          //-----------------------------------------------------------------------
+ 530          //-----------------------------------------------------------------------
+ 531          // Handle command E0 - Reports the state of the test inputs
+ 532          //-----------------------------------------------------------------------
+ 533          void Cmd_E0(void)
+ 534          
+ 535          {
+ 536   1              ResponseKBData(0x00);
+ 537   1      }
+ 538          
+ 539          //-----------------------------------------------------------------------
+ 540          // Handle 64 port command Fx.
+ 541          //-----------------------------------------------------------------------
+ 542          void Cmd_FX(void)
+ 543          {
+ 544   1              if ((KBHICmd % 2)==0x00)    // Even command
+ 545   1          {
+ 546   2              //CLEAR_MASK(KBHISR,SYSF);
+ 547   2                      Hook_A20ON();
+ 548   2                      Hook_KBRSTON();
+ 549   2                      //Microsecond_Delay(64);  // Delay.
+ 550   2                  WNCKR = 0x00;           // Delay 15.26 us
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 10  
+
+ 551   2              WNCKR = 0x00;           // Delay 15.26 us
+ 552   2              WNCKR = 0x00;           // Delay 15.26 us
+ 553   2              WNCKR = 0x00;           // Delay 15.26 us
+ 554   2              WNCKR = 0x00;           // Delay 15.26 us
+ 555   2                      Hook_KBRSTOFF();
+ 556   2              }                                                       // Odd command do no thing
+ 557   1      }
+ 558          
+ 559          //-----------------------------------------------------------------------
+ 560          // Handle 60 port data 6x.
+ 561          //-----------------------------------------------------------------------
+ 562          //-----------------------------------------------------------------------
+ 563          // Process command data 60 - Write command byte
+ 564          //-----------------------------------------------------------------------
+ 565          void Cmd_60Data(void)
+ 566          {
+ 567   1              Ccb42 = KBHIData;   // Write the data.
+ 568   1              //if (Ext_Cb0_PS2_AT)   // Reconfigure variables/registers that are dependent on Command Byte value.
+ 569   1              //{
+ 570   1              //      if (Ccb42_DISAB_AUX)    // For PS/2 style 8042 interface.
+ 571   1              //      {
+ 572   1          //          Cmd_A7();       // Disable aux device interface.
+ 573   1          //  }
+ 574   1         //   else
+ 575   1              //      {
+ 576   1          //                  Cmd_A8();       // Enable Auxiliary Device Interface.
+ 577   1          //  }
+ 578   1              //}
+ 579   1      
+ 580   1              if (Ccb42_DISAB_KEY)
+ 581   1              {
+ 582   2              Cmd_AD();               // Disable keyboard interface.
+ 583   2              }
+ 584   1              else
+ 585   1              {
+ 586   2              Cmd_AE();               // Enable keyboard interface.
+ 587   2              }
+ 588   1      
+ 589   1      
+ 590   1              if (Ccb42_SYS_FLAG)     // Put system flag bit in Status Reg.
+ 591   1                      SET_MASK(KBHISR,SYSF);
+ 592   1              else
+ 593   1                      CLEAR_MASK(KBHISR,SYSF);
+ 594   1      }
+ 595          
+ 596          //-----------------------------------------------------------------------
+ 597          // Handle 60 port data 7x.
+ 598          //-----------------------------------------------------------------------
+ 599          //-----------------------------------------------------------------------
+ 600          // Process command data 71 - Write Security Code On byte
+ 601          //-----------------------------------------------------------------------
+ 602          void Cmd_73Data(void)
+ 603          {
+ 604   1              Pass_On = KBHIData;     // Write the data.
+ 605   1      }
+ 606          
+ 607          //-----------------------------------------------------------------------
+ 608          // Process command data 74 - Write Security Code Off byte
+ 609          //-----------------------------------------------------------------------
+ 610          void Cmd_74Data(void)
+ 611          {
+ 612   1              Pass_Off = KBHIData;    // Write the data.
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 11  
+
+ 613   1      }
+ 614          
+ 615          //-----------------------------------------------------------------------
+ 616          // Process command data 76 - Reject make code 1
+ 617          //-----------------------------------------------------------------------
+ 618          void Cmd_76Data(void)
+ 619          {
+ 620   1              Pass_Make1 = KBHIData;  // Write the data.
+ 621   1      }
+ 622          
+ 623          //-----------------------------------------------------------------------
+ 624          // Process command data 77 - Reject make code 2
+ 625          //-----------------------------------------------------------------------
+ 626          void Cmd_77Data(void)
+ 627          {
+ 628   1              Pass_Make2 = KBHIData;  // Write the data.
+ 629   1      }
+ 630          
+ 631          // Dino MUX ps2 -->
+ 632          //-----------------------------------------------------------------------
+ 633          // Handle 60 port data 9x.
+ 634          //-----------------------------------------------------------------------
+ 635          //-----------------------------------------------------------------------
+ 636          // Process command data 90 - MUX AUX port #0
+ 637          //-----------------------------------------------------------------------
+ 638          void Cmd_90Data(void)                   // always send timeout error to system
+ 639          {
+ 640   1          if(PS2_MSCMD)
+ 641   1          {
+ 642   2              #ifdef UART_Debug
+ 643   2                  printf("\nMS 90Port CMD : 0X%bX\n",KBHIData);
+ 644   2              #endif
+ 645   2          }
+ 646   1      
+ 647   1          #if !TouchPad_only
+                      if(ECSendtoAUXFlag)
+                      {
+                          if(WaitECSend2PortACK(AUX_SCAN_INDEX)==0x01)
+                          {
+                              AUXDevicePlugOutClearVariables();
+                          }
+                      }
+              
+                      SetPS2SkipScanTime(100);    // 1Sec
+                  #endif
+ 658   1      
+ 659   1          if(KBHIData==0xFF)
+ 660   1          {
+ 661   2              ScanAUXDevice(ScanAllPS2Channel);
+ 662   2          }
+ 663   1      
+ 664   1          KBHISR = 0x24;                                  // set error bit and AUX bit, source bits is 00
+ 665   1          KBHICR &= 0xFC;
+ 666   1          if ( Ccb42_INTR_AUX )                   // If AUX IRQ bit of command is present
+ 667   1          {
+ 668   2              SET_MASK(KBHICR,OBFMIE);    // Enable IRQ
+ 669   2          }
+ 670   1      
+ 671   1          DelayXms(5);                                    // Emulate transmission delay times
+ 672   1          KBHIMDOR = 0xFC;                        // timeout error
+ 673   1      
+ 674   1          Hook_Mouse_90Cmd(KBHIData);
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 12  
+
+ 675   1      }
+ 676          
+ 677          //-----------------------------------------------------------------------
+ 678          // Process command data 91 - MUX AUX port #1 internal mouse
+ 679          //-----------------------------------------------------------------------
+ 680          void Cmd_91Data(void)
+ 681          {
+ 682   1          if(PS2_MSCMD)
+ 683   1          {
+ 684   2              #ifdef UART_Debug
+ 685   2                  printf("\nMS 91Port CMD : 0X%bX\n",KBHIData);
+ 686   2              #endif
+ 687   2          }
+ 688   1      
+ 689   1          if(IS_MASK_SET(AuxFlags[0], DEVICE_IS_MOUSE))
+ 690   1          {
+ 691   2              SendCmdtoMUX(0);                    // Send command to channel 0 mouse
+ 692   2          }
+ 693   1          else
+ 694   1          {
+ 695   2                  KBHISR = 0x40;
+ 696   2                  DelayXms(5);                                // Emulate transmission delay times
+ 697   2                  KBHIMDOR = 0xFC;                    // timeout error
+ 698   2          }
+ 699   1      
+ 700   1          Hook_Mouse_91Cmd(KBHIData);
+ 701   1      }
+ 702          
+ 703          //-----------------------------------------------------------------------
+ 704          // Process command data 92 - MUX AUX port #2
+ 705          //-----------------------------------------------------------------------
+ 706          void Cmd_92Data(void)
+ 707          {
+ 708   1          if(PS2_MSCMD)
+ 709   1          {
+ 710   2              #ifdef UART_Debug
+ 711   2                  printf("\nMS 92Port CMD : 0X%bX\n",KBHIData);
+ 712   2              #endif
+ 713   2          }
+ 714   1      
+ 715   1          if(IS_MASK_SET(AuxFlags[1], DEVICE_IS_MOUSE))
+ 716   1          {
+ 717   2                  SendCmdtoMUX(1);                // Send command to channel 0 mouse
+ 718   2          }
+ 719   1          else
+ 720   1          {
+ 721   2              KBHISR = 0x80;
+ 722   2                  DelayXms(5);                                // Emulate transmission delay times
+ 723   2              KBHIMDOR = 0xFC;                        // timeout error
+ 724   2          }
+ 725   1      
+ 726   1          Hook_Mouse_92Cmd(KBHIData);
+ 727   1      }
+ 728          
+ 729          //-----------------------------------------------------------------------
+ 730          // Process command data 93 - MUX AUX port #3 external mouse
+ 731          //-----------------------------------------------------------------------
+ 732          void Cmd_93Data(void)
+ 733          {
+ 734   1          if(PS2_MSCMD)
+ 735   1          {
+ 736   2              #ifdef UART_Debug
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 13  
+
+ 737   2                  printf("\nMS 93Port CMD : 0X%bX\n",KBHIData);
+ 738   2              #endif
+ 739   2          }
+ 740   1      
+ 741   1          if(IS_MASK_SET(AuxFlags[2], DEVICE_IS_MOUSE))
+ 742   1          {
+ 743   2                  SendCmdtoMUX(2);            // Send command to channel 2 mouse
+ 744   2          }
+ 745   1          else
+ 746   1          {
+ 747   2                  KBHISR = 0xC0;                              // source bits is 11
+ 748   2                  DelayXms(5);                                // Emulate transmission delay times
+ 749   2                  KBHIMDOR = 0xFC;
+ 750   2          }
+ 751   1      
+ 752   1          Hook_Mouse_93Cmd(KBHIData);
+ 753   1      }
+ 754          // Dino MUX ps2 <--
+ 755          
+ 756          //-----------------------------------------------------------------------
+ 757          // Handle 60 port data Ax.
+ 758          //-----------------------------------------------------------------------
+ 759          
+ 760          //-----------------------------------------------------------------------
+ 761          // Process command data A5 - Load Password
+ 762          //-----------------------------------------------------------------------
+ 763          void Cmd_A5Data(void)
+ 764          {
+ 765   1              if ((Tmp_Load == 0) && (KBHIData == 0)) // The first byte is NULL
+ 766   1              {
+ 767   2                      Flag.PASS_READY = 0;    // clear password ready flag and exit
+ 768   2                                                      // Cmd_Byte has already been set to 0.  So the code will
+ 769   2                                                      // NOT wait for next byte
+ 770   2              }
+ 771   1              else
+ 772   1              {
+ 773   2              if (Tmp_Load < 8)               // PASS_SIZE = 8
+ 774   2              {                                       // If there is room in the buffer
+ 775   3                      Pass_Buff[Tmp_Load] = KBHIData;   // Store scan code
+ 776   3                      Tmp_Load++;             // Increment password buffer index
+ 777   3              }
+ 778   2              //Cmd_Byte = 0xA5;      // Set to keep waiting for next byte
+ 779   2                      if (KBHIData == 0)              // The last byte (null terminated string) has been stored
+ 780   2              {
+ 781   3                      //Cmd_Byte = 0;     // Clear out the command byte.
+ 782   3                      Flag.PASS_READY = 1; // Set password ready bit.
+ 783   3              }
+ 784   2              }
+ 785   1      }
+ 786          
+ 787          //-----------------------------------------------------------------------
+ 788          // Handle 60 port data Dx.
+ 789          //-----------------------------------------------------------------------
+ 790          //-----------------------------------------------------------------------
+ 791          // Process command data D1 - set/reset GateA20 line based on the System Data bit1.
+ 792          //-----------------------------------------------------------------------
+ 793          void Cmd_D1Data(void)
+ 794          {
+ 795   1              if ( (KBHIData & 0x02) != 0x00)
+ 796   1              {
+ 797   2              Hook_A20ON();
+ 798   2              }
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 14  
+
+ 799   1              else
+ 800   1              {
+ 801   2              Hook_A20OFF();
+ 802   2              }
+ 803   1      }
+ 804          
+ 805          //-----------------------------------------------------------------------
+ 806          // Process command data D2 - Send data back to the system as if it came from the keyboard.
+ 807          //-----------------------------------------------------------------------
+ 808          void Cmd_D2Data(void)
+ 809          {
+ 810   1          Data_To_Host(KBHIData);
+ 811   1      }
+ 812          
+ 813          //-----------------------------------------------------------------------
+ 814          // Process command data D3 - Send data back to the system as if it came from the auxiliary device.
+ 815          //-----------------------------------------------------------------------
+ 816          void Cmd_D3Data(void)                           // Dino MUX ps2
+ 817          {
+ 818   1          #if MultiplexedModes
+                          Aux_Data_To_Host(CheckAuxMux());
+                  #else
+ 821   1              Aux_Data_To_Host(KBHIData);
+ 822   1          #endif
+ 823   1      }
+ 824          
+ 825          //-----------------------------------------------------------------------
+ 826          // Process command data D4 - Output next received byte of data from system to auxiliary device.
+ 827          //-----------------------------------------------------------------------
+ 828          void Cmd_D4Data(void)
+ 829          {
+ 830   1          if(PS2_MSCMD)
+ 831   1          {
+ 832   2              #ifdef UART_Debug
+ 833   2              printf("\nMS CMD : 0X%bX\n",KBHIData);
+ 834   2              #endif
+ 835   2          }
+ 836   1          if(KBHIData==0xFF)                      // if is reset command
+ 837   1          {
+ 838   2              ScanAUXDevice(ScanMouseChannel);    // Scan mouse channel
+ 839   2          }
+ 840   1      
+ 841   1          if(Main_MOUSE_CHN!=0x00)                // mouse device is attached
+ 842   1          {
+ 843   2              CLEAR_MASK(AuxFlags[(Main_MOUSE_CHN-1)], DEVICE_NEED_INIT);
+ 844   2              CLEAR_MASK(AuxFlags[(Main_MOUSE_CHN-1)], DEVICE_NEED_CONFIG);
+ 845   2                  SendCmdtoMouse((Main_MOUSE_CHN-1));
+ 846   2          }
+ 847   1          else
+ 848   1          {
+ 849   2                  DelayXms(20);                                   // Emulate transmission delay times
+ 850   2                  #ifdef Hook_ECACKMouseDriver
+                      Hook_ECRespondtoMouseDriver(KBHIData);
+                      #else
+ 853   2                  SendFromAux(0xFC);
+ 854   2              #endif
+ 855   2          }
+ 856   1      
+ 857   1          Hook_Mouse_D4Cmd(KBHIData);
+ 858   1      }
+ 859          
+ 860          //-----------------------------------------------------------------------
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 15  
+
+ 861          // Handle 60 port data Fx.
+ 862          //-----------------------------------------------------------------------
+ 863          void ResponseKBData(BYTE RData)
+ 864          {
+ 865   1              KBHIReponse = RData;
+ 866   1              KbdNeedResponseFlag = 1;
+ 867   1      }
+ 868          
+ 869          //-----------------------------------------------------------------------
+ 870          // Handle 60 port data Fx.
+ 871          //-----------------------------------------------------------------------
+ 872          void SetHandleCmdData(BYTE step)
+ 873          {
+ 874   1          KBHIStep = step;
+ 875   1      }
+ 876          
+ 877          /* ----------------------------------------------------------------------------
+ 878           * FUNCTION: vKeyboardCmd
+ 879           *
+ 880           * Passes data sent from the Host (port 60 write) to the keyboard.
+ 881           *
+ 882           * Input: data = data byte to send
+ 883           * ------------------------------------------------------------------------- */
+ 884          static void KeyboardCmd(BYTE nKB60DAT)
+ 885          {
+ 886   1          BYTE ack,ack1,ack2,index,cmdbk;
+ 887   1               BYTE cnt1=0; //BROOKE0000: add
+ 888   1          BYTE cnt1flag=0; //BROOKE0000: add
+ 889   1          KBCmdAckByteCunt(0x00);         // New keyboard command, clear ack counter
+ 890   1          ack = 0x00;
+ 891   1          ack1 = 0x00;
+ 892   1          ack2 = 0x00;
+ 893   1         //  BROOKE0000: Start for clear output buffer before 0xFA ack to make sure kb function ok.
+ 894   1          //  and make sure command/data integrated. for example. cmd 0xF3, Ack 0xFA. 
+ 895   1          while(IS_MASK_SET(KBHISR,OBF))
+ 896   1          {
+ 897   2              cnt1++;
+ 898   2             if(cnt1>0xFE)
+ 899   2             {
+ 900   3               cnt1=0x00;
+ 901   3               break;
+ 902   3             }
+ 903   2      
+ 904   2              if ((IS_MASK_SET(KBHICR,OBFKIE))&&(IS_MASK_SET(KBIRQR,IRQ1B)))
+ 905   2              {
+ 906   3                    KBHICR &= 0xFC;
+ 907   3                    KBIRQR &= 0xFE;
+ 908   3                   _nop_();
+ 909   3                   _nop_();
+ 910   3                  _nop_();
+ 911   3              } 
+ 912   2              else if ((IS_MASK_CLEAR(KBHICR,OBFKIE))&&(IS_MASK_CLEAR(KBIRQR,IRQ1B)))
+ 913   2              {
+ 914   3               KBHICR |= 0x01;
+ 915   3               
+ 916   3               _nop_();
+ 917   3               _nop_();
+ 918   3               _nop_();
+ 919   3              }
+ 920   2              if (IS_MASK_CLEAR(KBHISR,OBF))
+ 921   2              {
+ 922   3                  Cmd_AD();
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 16  
+
+ 923   3                              cnt1flag=1;
+ 924   3                  Clear_Key();
+ 925   3                  cnt1=0x00;
+ 926   3                  break;
+ 927   3              }
+ 928   2          }
+ 929   1              //BROOKE0000: End
+ 930   1          //-------------------------------------------------------------------------
+ 931   1          //Keyboard Command Received Data Process
+ 932   1          //-------------------------------------------------------------------------
+ 933   1          if ( KB_Command )
+ 934   1          {
+ 935   2              cmdbk = KB_Command;
+ 936   2      
+ 937   2              switch(KB_Command)
+ 938   2              {
+ 939   3                  case 0xED:  /* Update LEDs command. */
+ 940   3                              Led_Data = nKB60DAT;
+ 941   3                              ack = 0xFA;
+ 942   3                              KB_Command = 0x00;
+ 943   3                              OEM_Write_Leds(Led_Data);   //Hook Oem On-board LED control
+ 944   3      
+ 945   3                              /* Update scanner numlock state. */
+ 946   3                              Scanner_State_NUM_LOCK = Led_Data_NUM;
+ 947   3                              break;
+ 948   3                  case 0xF0:  /* Set alternate scan codes. */
+ 949   3                              KB_CodeSet = nKB60DAT;
+ 950   3                              ack = 0xFA;
+ 951   3                              KB_Command = 0x00;
+ 952   3                              break;
+ 953   3                  case 0xF3:  /* Set typematic rate/delay. */
+ 954   3                              PS2KB_Typematic = nKB60DAT;
+ 955   3                              Set_Typematic(PS2KB_Typematic);
+ 956   3                              ack = 0xFA;
+ 957   3                              KB_Command = 0x00;
+ 958   3                              break;
+ 959   3                  default:    //Unknown command request system resend
+ 960   3                              ack = 0xFE;         //Resend
+ 961   3                              //KBCUnProcessCnt++;
+ 962   3                              break;
+ 963   3              }
+ 964   2      
+ 965   2              if((cmdbk==0xF3)||(cmdbk==0xED))
+ 966   2              {
+ 967   3                  KeyboardDriverIn = 1;
+ 968   3              }
+ 969   2      
+ 970   2              if( Main_KB_CHN ==0x00)             // no any external keyboard
+ 971   2              {
+ 972   3                  if(ack != 0x00)                 // if need send ack to host
+ 973   3                  {
+ 974   4                      KBC_DataToHost(ack);        // send to host
+ 975   4                      #if PS2_KBCMD
+                                  #ifdef UART_Debug
+                                  printf("EC KB ACK : 0X%bX\n",ack);
+                                  #endif
+                              #endif
+ 980   4                  }
+ 981   3              }
+ 982   2              else                                // Send command to external keyboard
+ 983   2              {
+ 984   3      
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 17  
+
+ 985   3                  CLEAR_MASK(AuxFlags[(Main_KB_CHN-1)], DEVICE_NEED_INIT);
+ 986   3                  CLEAR_MASK(AuxFlags[(Main_KB_CHN-1)], DEVICE_NEED_CONFIG);
+ 987   3      
+ 988   3                  KBCmdAckByteCunt(0x01);         // set ec need send one byte to host
+ 989   3      
+ 990   3                  if(cmdbk==0xED)
+ 991   3                  {
+ 992   4                          Send2Port((Main_KB_CHN-1), (nKB60DAT&0x07), SendCmdToKB);
+ 993   4                  }
+ 994   3                  else
+ 995   3                  {
+ 996   4                          Send2Port((Main_KB_CHN-1), nKB60DAT, SendCmdToKB);
+ 997   4                  }
+ 998   3      
+ 999   3                  if((cmdbk==0xF3)||(cmdbk==0xED))
+1000   3                  {
+1001   4                      SetOtherKBNeedUpdataFlag(cmdbk);
+1002   4                  }
+1003   3              }
+1004   2              //BROOKE0000: add start
+1005   2                      if(cnt1flag == 1)
+1006   2                      {
+1007   3                              cnt1flag = 0;
+1008   3                      Cmd_AE();
+1009   3                      }
+1010   2                      //BROOKE0000: add end
+1011   2              Hook_Keyboard_Cmd_Parameter(nKB60DAT);
+1012   2              return;
+1013   2          }
+1014   1      
+1015   1          //-------------------------------------------------------------------------
+1016   1          //Keyboard Command Process
+1017   1          //-------------------------------------------------------------------------
+1018   1          switch(nKB60DAT)
+1019   1          {
+1020   2           //  BROOKE0000: Start for clear output buffer before 0xFA ack to make sure kb function ok.
+1021   2          //  and make sure command/data integrated. for example. cmd 0xF3, Ack 0xFA. 
+1022   2               while(IS_MASK_SET(KBHISR,OBF))
+1023   2              {
+1024   3                  cnt1++;
+1025   3                  if(cnt1>0xFE)
+1026   3                  {
+1027   4                      cnt1=0x00;
+1028   4                      break;
+1029   4                  }
+1030   3                  if ((IS_MASK_SET(KBHICR,OBFKIE))&&(IS_MASK_SET(KBIRQR,IRQ1B)))
+1031   3                  {
+1032   4                      KBHICR &= 0xFC;
+1033   4                      KBIRQR &= 0xFE;
+1034   4                      _nop_();
+1035   4                      _nop_();
+1036   4                      _nop_();
+1037   4                  } 
+1038   3                  else if ((IS_MASK_CLEAR(KBHICR,OBFKIE))&&(IS_MASK_CLEAR(KBIRQR,IRQ1B)))
+1039   3                  {
+1040   4                      KBHICR |= 0x01; 
+1041   4                      _nop_();
+1042   4                      _nop_();
+1043   4                      _nop_();
+1044   4                  }
+1045   3                  if (IS_MASK_CLEAR(KBHISR,OBF))
+1046   3                  {
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 18  
+
+1047   4                      Cmd_AD();
+1048   4                                      cnt1flag = 1;
+1049   4                      Clear_Key();
+1050   4                      cnt1=0x00;
+1051   4                      break;
+1052   4                  }
+1053   3              }
+1054   2              //BROOKE0000:End
+1055   2              KB_Command = 0x00;
+1056   2              case 0xED:  /* Update LEDs command. */
+1057   2                          ack = 0xFA;
+1058   2                          KB_Command = 0xED;
+1059   2                          break;
+1060   2              case 0xEC:
+1061   2                          ack = 0xFA;
+1062   2                          break;
+1063   2      
+1064   2              case 0xEE:  /* ECHO command. */
+1065   2                          ack = 0xEE;
+1066   2                          break;
+1067   2      
+1068   2              case 0xF0:  /* Set alternate scan codes. */
+1069   2                          ack = 0xFA;
+1070   2                          KB_Command = 0xF0;
+1071   2                          break;
+1072   2      
+1073   2              case 0xF2:  /* Read manufacturers ID */
+1074   2                          ack = 0xFA;
+1075   2                          ack1 = 0xAB;
+1076   2                          if( Ccb42_XLATE_PC )
+1077   2                          {
+1078   3                              ack2 = 0x83;
+1079   3                          }
+1080   2                          else
+1081   2                          {
+1082   3                              ack2 = 0x41;
+1083   3                          }
+1084   2                          break;
+1085   2      
+1086   2              case 0xF3:  /* Set typematic rate/delay. */
+1087   2                          ack = 0xFA;
+1088   2                          KB_Command = 0xF3;
+1089   2                          break;
+1090   2      
+1091   2              case 0xF4:  /* Enable scanning. */
+1092   2                          KeyboardDriverIn = 1;
+1093   2                          Clear_Key();
+1094   2                          ack = 0xFA;
+1095   2                          break;
+1096   2      
+1097   2              case 0xF5:  /* Default disable. */
+1098   2                          KeyboardDriverIn = 0;
+1099   2                          Clear_Key();
+1100   2                          Clear_Typematic();
+1101   2                          ack = 0xFA;
+1102   2                          break;
+1103   2      
+1104   2              case 0xF6:  /* Set defaults. */
+1105   2                          Clear_Key();
+1106   2                          Clear_Typematic();
+1107   2                          ack = 0xFA;
+1108   2                          break;
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 19  
+
+1109   2              case 0xF7:
+1110   2              case 0xF8:
+1111   2              case 0xF9:
+1112   2              case 0xFA:
+1113   2              case 0xFB:
+1114   2                          ack = 0xFA;
+1115   2                          break;
+1116   2      
+1117   2              case 0xFF:  /* Reset keyboard. */
+1118   2                          KeyboardDriverIn = 0;
+1119   2                          ScanAUXDevice(ScanKeyboardChannel); // Scan keyboard channel
+1120   2                          Clear_Key();
+1121   2                          Clear_Typematic();
+1122   2                          Scanner_State = 0;
+1123   2                          Clear_Fn_Keys();
+1124   2                          ack = 0xFA;
+1125   2                          ack1 = 0xAA;
+1126   2      
+1127   2                          for(index=0x00; index<3; index++)
+1128   2                          {
+1129   3                              if((Main_KB_CHN-1)!=index)
+1130   3                              {
+1131   4                                  if(IS_MASK_SET(AuxFlags[index], DEVICE_IS_KEYBOARD))
+1132   4                                  {
+1133   5                                      AuxFlags[index] = 0x00;
+1134   5                                  }
+1135   4                              }
+1136   3                          }
+1137   2      
+1138   2                          #if KB_FnStickKey
+                                  FnStickKey = 0;
+                                  #endif
+1141   2      
+1142   2                          break;
+1143   2      
+1144   2              default:    //Unknown command request system resend
+1145   2                          ack = 0xFE;
+1146   2                          //KBCUnProcessCnt++;
+1147   2                          //KBCUnProcessRec = nKB60DAT;
+1148   2                          break;
+1149   2      
+1150   2          }
+1151   1      
+1152   1          if( Main_KB_CHN ==0x00)             // no any external keyboard
+1153   1          {
+1154   2              KBCmdAckByteCunt(0x00);
+1155   2      
+1156   2              if(ack != 0x00)
+1157   2              {
+1158   3                  KBC_DataToHost(ack);
+1159   3      
+1160   3                  #if PS2_KBCMD
+                              #ifdef UART_Debug
+                              printf("EC KB ACK : 0X%bX\n",ack);
+                              #endif
+                          #endif
+1165   3      
+1166   3                  if(ack1 != 0x00)
+1167   3                  {
+1168   4                      KBC_DataPending(ack1);
+1169   4      
+1170   4                      #if PS2_KBCMD
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 20  
+
+                                  #ifdef UART_Debug
+                                  printf("EC KB ACK : 0X%bX\n",ack1);
+                                  #endif
+                              #endif
+1175   4      
+1176   4                      if(ack2 != 0x00)
+1177   4                      {
+1178   5                          KBC_DataPending(ack2);
+1179   5      
+1180   5                          #if PS2_KBCMD
+                                      #ifdef UART_Debug
+                                      printf("EC KB ACK : 0X%bX\n",ack2);
+                                      #endif
+                                  #endif
+1185   5                      }
+1186   4                  }
+1187   3              }
+1188   2          }
+1189   1          else                                    // Send command to external keyboard
+1190   1          {
+1191   2              CLEAR_MASK(AuxFlags[(Main_KB_CHN-1)], DEVICE_NEED_INIT);
+1192   2              CLEAR_MASK(AuxFlags[(Main_KB_CHN-1)], DEVICE_NEED_CONFIG);
+1193   2      
+1194   2              if(nKB60DAT==0xFF)                  // reset command
+1195   2              {
+1196   3                  KBCmdAckByteCunt(0x02);
+1197   3              }
+1198   2              else
+1199   2              {
+1200   3                  if(nKB60DAT==0xF2)              // read keyboard ID command
+1201   3                  {
+1202   4                      KBCmdAckByteCunt(0x03);
+1203   4                  }
+1204   3                  else if((nKB60DAT==0xF3)||(nKB60DAT==0xED))
+1205   3                  {
+1206   4                      KBCmdAckByteCunt(0x02);
+1207   4                  }
+1208   3                  else                            // other
+1209   3                  {
+1210   4                      KBCmdAckByteCunt(0x01);
+1211   4                  }
+1212   3              }
+1213   2      
+1214   2                  Send2Port((Main_KB_CHN-1), nKB60DAT, SendCmdToKB);
+1215   2      
+1216   2              if((nKB60DAT==0xF4)||(nKB60DAT==0xF5))
+1217   2              {
+1218   3                  SetOtherKBNeedUpdataFlag(nKB60DAT);
+1219   3              }
+1220   2          }
+1221   1      //BROOKE0000: add start
+1222   1              if(cnt1flag == 1)
+1223   1              {
+1224   2                      cnt1flag = 0;
+1225   2              Cmd_AE();
+1226   2              }
+1227   1              //BROOKE0000: add end
+1228   1          Hook_Keyboard_Cmd(nKB60DAT);
+1229   1      }
+1230          
+1231          
+1232          /* ----------------------------------------------------------------------------
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 21  
+
+1233           * FUNCTION: Set_Overlay_Mask
+1234           *
+1235           * Set the overlay state in the scanner_state variable and
+1236           * set the led numlock and/or overlay bits for the LED data.
+1237           *
+1238           * Input: data = current LED data
+1239           *        bit_state = 1 to set overlay/numlock bits
+1240           *                  = 0 to clear overlay/numlock bits
+1241           *
+1242           * Return: updated LED data (num lock and overlay state updated)
+1243           * ------------------------------------------------------------------------- */
+1244          BBYTE Set_Overlay_Mask(BBYTE data_byte, FLAG bit_state)
+1245          {
+1246   1          BITS_8 temp;
+1247   1          temp.byte = data_byte;
+1248   1      
+1249   1          if (Led_Ctrl_NUM) {
+1250   2              temp.fbit.NUM = bit_state;
+1251   2          }
+1252   1      
+1253   1          if (Led_Ctrl_OVL) {
+1254   2              temp.fbit.OVL = bit_state;
+1255   2          }
+1256   1      
+1257   1          data_byte = temp.byte;
+1258   1          Scanner_State_NUM_LOCK = bit_state;
+1259   1          //Ext_Cb3_OVL_STATE = bit_state;
+1260   1      
+1261   1          return(data_byte);
+1262   1      }
+1263          
+1264          /* ----------------------------------------------------------------------------
+1265           * FUNCTION: Read_Input_Port_1
+1266           *
+1267           * Read 8042 Input Port 1 and return its contents.
+1268           *
+1269           * Return: Byte from input port.
+1270           *     Bit 7 = Keyboard not inhibited via switch.
+1271           *     Bit 6 = Monochrome adapter (0 = Color/Graphics adapter).
+1272           *     Bit 5 = Manufacturing jumper not installed.
+1273           *     Bit 4 = Enable 2nd 256K of system board RAM.
+1274           *     Bit 3 =
+1275           *     Bit 2 =
+1276           *     Bit 1 = Auxiliary data in line (PS/2 only).
+1277           *     Bit 0 = Keyboard data in line (PS/2 only).
+1278           * ------------------------------------------------------------------------- */
+1279          //BYTE Read_Input_Port_1(void)
+1280          //{
+1281          //   return(0xBF);   //  Just return the compatibility value for now. //return (PCIN | 0x1F);
+1282          //}
+1283          
+1284          
+1285          /* ----------------------------------------------------------------------------
+1286           * FUNCTION: Read_Output_Port_2
+1287           *
+1288           * Read 8042 output port 2.
+1289           *
+1290           * Return: Byte from output port.
+1291           *     Bit 7 = Keyboard data output line (inverted on PS/2).
+1292           *     Bit 6 = Keyboard clock output line.
+1293           *     Bit 5 = Input buffer empty (auxiliary interrupt IRQ12 on PS/2).
+1294           *     Bit 4 = Output buffer full (Generates IRQ1).
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 22  
+
+1295           *     Bit 3 = Reserved (inverted auxiliary clock output line on PS/2).
+1296           *     Bit 2 = Reserved (inverted auxiliary data output line on PS/2).
+1297           *     Bit 1 = Gate A20.
+1298           *     Bit 0 = System reset.
+1299           * ------------------------------------------------------------------------- */
+1300          BYTE Read_Output_Port_2(void)
+1301          {
+1302   1      #if 1
+1303   1          BYTE p2byte;
+1304   1      
+1305   1          /* "data" will hold bits read from different inputs.
+1306   1              Start with bit 0 set and set bits 2 and 3 for AT mode.
+1307   1              If PS2 mode is being used, bits 2 and 3 will be changed. */
+1308   1          p2byte = (1 << 3) | (1 << 2) | (1 << 0);
+1309   1      
+1310   1          //if (Ext_Cb0_PS2_AT)
+1311   1          //{   /* If PS2 mode is enabled */
+1312   1              /* Invert auxiliary keyboard data line (bit 7) and clear bits 2 and 3.
+1313   1                 (Since bits 2 and 3 were set before, they can be cleared by inverting.) */
+1314   1          //    p2byte^= 0x8C;
+1315   1          //}
+1316   1      
+1317   1          return (p2byte);
+1318   1      #else
+              
+                  BYTE data_byte;
+              
+                  /* "data" will hold bits read from different inputs.
+                     Start with bit 0 set and set bits 2 and 3 for AT mode.
+                     If PS2 mode is being used, bits 2 and 3 will be changed. */
+                  data_byte = (1 << 3) | (1 << 2) | (1 << 0);
+              
+                  /* Put Gate A20 bit value into bit 1. */
+              
+                  if (Ext_Cb0_PS2_AT)
+                  {   /* PS/2 mode is enabled 8/
+                      /* Invert aux keyboard data line (bit 7) and clear bit[3:2]. (Since
+                         bits 2 and 3 were set before, they can be cleared by inverting.) */
+                      data_byte ^= 0x8C;
+              
+                      /* Put inverted auxiliary device (mouse) clock line in bit 3. */
+              
+                      /* Put inverted auxiliary device (mouse) data line in bit 2. */
+                  } /* if (Ext_Cb0_PS2_AT) */
+              
+                  return (data_byte);
+              #endif
+1342   1      }
+1343          
+1344          //----------------------------------------------------------------------------
+1345          // The function of processing 60 port
+1346          //----------------------------------------------------------------------------
+1347          void Core_60Port(BYTE KBHIData)
+1348          {
+1349   1          switch(KBHIData)
+1350   1          {
+1351   2              case 0x60:
+1352   2              Cmd_60Data();
+1353   2              break;
+1354   2      
+1355   2              case 0x73:
+1356   2              Cmd_73Data();
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 23  
+
+1357   2              break;
+1358   2      
+1359   2              case 0x74:
+1360   2              Cmd_74Data();
+1361   2              break;
+1362   2      
+1363   2              case 0x76:
+1364   2              Cmd_76Data();
+1365   2              break;
+1366   2      
+1367   2              case 0x77:
+1368   2              Cmd_77Data();
+1369   2              break;
+1370   2      
+1371   2              case 0x90:
+1372   2              Cmd_90Data();
+1373   2              break;
+1374   2      
+1375   2              case 0x91:
+1376   2              Cmd_91Data();
+1377   2              break;
+1378   2      
+1379   2              case 0x92:
+1380   2              Cmd_92Data();
+1381   2              break;
+1382   2      
+1383   2              case 0x93:
+1384   2              Cmd_93Data();
+1385   2              break;
+1386   2      
+1387   2              case 0xA5:
+1388   2              Cmd_A5Data();
+1389   2              break;
+1390   2      
+1391   2              case 0xD1:
+1392   2              Cmd_D1Data();
+1393   2              break;
+1394   2      
+1395   2              case 0xD2:
+1396   2              Cmd_D2Data();
+1397   2              break;
+1398   2      
+1399   2              case 0xD3:
+1400   2              Cmd_D3Data();
+1401   2              break;
+1402   2      
+1403   2              case 0xD4:
+1404   2              Cmd_D4Data();
+1405   2              break;
+1406   2      
+1407   2              default:
+1408   2              break;
+1409   2          }
+1410   1      }
+1411          
+1412          //----------------------------------------------------------------------------
+1413          // The function of processing 64 port
+1414          //----------------------------------------------------------------------------
+1415          void Core_64Port(BYTE KBHICmd)
+1416          {
+1417   1          switch(KBHICmd)
+1418   1          {
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 24  
+
+1419   2              case 0x20:
+1420   2              Cmd_20();
+1421   2              break;
+1422   2      
+1423   2              case 0x33:
+1424   2              Cmd_33();
+1425   2              break;
+1426   2      
+1427   2              case 0x34:
+1428   2              Cmd_34();
+1429   2              break;
+1430   2      
+1431   2              case 0x36:
+1432   2              Cmd_36();
+1433   2              break;
+1434   2      
+1435   2              case 0x37:
+1436   2              Cmd_37();
+1437   2              break;
+1438   2      
+1439   2              case 0x60:
+1440   2              Cmd_60();
+1441   2              break;
+1442   2      
+1443   2              case 0x73:
+1444   2              Cmd_73();
+1445   2              break;
+1446   2      
+1447   2              case 0x74:
+1448   2              Cmd_74();
+1449   2              break;
+1450   2      
+1451   2              case 0x76:
+1452   2              Cmd_76();
+1453   2              break;
+1454   2      
+1455   2              case 0x77:
+1456   2              Cmd_77();
+1457   2              break;
+1458   2      
+1459   2              case 0x90:
+1460   2              Cmd_90();
+1461   2              break;
+1462   2      
+1463   2              case 0x91:
+1464   2              Cmd_91();
+1465   2              break;
+1466   2      
+1467   2              case 0x92:
+1468   2              Cmd_92();
+1469   2              break;
+1470   2      
+1471   2              case 0x93:
+1472   2              Cmd_93();
+1473   2              break;
+1474   2      
+1475   2              case 0xA4:
+1476   2              Cmd_A4();
+1477   2              break;
+1478   2      
+1479   2              case 0xA5:
+1480   2              Cmd_A5();
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 25  
+
+1481   2              break;
+1482   2      
+1483   2              case 0xA6:
+1484   2              Cmd_A6();
+1485   2              break;
+1486   2      
+1487   2              case 0xA7:
+1488   2              Cmd_A7();
+1489   2              break;
+1490   2      
+1491   2              case 0xA8:
+1492   2              Cmd_A8();
+1493   2              break;
+1494   2      
+1495   2              case 0xA9:
+1496   2              Cmd_A9();
+1497   2              break;
+1498   2      
+1499   2              case 0xAA:
+1500   2              Cmd_AA();
+1501   2              break;
+1502   2      
+1503   2              case 0xAB:
+1504   2              Cmd_AB();
+1505   2              break;
+1506   2      
+1507   2              case 0xAC:
+1508   2              Cmd_AC();
+1509   2              break;
+1510   2      
+1511   2              case 0xAD:
+1512   2              Cmd_AD();
+1513   2              break;
+1514   2      
+1515   2              case 0xAE:
+1516   2              Cmd_AE();
+1517   2              break;
+1518   2      
+1519   2              case 0xAF:
+1520   2              Cmd_AF();
+1521   2              break;
+1522   2      
+1523   2              case 0xC0:
+1524   2              Cmd_C0();
+1525   2              break;
+1526   2      
+1527   2              case 0xD0:
+1528   2              Cmd_D0();
+1529   2              break;
+1530   2      
+1531   2              case 0xD1:
+1532   2              Cmd_D1();
+1533   2              break;
+1534   2      
+1535   2              case 0xD2:
+1536   2              Cmd_D2();
+1537   2              break;
+1538   2      
+1539   2              case 0xD3:
+1540   2              Cmd_D3();
+1541   2              break;
+1542   2      
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 26  
+
+1543   2              case 0xD4:
+1544   2              Cmd_D4();
+1545   2              break;
+1546   2      
+1547   2              case 0xE0:
+1548   2              Cmd_E0();
+1549   2              break;
+1550   2      
+1551   2              case 0xF0:
+1552   2              case 0xF1:
+1553   2              case 0xF2:
+1554   2              case 0xF3:
+1555   2              case 0xF4:
+1556   2              case 0xF5:
+1557   2              case 0xF6:
+1558   2              case 0xF7:
+1559   2              case 0xF8:
+1560   2              case 0xF9:
+1561   2              case 0xFA:
+1562   2              case 0xFB:
+1563   2              case 0xFC:
+1564   2              case 0xFD:
+1565   2              case 0xFE:
+1566   2              case 0xFF:
+1567   2              Cmd_FX();
+1568   2              break;
+1569   2      
+1570   2              default:
+1571   2              break;
+1572   2          }
+1573   1      }
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 27  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0103 (BEGIN)
+0000         L?0260:
+0000 7800        E     MOV     R0,#LOW Main_KB_CHN
+0002 E6                MOV     A,@R0
+0003 2400        E     ADD     A,#LOW AuxFlags+0FFFFH
+0005 F8                MOV     R0,A
+0006 74FD              MOV     A,#0FDH
+0008 56                ANL     A,@R0
+0009 F6                MOV     @R0,A
+000A 7800        E     MOV     R0,#LOW Main_KB_CHN
+000C         L?0261:
+000C E6                MOV     A,@R0
+000D 2400        E     ADD     A,#LOW AuxFlags+0FFFFH
+000F F8                MOV     R0,A
+0010 74F7              MOV     A,#0F7H
+0012 56                ANL     A,@R0
+0013 F6                MOV     @R0,A
+0014 22                RET     
+0015         L?0262:
+0015         L?0263:
+0015 900000      R     MOV     DPTR,#ack
+0018 74FA              MOV     A,#0FAH
+001A F0                MOVX    @DPTR,A
+001B 22                RET     
+001C         L?0264:
+001C         L?0265:
+001C C28E              CLR     TR1
+001E C28F              CLR     TF1
+0020 D2AB              SETB    ET1
+0022 22                RET     
+0023         L?0266:
+0023         L?0267:
+0023 900000      E     MOV     DPTR,#KBHIMDOR
+0026 74FC              MOV     A,#0FCH
+0028 F0                MOVX    @DPTR,A
+0029 22                RET     
+002A         L?0268:
+002A         L?0269:
+002A E6                MOV     A,@R0
+002B 14                DEC     A
+002C FF                MOV     R7,A
+002D 900000      R     MOV     DPTR,#nKB60DAT
+0030 E0                MOVX    A,@DPTR
+0031 22                RET     
+0032         L?0270:
+0032 758DC4            MOV     TH1,#0C4H
+0035 758B1B            MOV     TL1,#01BH
+0038 C28F              CLR     TF1
+003A D28E              SETB    TR1
+003C 22                RET     
+003D         L?0271:
+003D         L?0272:
+003D 900000      E     MOV     DPTR,#KBHIDIR
+0040 E0                MOVX    A,@DPTR
+0041 F500        E     MOV     KBHIData,A
+0043 22                RET     
+0044         L?0273:
+0044 900000      E     MOV     DPTR,#KBHISR
+0047 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 28  
+
+0048 7F05              MOV     R7,#05H
+004A 22                RET     
+             ; FUNCTION Com0103 (END)
+
+             ; FUNCTION service_pci1 (BEGIN)
+                                           ; SOURCE LINE # 18
+                                           ; SOURCE LINE # 19
+                                           ; SOURCE LINE # 20
+0000 900000      E     MOV     DPTR,#KBHISR
+0003 E0                MOVX    A,@DPTR
+0004 30E16A            JNB     ACC.1,?C0002
+                                           ; SOURCE LINE # 21
+                                           ; SOURCE LINE # 23
+0007         ?C0001:
+                                           ; SOURCE LINE # 25
+0007 900000      E     MOV     DPTR,#KBHISR
+000A E0                MOVX    A,@DPTR
+000B 30E31A            JNB     ACC.3,?C0003
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+000E E4                CLR     A
+000F F500        E     MOV     KBHIStep,A
+                                           ; SOURCE LINE # 28
+0011 C200        E     CLR     KbdNeedResponseFlag
+                                           ; SOURCE LINE # 29
+0013 900000      E     MOV     DPTR,#KBHIDIR
+0016 E0                MOVX    A,@DPTR
+0017 F500        E     MOV     KBHICmd,A
+                                           ; SOURCE LINE # 31
+0019 AF00        E     MOV     R7,KBHICmd
+001B 120000      R     LCALL   _Core_64Port
+                                           ; SOURCE LINE # 32
+001E AF00        E     MOV     R7,KBHICmd
+0020 120000      E     LCALL   _Hook_64Port
+                                           ; SOURCE LINE # 34
+0023 300048      E     JNB     KbdNeedResponseFlag,?C0005
+                                           ; SOURCE LINE # 35
+                                           ; SOURCE LINE # 36
+                                           ; SOURCE LINE # 37
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+0026 8033              SJMP    ?C0245
+0028         ?C0003:
+                                           ; SOURCE LINE # 41
+                                           ; SOURCE LINE # 42
+0028 850000      E     MOV     KBHIData2,KBHIData1
+                                           ; SOURCE LINE # 43
+002B 850000      E     MOV     KBHIData1,KBHIData
+                                           ; SOURCE LINE # 44
+002E 120000      R     LCALL   L?0271
+                                           ; SOURCE LINE # 47
+0031 300014      E     JNB     FastA20,?C0006
+                                           ; SOURCE LINE # 48
+                                           ; SOURCE LINE # 49
+0034 E500        E     MOV     A,KBHIData
+0036 30E105            JNB     ACC.1,?C0007
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 51
+0039 120000      E     LCALL   Hook_A20ON
+                                           ; SOURCE LINE # 52
+003C 8003              SJMP    ?C0008
+003E         ?C0007:
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 29  
+
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+003E 120000      E     LCALL   Hook_A20OFF
+                                           ; SOURCE LINE # 56
+0041         ?C0008:
+                                           ; SOURCE LINE # 57
+0041 C200        E     CLR     FastA20
+                                           ; SOURCE LINE # 58
+0043 E4                CLR     A
+0044 F500        E     MOV     KBHIStep,A
+                                           ; SOURCE LINE # 59
+0046 8026              SJMP    ?C0005
+0048         ?C0006:
+                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 62
+0048 E500        E     MOV     A,KBHIStep
+004A 601A              JZ      ?C0010
+                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 64
+004C AF00        E     MOV     R7,KBHICmd
+004E 120000      R     LCALL   _Core_60Port
+                                           ; SOURCE LINE # 65
+0051 AF00        E     MOV     R7,KBHICmd
+0053 120000      E     LCALL   _Hook_60Port
+                                           ; SOURCE LINE # 66
+0056 1500        E     DEC     KBHIStep
+                                           ; SOURCE LINE # 67
+0058 300013      E     JNB     KbdNeedResponseFlag,?C0005
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 69
+005B         ?C0245:
+005B C200        E     CLR     KbdNeedResponseFlag
+                                           ; SOURCE LINE # 70
+005D 7800        E     MOV     R0,#LOW KBHIReponse
+005F E6                MOV     A,@R0
+0060 FF                MOV     R7,A
+0061 120000      E     LCALL   _KBC_DataToHost
+                                           ; SOURCE LINE # 71
+                                           ; SOURCE LINE # 72
+0064 8008              SJMP    ?C0005
+0066         ?C0010:
+                                           ; SOURCE LINE # 74
+                                           ; SOURCE LINE # 75
+0066 120000      R     LCALL   Cmd_AE
+                                           ; SOURCE LINE # 83
+0069 AF00        E     MOV     R7,KBHIData
+006B 120000      R     LCALL   _KeyboardCmd
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 86
+006E         ?C0005:
+                                           ; SOURCE LINE # 88
+006E 120000      E     LCALL   EnableKBCIBFInt
+                                           ; SOURCE LINE # 89
+0071         ?C0002:
+0071 22                RET     
+             ; FUNCTION service_pci1 (END)
+
+             ; FUNCTION Cmd_20 (BEGIN)
+                                           ; SOURCE LINE # 97
+                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 100
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 30  
+
+0000 AF00        E     MOV     R7,Ccb42
+0002 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_20 (END)
+
+             ; FUNCTION Cmd_33 (BEGIN)
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+0000 900000      E     MOV     DPTR,#Pass_On
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_33 (END)
+
+             ; FUNCTION Cmd_34 (BEGIN)
+                                           ; SOURCE LINE # 118
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+0000 900000      E     MOV     DPTR,#Pass_Off
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_34 (END)
+
+             ; FUNCTION Cmd_36 (BEGIN)
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+0000 900000      E     MOV     DPTR,#Pass_Make1
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_36 (END)
+
+             ; FUNCTION Cmd_37 (BEGIN)
+                                           ; SOURCE LINE # 136
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+0000 900000      E     MOV     DPTR,#Pass_Make2
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_37 (END)
+
+             ; FUNCTION Cmd_60 (BEGIN)
+                                           ; SOURCE LINE # 148
+                                           ; SOURCE LINE # 150
+                                           ; SOURCE LINE # 151
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_60 (END)
+
+             ; FUNCTION Cmd_73 (BEGIN)
+                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 162
+                                           ; SOURCE LINE # 163
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_73 (END)
+
+             ; FUNCTION Cmd_74 (BEGIN)
+                                           ; SOURCE LINE # 169
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 31  
+
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_74 (END)
+
+             ; FUNCTION Cmd_76 (BEGIN)
+                                           ; SOURCE LINE # 178
+                                           ; SOURCE LINE # 180
+                                           ; SOURCE LINE # 181
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_76 (END)
+
+             ; FUNCTION Cmd_77 (BEGIN)
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 189
+                                           ; SOURCE LINE # 190
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_77 (END)
+
+             ; FUNCTION Cmd_90 (BEGIN)
+                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 202
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_90 (END)
+
+             ; FUNCTION Cmd_91 (BEGIN)
+                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 211
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_91 (END)
+
+             ; FUNCTION Cmd_92 (BEGIN)
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 220
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_92 (END)
+
+             ; FUNCTION Cmd_93 (BEGIN)
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 228
+                                           ; SOURCE LINE # 229
+0000 7F01              MOV     R7,#01H
+0002 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_93 (END)
+
+             ; FUNCTION Cmd_A4 (BEGIN)
+                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 241
+                                           ; SOURCE LINE # 242
+0000 7800        E     MOV     R0,#LOW Flag
+0002 E6                MOV     A,@R0
+0003 13                RRC     A
+0004 13                RRC     A
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 32  
+
+0005 543F              ANL     A,#03FH
+0007 30E004            JNB     ACC.0,?C0027
+                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 244
+000A 7FFA              MOV     R7,#0FAH
+                                           ; SOURCE LINE # 245
+000C 8002              SJMP    ?C0246
+000E         ?C0027:
+                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 248
+000E 7FF1              MOV     R7,#0F1H
+0010         ?C0246:
+0010 120000      R     LCALL   _ResponseKBData
+                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 250
+0013         ?C0029:
+0013 22                RET     
+             ; FUNCTION Cmd_A4 (END)
+
+             ; FUNCTION Cmd_A5 (BEGIN)
+                                           ; SOURCE LINE # 255
+                                           ; SOURCE LINE # 257
+                                           ; SOURCE LINE # 258
+0000 E4                CLR     A
+0001 F500        E     MOV     Tmp_Load,A
+                                           ; SOURCE LINE # 259
+0003 7F08              MOV     R7,#08H
+0005 020000      R     LJMP    _SetHandleCmdData
+             ; FUNCTION Cmd_A5 (END)
+
+             ; FUNCTION Cmd_A6 (BEGIN)
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 268
+0000 7800        E     MOV     R0,#LOW Flag
+0002 E6                MOV     A,@R0
+0003 13                RRC     A
+0004 13                RRC     A
+0005 543F              ANL     A,#03FH
+0007 30E012            JNB     ACC.0,?C0031
+                                           ; SOURCE LINE # 269
+                                           ; SOURCE LINE # 270
+000A D200        E     SETB    Gen_Info_PASS_ENABLE
+                                           ; SOURCE LINE # 271
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#Pass_Buff_Idx
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 272
+0011 E6                MOV     A,@R0
+0012 54FE              ANL     A,#0FEH
+0014 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 273
+0015 900000      E     MOV     DPTR,#Pass_On
+0018 E0                MOVX    A,@DPTR
+0019 FF                MOV     R7,A
+                                           ; SOURCE LINE # 274
+001A 8002              SJMP    ?C0247
+001C         ?C0031:
+                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 277
+001C E4                CLR     A
+001D FF                MOV     R7,A
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 33  
+
+001E         ?C0247:
+001E 120000      R     LCALL   _ResponseKBData
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+0021         ?C0033:
+0021 22                RET     
+             ; FUNCTION Cmd_A6 (END)
+
+             ; FUNCTION Cmd_A7 (BEGIN)
+                                           ; SOURCE LINE # 284
+                                           ; SOURCE LINE # 286
+                                           ; SOURCE LINE # 287
+0000 D200        E     SETB    Ccb42_DISAB_AUX
+                                           ; SOURCE LINE # 288
+0002 22                RET     
+             ; FUNCTION Cmd_A7 (END)
+
+             ; FUNCTION Cmd_A8 (BEGIN)
+                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 296
+0000 C200        E     CLR     Ccb42_DISAB_AUX
+                                           ; SOURCE LINE # 297
+0002 22                RET     
+             ; FUNCTION Cmd_A8 (END)
+
+             ; FUNCTION Cmd_A9 (BEGIN)
+                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 310
+                                           ; SOURCE LINE # 311
+0000 C200        E     CLR     MULPX_Multiplex
+                                           ; SOURCE LINE # 312
+0002 E4                CLR     A
+0003 FF                MOV     R7,A
+0004 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_A9 (END)
+
+             ; FUNCTION Cmd_AA (BEGIN)
+                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 323
+0000 7F01              MOV     R7,#01H
+0002 120000      E     LCALL   _ScanAUXDevice
+                                           ; SOURCE LINE # 328
+0005 C200        E     CLR     MULPX_Multiplex
+                                           ; SOURCE LINE # 330
+0007 7F55              MOV     R7,#055H
+0009 020000      E     LJMP    _Data_To_Host
+             ; FUNCTION Cmd_AA (END)
+
+             ; FUNCTION Cmd_AB (BEGIN)
+                                           ; SOURCE LINE # 343
+                                           ; SOURCE LINE # 345
+                                           ; SOURCE LINE # 346
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_AB (END)
+
+             ; FUNCTION Cmd_AC (BEGIN)
+                                           ; SOURCE LINE # 352
+                                           ; SOURCE LINE # 354
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 34  
+
+                                           ; SOURCE LINE # 357
+0000 22                RET     
+             ; FUNCTION Cmd_AC (END)
+
+             ; FUNCTION Cmd_AD (BEGIN)
+                                           ; SOURCE LINE # 362
+                                           ; SOURCE LINE # 364
+                                           ; SOURCE LINE # 365
+0000 D200        E     SETB    Ccb42_DISAB_KEY
+                                           ; SOURCE LINE # 366
+0002 7800        E     MOV     R0,#LOW Flag
+0004 E6                MOV     A,@R0
+0005 4401              ORL     A,#01H
+0007 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 367
+0008 020000      E     LJMP    Lock_Scan
+             ; FUNCTION Cmd_AD (END)
+
+             ; FUNCTION Cmd_AE (BEGIN)
+                                           ; SOURCE LINE # 374
+                                           ; SOURCE LINE # 376
+                                           ; SOURCE LINE # 377
+0000 C200        E     CLR     Ccb42_DISAB_KEY
+                                           ; SOURCE LINE # 378
+0002 7800        E     MOV     R0,#LOW Flag
+0004 E6                MOV     A,@R0
+0005 54FE              ANL     A,#0FEH
+0007 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 379
+0008 22                RET     
+             ; FUNCTION Cmd_AE (END)
+
+             ; FUNCTION Cmd_AF (BEGIN)
+                                           ; SOURCE LINE # 384
+                                           ; SOURCE LINE # 386
+                                           ; SOURCE LINE # 388
+0000 22                RET     
+             ; FUNCTION Cmd_AF (END)
+
+             ; FUNCTION Cmd_C0 (BEGIN)
+                                           ; SOURCE LINE # 406
+                                           ; SOURCE LINE # 408
+                                           ; SOURCE LINE # 409
+0000 7FBF              MOV     R7,#0BFH
+0002 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_C0 (END)
+
+             ; FUNCTION Cmd_D0 (BEGIN)
+                                           ; SOURCE LINE # 419
+                                           ; SOURCE LINE # 421
+                                           ; SOURCE LINE # 422
+0000 120000      R     LCALL   Read_Output_Port_2
+0003 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_D0 (END)
+
+             ; FUNCTION Cmd_D1 (BEGIN)
+                                           ; SOURCE LINE # 428
+                                           ; SOURCE LINE # 430
+                                           ; SOURCE LINE # 431
+0000 D200        E     SETB    FastA20
+                                           ; SOURCE LINE # 433
+0002 22                RET     
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 35  
+
+             ; FUNCTION Cmd_D1 (END)
+
+             ; FUNCTION Cmd_D2 (BEGIN)
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 440
+                                           ; SOURCE LINE # 441
+0000 C28E              CLR     TR1
+                                           ; SOURCE LINE # 442
+0002 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 443
+0004 00                NOP     
+                                           ; SOURCE LINE # 444
+0005 00                NOP     
+                                           ; SOURCE LINE # 445
+0006 00                NOP     
+                                           ; SOURCE LINE # 446
+0007 00                NOP     
+                                           ; SOURCE LINE # 447
+                                           ; SOURCE LINE # 448
+                                           ; SOURCE LINE # 449
+                                           ; SOURCE LINE # 450
+0008 120000      R     LCALL   L?0270
+000B         ?C0046:
+                                           ; SOURCE LINE # 452
+000B 208F17            JB      TF1,?C0047
+                                           ; SOURCE LINE # 453
+                                           ; SOURCE LINE # 454
+000E 900000      E     MOV     DPTR,#KBHISR
+0011 E0                MOVX    A,@DPTR
+0012 30E1F6            JNB     ACC.1,?C0046
+                                           ; SOURCE LINE # 455
+                                           ; SOURCE LINE # 456
+0015 E0                MOVX    A,@DPTR
+0016 20E308            JB      ACC.3,?C0049
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 458
+0019 120000      R     LCALL   L?0271
+                                           ; SOURCE LINE # 459
+001C AF00        E     MOV     R7,KBHIData
+001E 120000      E     LCALL   _Data_To_Host
+                                           ; SOURCE LINE # 460
+0021         ?C0049:
+                                           ; SOURCE LINE # 461
+                                           ; SOURCE LINE # 462
+                                           ; SOURCE LINE # 463
+0021 120000      R     LCALL   L?0264
+0024 22                RET     
+                                           ; SOURCE LINE # 465
+                                           ; SOURCE LINE # 466
+0025         ?C0047:
+                                           ; SOURCE LINE # 468
+                                           ; SOURCE LINE # 469
+                                           ; SOURCE LINE # 470
+0025 120000      R     LCALL   L?0264
+                                           ; SOURCE LINE # 471
+0028 7F01              MOV     R7,#01H
+002A 120000      R     LCALL   _SetHandleCmdData
+                                           ; SOURCE LINE # 472
+002D         ?C0050:
+002D 22                RET     
+             ; FUNCTION Cmd_D2 (END)
+
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 36  
+
+             ; FUNCTION Cmd_D3 (BEGIN)
+                                           ; SOURCE LINE # 477
+                                           ; SOURCE LINE # 479
+                                           ; SOURCE LINE # 480
+0000 C28E              CLR     TR1
+                                           ; SOURCE LINE # 481
+0002 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 482
+0004 00                NOP     
+                                           ; SOURCE LINE # 483
+0005 00                NOP     
+                                           ; SOURCE LINE # 484
+0006 00                NOP     
+                                           ; SOURCE LINE # 485
+0007 00                NOP     
+                                           ; SOURCE LINE # 486
+                                           ; SOURCE LINE # 487
+                                           ; SOURCE LINE # 488
+                                           ; SOURCE LINE # 489
+0008 120000      R     LCALL   L?0270
+000B         ?C0051:
+                                           ; SOURCE LINE # 491
+000B 208F17            JB      TF1,?C0052
+                                           ; SOURCE LINE # 492
+                                           ; SOURCE LINE # 493
+000E 900000      E     MOV     DPTR,#KBHISR
+0011 E0                MOVX    A,@DPTR
+0012 30E1F6            JNB     ACC.1,?C0051
+                                           ; SOURCE LINE # 494
+                                           ; SOURCE LINE # 495
+0015 E0                MOVX    A,@DPTR
+0016 20E308            JB      ACC.3,?C0054
+                                           ; SOURCE LINE # 496
+                                           ; SOURCE LINE # 497
+0019 120000      R     LCALL   L?0272
+                                           ; SOURCE LINE # 501
+001C AF00        E     MOV     R7,KBHIData
+001E 120000      E     LCALL   _Aux_Data_To_Host
+                                           ; SOURCE LINE # 503
+0021         ?C0054:
+                                           ; SOURCE LINE # 504
+                                           ; SOURCE LINE # 505
+                                           ; SOURCE LINE # 506
+0021 120000      R     LCALL   L?0265
+0024 22                RET     
+                                           ; SOURCE LINE # 508
+                                           ; SOURCE LINE # 509
+0025         ?C0052:
+                                           ; SOURCE LINE # 511
+                                           ; SOURCE LINE # 512
+                                           ; SOURCE LINE # 513
+0025 120000      R     LCALL   L?0265
+                                           ; SOURCE LINE # 514
+0028 7F01              MOV     R7,#01H
+002A 120000      R     LCALL   _SetHandleCmdData
+                                           ; SOURCE LINE # 515
+002D         ?C0055:
+002D 22                RET     
+             ; FUNCTION Cmd_D3 (END)
+
+             ; FUNCTION Cmd_D4 (BEGIN)
+                                           ; SOURCE LINE # 520
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 37  
+
+                                           ; SOURCE LINE # 522
+                                           ; SOURCE LINE # 523
+0000 7F01              MOV     R7,#01H
+0002 120000      R     LCALL   _SetHandleCmdData
+                                           ; SOURCE LINE # 524
+0005 C200        E     CLR     MULPX_Multiplex
+                                           ; SOURCE LINE # 525
+0007 22                RET     
+             ; FUNCTION Cmd_D4 (END)
+
+             ; FUNCTION Cmd_E0 (BEGIN)
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 535
+                                           ; SOURCE LINE # 536
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 020000      R     LJMP    _ResponseKBData
+             ; FUNCTION Cmd_E0 (END)
+
+             ; FUNCTION Cmd_FX (BEGIN)
+                                           ; SOURCE LINE # 542
+                                           ; SOURCE LINE # 543
+                                           ; SOURCE LINE # 544
+0000 E500        E     MOV     A,KBHICmd
+0002 20E012            JB      ACC.0,?C0059
+                                           ; SOURCE LINE # 545
+                                           ; SOURCE LINE # 547
+0005 120000      E     LCALL   Hook_A20ON
+                                           ; SOURCE LINE # 548
+0008 120000      E     LCALL   Hook_KBRSTON
+                                           ; SOURCE LINE # 550
+000B E4                CLR     A
+000C 900000      E     MOV     DPTR,#WNCKR
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 551
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 552
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 553
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 554
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 555
+0014 120000      E     LCALL   Hook_KBRSTOFF
+                                           ; SOURCE LINE # 556
+                                           ; SOURCE LINE # 557
+0017         ?C0059:
+0017 22                RET     
+             ; FUNCTION Cmd_FX (END)
+
+             ; FUNCTION Cmd_60Data (BEGIN)
+                                           ; SOURCE LINE # 565
+                                           ; SOURCE LINE # 566
+                                           ; SOURCE LINE # 567
+0000 850000      E     MOV     Ccb42,KBHIData
+                                           ; SOURCE LINE # 580
+0003 300005      E     JNB     Ccb42_DISAB_KEY,?C0060
+                                           ; SOURCE LINE # 581
+                                           ; SOURCE LINE # 582
+0006 120000      R     LCALL   Cmd_AD
+                                           ; SOURCE LINE # 583
+0009 8003              SJMP    ?C0061
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 38  
+
+000B         ?C0060:
+                                           ; SOURCE LINE # 585
+                                           ; SOURCE LINE # 586
+000B 120000      R     LCALL   Cmd_AE
+                                           ; SOURCE LINE # 587
+000E         ?C0061:
+                                           ; SOURCE LINE # 590
+000E 900000      E     MOV     DPTR,#KBHISR
+0011 E0                MOVX    A,@DPTR
+0012 300004      E     JNB     Ccb42_SYS_FLAG,?C0062
+                                           ; SOURCE LINE # 591
+0015 4404              ORL     A,#04H
+0017 F0                MOVX    @DPTR,A
+0018 22                RET     
+0019         ?C0062:
+                                           ; SOURCE LINE # 593
+0019 54FB              ANL     A,#0FBH
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 594
+001C         ?C0064:
+001C 22                RET     
+             ; FUNCTION Cmd_60Data (END)
+
+             ; FUNCTION Cmd_73Data (BEGIN)
+                                           ; SOURCE LINE # 602
+                                           ; SOURCE LINE # 603
+                                           ; SOURCE LINE # 604
+0000 900000      E     MOV     DPTR,#Pass_On
+0003 E500        E     MOV     A,KBHIData
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 605
+0006 22                RET     
+             ; FUNCTION Cmd_73Data (END)
+
+             ; FUNCTION Cmd_74Data (BEGIN)
+                                           ; SOURCE LINE # 610
+                                           ; SOURCE LINE # 611
+                                           ; SOURCE LINE # 612
+0000 900000      E     MOV     DPTR,#Pass_Off
+0003 E500        E     MOV     A,KBHIData
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 613
+0006 22                RET     
+             ; FUNCTION Cmd_74Data (END)
+
+             ; FUNCTION Cmd_76Data (BEGIN)
+                                           ; SOURCE LINE # 618
+                                           ; SOURCE LINE # 619
+                                           ; SOURCE LINE # 620
+0000 900000      E     MOV     DPTR,#Pass_Make1
+0003 E500        E     MOV     A,KBHIData
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 621
+0006 22                RET     
+             ; FUNCTION Cmd_76Data (END)
+
+             ; FUNCTION Cmd_77Data (BEGIN)
+                                           ; SOURCE LINE # 626
+                                           ; SOURCE LINE # 627
+                                           ; SOURCE LINE # 628
+0000 900000      E     MOV     DPTR,#Pass_Make2
+0003 E500        E     MOV     A,KBHIData
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 39  
+
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 629
+0006 22                RET     
+             ; FUNCTION Cmd_77Data (END)
+
+             ; FUNCTION Cmd_90Data (BEGIN)
+                                           ; SOURCE LINE # 638
+                                           ; SOURCE LINE # 639
+                                           ; SOURCE LINE # 640
+                                           ; SOURCE LINE # 641
+                                           ; SOURCE LINE # 643
+                                           ; SOURCE LINE # 645
+0000         ?C0069:
+                                           ; SOURCE LINE # 659
+0000 E500        E     MOV     A,KBHIData
+0002 B4FF05            CJNE    A,#0FFH,?C0070
+                                           ; SOURCE LINE # 660
+                                           ; SOURCE LINE # 661
+0005 E4                CLR     A
+0006 FF                MOV     R7,A
+0007 120000      E     LCALL   _ScanAUXDevice
+                                           ; SOURCE LINE # 662
+000A         ?C0070:
+                                           ; SOURCE LINE # 664
+000A 900000      E     MOV     DPTR,#KBHISR
+000D 7424              MOV     A,#024H
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 665
+0010 900000      E     MOV     DPTR,#KBHICR
+0013 E0                MOVX    A,@DPTR
+0014 54FC              ANL     A,#0FCH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 666
+0017 300004      E     JNB     Ccb42_INTR_AUX,?C0071
+                                           ; SOURCE LINE # 667
+                                           ; SOURCE LINE # 668
+001A E0                MOVX    A,@DPTR
+001B 4402              ORL     A,#02H
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 669
+001E         ?C0071:
+                                           ; SOURCE LINE # 671
+001E 7F05              MOV     R7,#05H
+0020 120000      E     LCALL   _DelayXms
+                                           ; SOURCE LINE # 672
+0023 120000      R     LCALL   L?0266
+                                           ; SOURCE LINE # 674
+0026 AF00        E     MOV     R7,KBHIData
+0028 020000      E     LJMP    _Hook_Mouse_90Cmd
+             ; FUNCTION Cmd_90Data (END)
+
+             ; FUNCTION Cmd_91Data (BEGIN)
+                                           ; SOURCE LINE # 680
+                                           ; SOURCE LINE # 681
+                                           ; SOURCE LINE # 682
+                                           ; SOURCE LINE # 683
+                                           ; SOURCE LINE # 685
+                                           ; SOURCE LINE # 687
+0000         ?C0073:
+                                           ; SOURCE LINE # 689
+0000 7800        E     MOV     R0,#LOW AuxFlags
+0002 E6                MOV     A,@R0
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 40  
+
+0003 30E707            JNB     ACC.7,?C0074
+                                           ; SOURCE LINE # 690
+                                           ; SOURCE LINE # 691
+0006 E4                CLR     A
+0007 FF                MOV     R7,A
+0008 120000      E     LCALL   _SendCmdtoMUX
+                                           ; SOURCE LINE # 692
+000B 800B              SJMP    ?C0075
+000D         ?C0074:
+                                           ; SOURCE LINE # 694
+                                           ; SOURCE LINE # 695
+000D 7440              MOV     A,#040H
+                                           ; SOURCE LINE # 696
+000F 120000      R     LCALL   L?0273
+0012 120000      E     LCALL   _DelayXms
+                                           ; SOURCE LINE # 697
+0015 120000      R     LCALL   L?0266
+                                           ; SOURCE LINE # 698
+0018         ?C0075:
+                                           ; SOURCE LINE # 700
+0018 AF00        E     MOV     R7,KBHIData
+001A 020000      E     LJMP    _Hook_Mouse_91Cmd
+             ; FUNCTION Cmd_91Data (END)
+
+             ; FUNCTION Cmd_92Data (BEGIN)
+                                           ; SOURCE LINE # 706
+                                           ; SOURCE LINE # 707
+                                           ; SOURCE LINE # 708
+                                           ; SOURCE LINE # 709
+                                           ; SOURCE LINE # 711
+                                           ; SOURCE LINE # 713
+0000         ?C0077:
+                                           ; SOURCE LINE # 715
+0000 7800        E     MOV     R0,#LOW AuxFlags+01H
+0002 E6                MOV     A,@R0
+0003 30E707            JNB     ACC.7,?C0078
+                                           ; SOURCE LINE # 716
+                                           ; SOURCE LINE # 717
+0006 7F01              MOV     R7,#01H
+0008 120000      E     LCALL   _SendCmdtoMUX
+                                           ; SOURCE LINE # 718
+000B 800B              SJMP    ?C0079
+000D         ?C0078:
+                                           ; SOURCE LINE # 720
+                                           ; SOURCE LINE # 721
+000D 7480              MOV     A,#080H
+                                           ; SOURCE LINE # 722
+000F 120000      R     LCALL   L?0273
+0012 120000      E     LCALL   _DelayXms
+                                           ; SOURCE LINE # 723
+0015 120000      R     LCALL   L?0267
+                                           ; SOURCE LINE # 724
+0018         ?C0079:
+                                           ; SOURCE LINE # 726
+0018 AF00        E     MOV     R7,KBHIData
+001A 020000      E     LJMP    _Hook_Mouse_92Cmd
+             ; FUNCTION Cmd_92Data (END)
+
+             ; FUNCTION Cmd_93Data (BEGIN)
+                                           ; SOURCE LINE # 732
+                                           ; SOURCE LINE # 733
+                                           ; SOURCE LINE # 734
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 41  
+
+                                           ; SOURCE LINE # 735
+                                           ; SOURCE LINE # 737
+                                           ; SOURCE LINE # 739
+0000         ?C0081:
+                                           ; SOURCE LINE # 741
+0000 7800        E     MOV     R0,#LOW AuxFlags+02H
+0002 E6                MOV     A,@R0
+0003 30E707            JNB     ACC.7,?C0082
+                                           ; SOURCE LINE # 742
+                                           ; SOURCE LINE # 743
+0006 7F02              MOV     R7,#02H
+0008 120000      E     LCALL   _SendCmdtoMUX
+                                           ; SOURCE LINE # 744
+000B 800E              SJMP    ?C0083
+000D         ?C0082:
+                                           ; SOURCE LINE # 746
+                                           ; SOURCE LINE # 747
+000D 900000      E     MOV     DPTR,#KBHISR
+0010 74C0              MOV     A,#0C0H
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 748
+0013 7F05              MOV     R7,#05H
+0015 120000      E     LCALL   _DelayXms
+                                           ; SOURCE LINE # 749
+0018 120000      R     LCALL   L?0267
+                                           ; SOURCE LINE # 750
+001B         ?C0083:
+                                           ; SOURCE LINE # 752
+001B AF00        E     MOV     R7,KBHIData
+001D 020000      E     LJMP    _Hook_Mouse_93Cmd
+             ; FUNCTION Cmd_93Data (END)
+
+             ; FUNCTION Cmd_A5Data (BEGIN)
+                                           ; SOURCE LINE # 763
+                                           ; SOURCE LINE # 764
+                                           ; SOURCE LINE # 765
+0000 E500        E     MOV     A,Tmp_Load
+0002 700B              JNZ     ?C0085
+0004 E500        E     MOV     A,KBHIData
+0006 7007              JNZ     ?C0085
+                                           ; SOURCE LINE # 766
+                                           ; SOURCE LINE # 767
+0008 7800        E     MOV     R0,#LOW Flag
+000A E6                MOV     A,@R0
+000B 54FB              ANL     A,#0FBH
+000D F6                MOV     @R0,A
+                                           ; SOURCE LINE # 770
+000E 22                RET     
+000F         ?C0085:
+                                           ; SOURCE LINE # 772
+                                           ; SOURCE LINE # 773
+000F E500        E     MOV     A,Tmp_Load
+0011 C3                CLR     C
+0012 9408              SUBB    A,#08H
+0014 5011              JNC     ?C0087
+                                           ; SOURCE LINE # 774
+                                           ; SOURCE LINE # 775
+0016 AF00        E     MOV     R7,Tmp_Load
+0018 7400        E     MOV     A,#LOW Pass_Buff
+001A 2F                ADD     A,R7
+001B F582              MOV     DPL,A
+001D E4                CLR     A
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 42  
+
+001E 3400        E     ADDC    A,#HIGH Pass_Buff
+0020 F583              MOV     DPH,A
+0022 E500        E     MOV     A,KBHIData
+0024 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 776
+0025 0500        E     INC     Tmp_Load
+                                           ; SOURCE LINE # 777
+0027         ?C0087:
+                                           ; SOURCE LINE # 779
+0027 E500        E     MOV     A,KBHIData
+0029 7006              JNZ     ?C0089
+                                           ; SOURCE LINE # 780
+                                           ; SOURCE LINE # 782
+002B 7800        E     MOV     R0,#LOW Flag
+002D E6                MOV     A,@R0
+002E 4404              ORL     A,#04H
+0030 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 783
+                                           ; SOURCE LINE # 784
+                                           ; SOURCE LINE # 785
+0031         ?C0089:
+0031 22                RET     
+             ; FUNCTION Cmd_A5Data (END)
+
+             ; FUNCTION Cmd_D1Data (BEGIN)
+                                           ; SOURCE LINE # 793
+                                           ; SOURCE LINE # 794
+                                           ; SOURCE LINE # 795
+0000 E500        E     MOV     A,KBHIData
+0002 30E103            JNB     ACC.1,?C0090
+                                           ; SOURCE LINE # 796
+                                           ; SOURCE LINE # 797
+0005 020000      E     LJMP    Hook_A20ON
+                                           ; SOURCE LINE # 798
+0008         ?C0090:
+                                           ; SOURCE LINE # 800
+                                           ; SOURCE LINE # 801
+0008 120000      E     LCALL   Hook_A20OFF
+                                           ; SOURCE LINE # 802
+                                           ; SOURCE LINE # 803
+000B         ?C0092:
+000B 22                RET     
+             ; FUNCTION Cmd_D1Data (END)
+
+             ; FUNCTION Cmd_D2Data (BEGIN)
+                                           ; SOURCE LINE # 808
+                                           ; SOURCE LINE # 809
+                                           ; SOURCE LINE # 810
+0000 AF00        E     MOV     R7,KBHIData
+0002 020000      E     LJMP    _Data_To_Host
+             ; FUNCTION Cmd_D2Data (END)
+
+             ; FUNCTION Cmd_D3Data (BEGIN)
+                                           ; SOURCE LINE # 816
+                                           ; SOURCE LINE # 817
+                                           ; SOURCE LINE # 821
+0000 AF00        E     MOV     R7,KBHIData
+0002 020000      E     LJMP    _Aux_Data_To_Host
+             ; FUNCTION Cmd_D3Data (END)
+
+             ; FUNCTION Cmd_D4Data (BEGIN)
+                                           ; SOURCE LINE # 828
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 43  
+
+                                           ; SOURCE LINE # 829
+                                           ; SOURCE LINE # 830
+                                           ; SOURCE LINE # 831
+                                           ; SOURCE LINE # 833
+                                           ; SOURCE LINE # 835
+0000         ?C0095:
+                                           ; SOURCE LINE # 836
+0000 E500        E     MOV     A,KBHIData
+0002 B4FF05            CJNE    A,#0FFH,?C0096
+                                           ; SOURCE LINE # 837
+                                           ; SOURCE LINE # 838
+0005 7F01              MOV     R7,#01H
+0007 120000      E     LCALL   _ScanAUXDevice
+                                           ; SOURCE LINE # 839
+000A         ?C0096:
+                                           ; SOURCE LINE # 841
+000A 7800        E     MOV     R0,#LOW Main_MOUSE_CHN
+000C E6                MOV     A,@R0
+000D 6017              JZ      ?C0097
+                                           ; SOURCE LINE # 842
+                                           ; SOURCE LINE # 843
+000F E6                MOV     A,@R0
+0010 2400        E     ADD     A,#LOW AuxFlags+0FFFFH
+0012 F8                MOV     R0,A
+0013 74FD              MOV     A,#0FDH
+0015 56                ANL     A,@R0
+0016 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 844
+0017 7800        E     MOV     R0,#LOW Main_MOUSE_CHN
+0019 120000      R     LCALL   L?0261
+                                           ; SOURCE LINE # 845
+001C 7800        E     MOV     R0,#LOW Main_MOUSE_CHN
+001E E6                MOV     A,@R0
+001F 14                DEC     A
+0020 FF                MOV     R7,A
+0021 120000      E     LCALL   _SendCmdtoMouse
+                                           ; SOURCE LINE # 846
+0024 800A              SJMP    ?C0098
+0026         ?C0097:
+                                           ; SOURCE LINE # 848
+                                           ; SOURCE LINE # 849
+0026 7F14              MOV     R7,#014H
+0028 120000      E     LCALL   _DelayXms
+                                           ; SOURCE LINE # 853
+002B 7FFC              MOV     R7,#0FCH
+002D 120000      E     LCALL   _SendFromAux
+                                           ; SOURCE LINE # 855
+0030         ?C0098:
+                                           ; SOURCE LINE # 857
+0030 AF00        E     MOV     R7,KBHIData
+0032 020000      E     LJMP    _Hook_Mouse_D4Cmd
+             ; FUNCTION Cmd_D4Data (END)
+
+             ; FUNCTION _ResponseKBData (BEGIN)
+                                           ; SOURCE LINE # 863
+;---- Variable 'RData' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 864
+                                           ; SOURCE LINE # 865
+0000 7800        E     MOV     R0,#LOW KBHIReponse
+0002 EF                MOV     A,R7
+0003 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 866
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 44  
+
+0004 D200        E     SETB    KbdNeedResponseFlag
+                                           ; SOURCE LINE # 867
+0006 22                RET     
+             ; FUNCTION _ResponseKBData (END)
+
+             ; FUNCTION _SetHandleCmdData (BEGIN)
+                                           ; SOURCE LINE # 872
+;---- Variable 'step' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 873
+                                           ; SOURCE LINE # 874
+0000 8F00        E     MOV     KBHIStep,R7
+                                           ; SOURCE LINE # 875
+0002 22                RET     
+             ; FUNCTION _SetHandleCmdData (END)
+
+             ; FUNCTION _KeyboardCmd (BEGIN)
+                                           ; SOURCE LINE # 884
+0000 900000      R     MOV     DPTR,#nKB60DAT
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 885
+                                           ; SOURCE LINE # 887
+0005 E4                CLR     A
+0006 900000      R     MOV     DPTR,#cnt1
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 888
+000A A3                INC     DPTR
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 889
+000C FF                MOV     R7,A
+000D 120000      E     LCALL   _KBCmdAckByteCunt
+                                           ; SOURCE LINE # 890
+0010 E4                CLR     A
+0011 900000      R     MOV     DPTR,#ack
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 891
+0015 A3                INC     DPTR
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 892
+0017 A3                INC     DPTR
+0018 F0                MOVX    @DPTR,A
+0019         ?C0102:
+                                           ; SOURCE LINE # 895
+0019 900000      E     MOV     DPTR,#KBHISR
+001C E0                MOVX    A,@DPTR
+001D 30E05D            JNB     ACC.0,?C0103
+                                           ; SOURCE LINE # 896
+                                           ; SOURCE LINE # 897
+0020 900000      R     MOV     DPTR,#cnt1
+0023 E0                MOVX    A,@DPTR
+0024 04                INC     A
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 898
+0026 E0                MOVX    A,@DPTR
+0027 D3                SETB    C
+0028 94FE              SUBB    A,#0FEH
+002A 4004              JC      ?C0104
+                                           ; SOURCE LINE # 899
+                                           ; SOURCE LINE # 900
+002C E4                CLR     A
+002D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 901
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 45  
+
+002E 804D              SJMP    ?C0103
+                                           ; SOURCE LINE # 902
+0030         ?C0104:
+                                           ; SOURCE LINE # 904
+0030 900000      E     MOV     DPTR,#KBHICR
+0033 E0                MOVX    A,@DPTR
+0034 30E016            JNB     ACC.0,?C0105
+0037 900000      E     MOV     DPTR,#KBIRQR
+003A E0                MOVX    A,@DPTR
+003B 30E00F            JNB     ACC.0,?C0105
+                                           ; SOURCE LINE # 905
+                                           ; SOURCE LINE # 906
+003E 900000      E     MOV     DPTR,#KBHICR
+0041 E0                MOVX    A,@DPTR
+0042 54FC              ANL     A,#0FCH
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 907
+0045 900000      E     MOV     DPTR,#KBIRQR
+0048 E0                MOVX    A,@DPTR
+0049 54FE              ANL     A,#0FEH
+                                           ; SOURCE LINE # 908
+                                           ; SOURCE LINE # 909
+                                           ; SOURCE LINE # 910
+                                           ; SOURCE LINE # 911
+004B 8014              SJMP    ?C0249
+004D         ?C0105:
+                                           ; SOURCE LINE # 912
+004D 900000      E     MOV     DPTR,#KBHICR
+0050 E0                MOVX    A,@DPTR
+0051 20E011            JB      ACC.0,?C0106
+0054 900000      E     MOV     DPTR,#KBIRQR
+0057 E0                MOVX    A,@DPTR
+0058 20E00A            JB      ACC.0,?C0106
+                                           ; SOURCE LINE # 913
+                                           ; SOURCE LINE # 914
+005B 900000      E     MOV     DPTR,#KBHICR
+005E E0                MOVX    A,@DPTR
+005F 4401              ORL     A,#01H
+0061         ?C0249:
+0061 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 916
+0062 00                NOP     
+                                           ; SOURCE LINE # 917
+0063 00                NOP     
+                                           ; SOURCE LINE # 918
+0064 00                NOP     
+                                           ; SOURCE LINE # 919
+0065         ?C0106:
+                                           ; SOURCE LINE # 920
+0065 900000      E     MOV     DPTR,#KBHISR
+0068 E0                MOVX    A,@DPTR
+0069 20E0AD            JB      ACC.0,?C0102
+                                           ; SOURCE LINE # 921
+                                           ; SOURCE LINE # 922
+006C 120000      R     LCALL   Cmd_AD
+                                           ; SOURCE LINE # 923
+006F 900000      R     MOV     DPTR,#cnt1flag
+0072 7401              MOV     A,#01H
+0074 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 924
+0075 120000      E     LCALL   Clear_Key
+                                           ; SOURCE LINE # 925
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 46  
+
+0078 E4                CLR     A
+0079 900000      R     MOV     DPTR,#cnt1
+007C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 926
+                                           ; SOURCE LINE # 927
+                                           ; SOURCE LINE # 928
+007D         ?C0103:
+                                           ; SOURCE LINE # 933
+007D 7800        E     MOV     R0,#LOW KB_Command
+007F E6                MOV     A,@R0
+0080 7003              JNZ     $ + 5H
+0082 020000      R     LJMP    ?C0109
+                                           ; SOURCE LINE # 934
+                                           ; SOURCE LINE # 935
+0085 E6                MOV     A,@R0
+0086 900000      R     MOV     DPTR,#cmdbk
+0089 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 937
+008A E6                MOV     A,@R0
+008B 2410              ADD     A,#010H
+008D 6021              JZ      ?C0112
+008F 24FD              ADD     A,#0FDH
+0091 6027              JZ      ?C0113
+0093 2406              ADD     A,#06H
+0095 703D              JNZ     ?C0114
+                                           ; SOURCE LINE # 938
+                                           ; SOURCE LINE # 939
+0097         ?C0111:
+                                           ; SOURCE LINE # 940
+0097 900000      R     MOV     DPTR,#nKB60DAT
+009A E0                MOVX    A,@DPTR
+009B F500        E     MOV     Led_Data,A
+                                           ; SOURCE LINE # 941
+009D A3                INC     DPTR
+009E 74FA              MOV     A,#0FAH
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 942
+00A1 E4                CLR     A
+00A2 7800        E     MOV     R0,#LOW KB_Command
+00A4 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 943
+00A5 AF00        E     MOV     R7,Led_Data
+00A7 120000      E     LCALL   _OEM_Write_Leds
+                                           ; SOURCE LINE # 946
+00AA A200        E     MOV     C,Led_Data_NUM
+00AC 9200        E     MOV     Scanner_State_NUM_LOCK,C
+                                           ; SOURCE LINE # 947
+00AE 802A              SJMP    ?C0110
+                                           ; SOURCE LINE # 948
+00B0         ?C0112:
+                                           ; SOURCE LINE # 949
+00B0 900000      R     MOV     DPTR,#nKB60DAT
+00B3 E0                MOVX    A,@DPTR
+00B4 7800        E     MOV     R0,#LOW KB_CodeSet
+00B6 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 950
+00B7 A3                INC     DPTR
+                                           ; SOURCE LINE # 951
+                                           ; SOURCE LINE # 952
+00B8 8011              SJMP    ?C0250
+                                           ; SOURCE LINE # 953
+00BA         ?C0113:
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 47  
+
+                                           ; SOURCE LINE # 954
+00BA 900000      R     MOV     DPTR,#nKB60DAT
+00BD E0                MOVX    A,@DPTR
+00BE 7800        E     MOV     R0,#LOW PS2KB_Typematic
+00C0 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 955
+00C1 E6                MOV     A,@R0
+00C2 FF                MOV     R7,A
+00C3 7E00              MOV     R6,#00H
+00C5 120000      E     LCALL   _Set_Typematic
+                                           ; SOURCE LINE # 956
+00C8 900000      R     MOV     DPTR,#ack
+00CB         ?C0250:
+00CB 74FA              MOV     A,#0FAH
+00CD F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 957
+00CE E4                CLR     A
+00CF 7800        E     MOV     R0,#LOW KB_Command
+00D1 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 958
+00D2 8006              SJMP    ?C0110
+                                           ; SOURCE LINE # 959
+00D4         ?C0114:
+                                           ; SOURCE LINE # 960
+00D4 900000      R     MOV     DPTR,#ack
+00D7 74FE              MOV     A,#0FEH
+00D9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 962
+                                           ; SOURCE LINE # 963
+00DA         ?C0110:
+                                           ; SOURCE LINE # 965
+00DA 900000      R     MOV     DPTR,#cmdbk
+00DD E0                MOVX    A,@DPTR
+00DE FF                MOV     R7,A
+00DF 64F3              XRL     A,#0F3H
+00E1 6004              JZ      ?C0116
+00E3 EF                MOV     A,R7
+00E4 B4ED02            CJNE    A,#0EDH,?C0115
+00E7         ?C0116:
+                                           ; SOURCE LINE # 966
+                                           ; SOURCE LINE # 967
+00E7 D200        E     SETB    KeyboardDriverIn
+                                           ; SOURCE LINE # 968
+00E9         ?C0115:
+                                           ; SOURCE LINE # 970
+00E9 7800        E     MOV     R0,#LOW Main_KB_CHN
+00EB E6                MOV     A,@R0
+00EC 700C              JNZ     ?C0117
+                                           ; SOURCE LINE # 971
+                                           ; SOURCE LINE # 972
+00EE 900000      R     MOV     DPTR,#ack
+00F1 E0                MOVX    A,@DPTR
+00F2 FF                MOV     R7,A
+00F3 6036              JZ      ?C0119
+                                           ; SOURCE LINE # 973
+                                           ; SOURCE LINE # 974
+00F5 120000      E     LCALL   _KBC_DataToHost
+                                           ; SOURCE LINE # 980
+                                           ; SOURCE LINE # 981
+00F8 8031              SJMP    ?C0119
+00FA         ?C0117:
+                                           ; SOURCE LINE # 983
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 48  
+
+                                           ; SOURCE LINE # 985
+                                           ; SOURCE LINE # 986
+00FA 120000      R     LCALL   L?0260
+                                           ; SOURCE LINE # 988
+00FD 7F01              MOV     R7,#01H
+00FF 120000      E     LCALL   _KBCmdAckByteCunt
+                                           ; SOURCE LINE # 990
+0102 900000      R     MOV     DPTR,#cmdbk
+0105 E0                MOVX    A,@DPTR
+0106 7800        E     MOV     R0,#LOW Main_KB_CHN
+0108 B4ED07            CJNE    A,#0EDH,?C0120
+                                           ; SOURCE LINE # 991
+                                           ; SOURCE LINE # 992
+010B 120000      R     LCALL   L?0268
+010E 5407              ANL     A,#07H
+                                           ; SOURCE LINE # 993
+0110 8003              SJMP    ?C0248
+0112         ?C0120:
+                                           ; SOURCE LINE # 995
+                                           ; SOURCE LINE # 996
+0112 120000      R     LCALL   L?0268
+0115         ?C0248:
+0115 FD                MOV     R5,A
+0116 7B01              MOV     R3,#01H
+0118 120000      E     LCALL   _Send2Port
+                                           ; SOURCE LINE # 997
+011B         ?C0121:
+                                           ; SOURCE LINE # 999
+011B 900000      R     MOV     DPTR,#cmdbk
+011E E0                MOVX    A,@DPTR
+011F FF                MOV     R7,A
+0120 64F3              XRL     A,#0F3H
+0122 6004              JZ      ?C0123
+0124 EF                MOV     A,R7
+0125 B4ED03            CJNE    A,#0EDH,?C0119
+0128         ?C0123:
+                                           ; SOURCE LINE # 1000
+                                           ; SOURCE LINE # 1001
+0128 120000      E     LCALL   _SetOtherKBNeedUpdataFlag
+                                           ; SOURCE LINE # 1002
+                                           ; SOURCE LINE # 1003
+012B         ?C0119:
+                                           ; SOURCE LINE # 1005
+012B 900000      R     MOV     DPTR,#cnt1flag
+012E E0                MOVX    A,@DPTR
+012F B40105            CJNE    A,#01H,?C0124
+                                           ; SOURCE LINE # 1006
+                                           ; SOURCE LINE # 1007
+0132 E4                CLR     A
+0133 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1008
+0134 120000      R     LCALL   Cmd_AE
+                                           ; SOURCE LINE # 1009
+0137         ?C0124:
+                                           ; SOURCE LINE # 1011
+0137 900000      R     MOV     DPTR,#nKB60DAT
+013A E0                MOVX    A,@DPTR
+013B FF                MOV     R7,A
+013C 020000      E     LJMP    _Hook_Keyboard_Cmd_Parameter
+                                           ; SOURCE LINE # 1013
+013F         ?C0109:
+                                           ; SOURCE LINE # 1018
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 49  
+
+013F 900000      R     MOV     DPTR,#nKB60DAT
+0142 E0                MOVX    A,@DPTR
+0143 120000      E     LCALL   ?C?CCASE
+0146 0000        R     DW      ?C0135
+0148 EC                DB      0ECH
+0149 0000        R     DW      ?C0134
+014B ED                DB      0EDH
+014C 0000        R     DW      ?C0136
+014E EE                DB      0EEH
+014F 0000        R     DW      ?C0137
+0151 F0                DB      0F0H
+0152 0000        R     DW      ?C0138
+0154 F2                DB      0F2H
+0155 0000        R     DW      ?C0141
+0157 F3                DB      0F3H
+0158 0000        R     DW      ?C0142
+015A F4                DB      0F4H
+015B 0000        R     DW      ?C0143
+015D F5                DB      0F5H
+015E 0000        R     DW      ?C0144
+0160 F6                DB      0F6H
+0161 0000        R     DW      ?C0135
+0163 F7                DB      0F7H
+0164 0000        R     DW      ?C0135
+0166 F8                DB      0F8H
+0167 0000        R     DW      ?C0135
+0169 F9                DB      0F9H
+016A 0000        R     DW      ?C0135
+016C FA                DB      0FAH
+016D 0000        R     DW      ?C0135
+016F FB                DB      0FBH
+0170 0000        R     DW      ?C0150
+0172 FF                DB      0FFH
+0173 0000              DW      00H
+0175 0000        R     DW      ?C0156
+                                           ; SOURCE LINE # 1019
+                                           ; SOURCE LINE # 1023
+                                           ; SOURCE LINE # 1024
+                                           ; SOURCE LINE # 1026
+                                           ; SOURCE LINE # 1027
+                                           ; SOURCE LINE # 1029
+                                           ; SOURCE LINE # 1031
+                                           ; SOURCE LINE # 1032
+                                           ; SOURCE LINE # 1039
+                                           ; SOURCE LINE # 1040
+                                           ; SOURCE LINE # 1046
+                                           ; SOURCE LINE # 1047
+0177         ?C0134:
+                                           ; SOURCE LINE # 1057
+0177 120000      R     LCALL   L?0262
+                                           ; SOURCE LINE # 1058
+017A 7800        E     MOV     R0,#LOW KB_Command
+017C 76ED              MOV     @R0,#0EDH
+                                           ; SOURCE LINE # 1059
+017E 020000      R     LJMP    ?C0126
+                                           ; SOURCE LINE # 1060
+0181         ?C0135:
+                                           ; SOURCE LINE # 1061
+                                           ; SOURCE LINE # 1062
+0181 8047              SJMP    ?C0252
+                                           ; SOURCE LINE # 1064
+0183         ?C0136:
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 50  
+
+                                           ; SOURCE LINE # 1065
+0183 900000      R     MOV     DPTR,#ack
+0186 74EE              MOV     A,#0EEH
+0188 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1066
+0189 020000      R     LJMP    ?C0126
+                                           ; SOURCE LINE # 1068
+018C         ?C0137:
+                                           ; SOURCE LINE # 1069
+018C 120000      R     LCALL   L?0262
+                                           ; SOURCE LINE # 1070
+018F 7800        E     MOV     R0,#LOW KB_Command
+0191 76F0              MOV     @R0,#0F0H
+                                           ; SOURCE LINE # 1071
+0193 020000      R     LJMP    ?C0126
+                                           ; SOURCE LINE # 1073
+0196         ?C0138:
+                                           ; SOURCE LINE # 1074
+0196 120000      R     LCALL   L?0263
+                                           ; SOURCE LINE # 1075
+0199 A3                INC     DPTR
+019A 74AB              MOV     A,#0ABH
+019C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1076
+019D 300006      E     JNB     Ccb42_XLATE_PC,?C0139
+                                           ; SOURCE LINE # 1077
+                                           ; SOURCE LINE # 1078
+01A0 A3                INC     DPTR
+01A1 7483              MOV     A,#083H
+01A3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1079
+01A4 8067              SJMP    ?C0126
+01A6         ?C0139:
+                                           ; SOURCE LINE # 1081
+                                           ; SOURCE LINE # 1082
+01A6 900000      R     MOV     DPTR,#ack2
+01A9 7441              MOV     A,#041H
+01AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1083
+                                           ; SOURCE LINE # 1084
+01AC 805F              SJMP    ?C0126
+                                           ; SOURCE LINE # 1086
+01AE         ?C0141:
+                                           ; SOURCE LINE # 1087
+01AE 120000      R     LCALL   L?0263
+                                           ; SOURCE LINE # 1088
+01B1 7800        E     MOV     R0,#LOW KB_Command
+01B3 76F3              MOV     @R0,#0F3H
+                                           ; SOURCE LINE # 1089
+01B5 8056              SJMP    ?C0126
+                                           ; SOURCE LINE # 1091
+01B7         ?C0142:
+                                           ; SOURCE LINE # 1092
+01B7 D200        E     SETB    KeyboardDriverIn
+                                           ; SOURCE LINE # 1093
+01B9 120000      E     LCALL   Clear_Key
+                                           ; SOURCE LINE # 1094
+                                           ; SOURCE LINE # 1095
+01BC 800C              SJMP    ?C0254
+                                           ; SOURCE LINE # 1097
+01BE         ?C0143:
+                                           ; SOURCE LINE # 1098
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 51  
+
+01BE C200        E     CLR     KeyboardDriverIn
+                                           ; SOURCE LINE # 1099
+                                           ; SOURCE LINE # 1100
+01C0 120000      R     LCALL   L?0274
+                                           ; SOURCE LINE # 1101
+01C3         ?C0253:
+                                           ; SOURCE LINE # 1102
+01C3 8005              SJMP    ?C0254
+                                           ; SOURCE LINE # 1104
+01C5         ?C0144:
+                                           ; SOURCE LINE # 1105
+                                           ; SOURCE LINE # 1106
+01C5 120000      R     LCALL   L?0274
+                                           ; SOURCE LINE # 1107
+                                           ; SOURCE LINE # 1108
+01C8 8000              SJMP    ?C0255
+                                           ; SOURCE LINE # 1109
+                                           ; SOURCE LINE # 1110
+                                           ; SOURCE LINE # 1111
+                                           ; SOURCE LINE # 1112
+                                           ; SOURCE LINE # 1113
+01CA         ?C0252:
+01CA         ?C0254:
+01CA         ?C0255:
+01CA 120000      R     LCALL   L?0263
+                                           ; SOURCE LINE # 1115
+01CD 803E              SJMP    ?C0126
+                                           ; SOURCE LINE # 1117
+01CF         ?C0150:
+                                           ; SOURCE LINE # 1118
+01CF C200        E     CLR     KeyboardDriverIn
+                                           ; SOURCE LINE # 1119
+01D1 7F02              MOV     R7,#02H
+01D3 120000      E     LCALL   _ScanAUXDevice
+                                           ; SOURCE LINE # 1120
+01D6 120000      E     LCALL   Clear_Key
+                                           ; SOURCE LINE # 1121
+01D9 120000      E     LCALL   Clear_Typematic
+                                           ; SOURCE LINE # 1122
+01DC E4                CLR     A
+01DD F500        E     MOV     Scanner_State,A
+                                           ; SOURCE LINE # 1123
+01DF 120000      E     LCALL   Clear_Fn_Keys
+                                           ; SOURCE LINE # 1124
+01E2 120000      R     LCALL   L?0263
+                                           ; SOURCE LINE # 1125
+01E5 A3                INC     DPTR
+01E6 74AA              MOV     A,#0AAH
+01E8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1127
+;---- Variable 'index' assigned to Register 'R7' ----
+01E9 E4                CLR     A
+01EA FF                MOV     R7,A
+01EB         ?C0151:
+                                           ; SOURCE LINE # 1128
+                                           ; SOURCE LINE # 1129
+01EB 7800        E     MOV     R0,#LOW Main_KB_CHN
+01ED E6                MOV     A,@R0
+01EE 14                DEC     A
+01EF 6F                XRL     A,R7
+01F0 600E              JZ      ?C0153
+                                           ; SOURCE LINE # 1130
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 52  
+
+                                           ; SOURCE LINE # 1131
+01F2 7400        E     MOV     A,#LOW AuxFlags
+01F4 2F                ADD     A,R7
+01F5 F8                MOV     R0,A
+01F6 E6                MOV     A,@R0
+01F7 30E606            JNB     ACC.6,?C0153
+                                           ; SOURCE LINE # 1132
+                                           ; SOURCE LINE # 1133
+01FA 7400        E     MOV     A,#LOW AuxFlags
+01FC 2F                ADD     A,R7
+01FD F8                MOV     R0,A
+01FE E4                CLR     A
+01FF F6                MOV     @R0,A
+                                           ; SOURCE LINE # 1134
+                                           ; SOURCE LINE # 1135
+                                           ; SOURCE LINE # 1136
+0200         ?C0153:
+0200 0F                INC     R7
+0201 EF                MOV     A,R7
+0202 B403E6            CJNE    A,#03H,?C0151
+0205 8006              SJMP    ?C0126
+                                           ; SOURCE LINE # 1142
+                                           ; SOURCE LINE # 1144
+0207         ?C0156:
+                                           ; SOURCE LINE # 1145
+0207 900000      R     MOV     DPTR,#ack
+020A 74FE              MOV     A,#0FEH
+020C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1148
+                                           ; SOURCE LINE # 1150
+020D         ?C0126:
+                                           ; SOURCE LINE # 1152
+020D 7800        E     MOV     R0,#LOW Main_KB_CHN
+020F E6                MOV     A,@R0
+0210 7024              JNZ     ?C0157
+                                           ; SOURCE LINE # 1153
+                                           ; SOURCE LINE # 1154
+0212 FF                MOV     R7,A
+0213 120000      E     LCALL   _KBCmdAckByteCunt
+                                           ; SOURCE LINE # 1156
+0216 900000      R     MOV     DPTR,#ack
+0219 E0                MOVX    A,@DPTR
+021A FF                MOV     R7,A
+021B 6061              JZ      ?C0161
+                                           ; SOURCE LINE # 1157
+                                           ; SOURCE LINE # 1158
+021D 120000      E     LCALL   _KBC_DataToHost
+                                           ; SOURCE LINE # 1166
+0220 900000      R     MOV     DPTR,#ack1
+0223 E0                MOVX    A,@DPTR
+0224 FF                MOV     R7,A
+0225 6057              JZ      ?C0161
+                                           ; SOURCE LINE # 1167
+                                           ; SOURCE LINE # 1168
+0227 120000      E     LCALL   _KBC_DataPending
+                                           ; SOURCE LINE # 1176
+022A 900000      R     MOV     DPTR,#ack2
+022D E0                MOVX    A,@DPTR
+022E FF                MOV     R7,A
+022F 604D              JZ      ?C0161
+                                           ; SOURCE LINE # 1177
+                                           ; SOURCE LINE # 1178
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 53  
+
+0231 120000      E     LCALL   _KBC_DataPending
+                                           ; SOURCE LINE # 1185
+                                           ; SOURCE LINE # 1186
+                                           ; SOURCE LINE # 1187
+                                           ; SOURCE LINE # 1188
+0234 8048              SJMP    ?C0161
+0236         ?C0157:
+                                           ; SOURCE LINE # 1190
+                                           ; SOURCE LINE # 1191
+                                           ; SOURCE LINE # 1192
+0236 120000      R     LCALL   L?0260
+                                           ; SOURCE LINE # 1194
+0239 900000      R     MOV     DPTR,#nKB60DAT
+023C E0                MOVX    A,@DPTR
+023D B4FF02            CJNE    A,#0FFH,?C0162
+                                           ; SOURCE LINE # 1195
+                                           ; SOURCE LINE # 1196
+                                           ; SOURCE LINE # 1197
+0240 8018              SJMP    ?C0256
+0242         ?C0162:
+                                           ; SOURCE LINE # 1199
+                                           ; SOURCE LINE # 1200
+0242 900000      R     MOV     DPTR,#nKB60DAT
+0245 E0                MOVX    A,@DPTR
+0246 B4F204            CJNE    A,#0F2H,?C0164
+                                           ; SOURCE LINE # 1201
+                                           ; SOURCE LINE # 1202
+0249 7F03              MOV     R7,#03H
+                                           ; SOURCE LINE # 1203
+024B 8013              SJMP    ?C0258
+024D         ?C0164:
+                                           ; SOURCE LINE # 1204
+024D 900000      R     MOV     DPTR,#nKB60DAT
+0250 E0                MOVX    A,@DPTR
+0251 FF                MOV     R7,A
+0252 64F3              XRL     A,#0F3H
+0254 6004              JZ      ?C0167
+0256 EF                MOV     A,R7
+0257 B4ED04            CJNE    A,#0EDH,?C0166
+025A         ?C0167:
+                                           ; SOURCE LINE # 1205
+                                           ; SOURCE LINE # 1206
+025A         ?C0256:
+025A 7F02              MOV     R7,#02H
+025C         ?C0257:
+                                           ; SOURCE LINE # 1207
+025C 8002              SJMP    ?C0258
+025E         ?C0166:
+                                           ; SOURCE LINE # 1209
+                                           ; SOURCE LINE # 1210
+025E 7F01              MOV     R7,#01H
+0260         ?C0258:
+0260 120000      E     LCALL   _KBCmdAckByteCunt
+                                           ; SOURCE LINE # 1211
+                                           ; SOURCE LINE # 1212
+0263         ?C0163:
+                                           ; SOURCE LINE # 1214
+0263 7800        E     MOV     R0,#LOW Main_KB_CHN
+0265 120000      R     LCALL   L?0269
+0268 FD                MOV     R5,A
+0269 7B01              MOV     R3,#01H
+026B 120000      E     LCALL   _Send2Port
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 54  
+
+                                           ; SOURCE LINE # 1216
+026E 900000      R     MOV     DPTR,#nKB60DAT
+0271 E0                MOVX    A,@DPTR
+0272 FF                MOV     R7,A
+0273 64F4              XRL     A,#0F4H
+0275 6004              JZ      ?C0170
+0277 EF                MOV     A,R7
+0278 B4F503            CJNE    A,#0F5H,?C0161
+027B         ?C0170:
+                                           ; SOURCE LINE # 1217
+                                           ; SOURCE LINE # 1218
+027B 120000      E     LCALL   _SetOtherKBNeedUpdataFlag
+                                           ; SOURCE LINE # 1219
+                                           ; SOURCE LINE # 1220
+027E         ?C0161:
+                                           ; SOURCE LINE # 1222
+027E 900000      R     MOV     DPTR,#cnt1flag
+0281 E0                MOVX    A,@DPTR
+0282 B40105            CJNE    A,#01H,?C0171
+                                           ; SOURCE LINE # 1223
+                                           ; SOURCE LINE # 1224
+0285 E4                CLR     A
+0286 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1225
+0287 120000      R     LCALL   Cmd_AE
+                                           ; SOURCE LINE # 1226
+028A         ?C0171:
+                                           ; SOURCE LINE # 1228
+028A 900000      R     MOV     DPTR,#nKB60DAT
+028D E0                MOVX    A,@DPTR
+028E FF                MOV     R7,A
+028F 120000      E     LCALL   _Hook_Keyboard_Cmd
+                                           ; SOURCE LINE # 1229
+0292         ?C0125:
+0292 22                RET     
+0293         L?0274:
+0293 120000      E     LCALL   Clear_Key
+0296 120000      E     LCALL   Clear_Typematic
+0299 22                RET     
+             ; FUNCTION _KeyboardCmd (END)
+
+             ; FUNCTION _Set_Overlay_Mask (BEGIN)
+                                           ; SOURCE LINE # 1244
+0000 900000      R     MOV     DPTR,#data_byte
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 ED                MOV     A,R5
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1245
+                                           ; SOURCE LINE # 1247
+0008 900000      R     MOV     DPTR,#data_byte
+000B E0                MOVX    A,@DPTR
+000C 7800        R     MOV     R0,#LOW temp
+000E F6                MOV     @R0,A
+                                           ; SOURCE LINE # 1249
+000F 30000C      E     JNB     Led_Ctrl_NUM,?C0172
+                                           ; SOURCE LINE # 1250
+0012 A3                INC     DPTR
+0013 E0                MOVX    A,@DPTR
+0014 5401              ANL     A,#01H
+0016 25E0              ADD     A,ACC
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 55  
+
+0018 FF                MOV     R7,A
+0019 E6                MOV     A,@R0
+001A 54FD              ANL     A,#0FDH
+001C 4F                ORL     A,R7
+001D F6                MOV     @R0,A
+                                           ; SOURCE LINE # 1251
+001E         ?C0172:
+                                           ; SOURCE LINE # 1253
+001E 300013      E     JNB     Led_Ctrl_OVL,?C0173
+                                           ; SOURCE LINE # 1254
+0021 900000      R     MOV     DPTR,#bit_state
+0024 E0                MOVX    A,@DPTR
+0025 5401              ANL     A,#01H
+0027 33                RLC     A
+0028 33                RLC     A
+0029 33                RLC     A
+002A 54F8              ANL     A,#0F8H
+002C FF                MOV     R7,A
+002D 7800        R     MOV     R0,#LOW temp
+002F E6                MOV     A,@R0
+0030 54F7              ANL     A,#0F7H
+0032 4F                ORL     A,R7
+0033 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 1255
+0034         ?C0173:
+                                           ; SOURCE LINE # 1257
+0034 7800        R     MOV     R0,#LOW temp
+0036 E6                MOV     A,@R0
+0037 900000      R     MOV     DPTR,#data_byte
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1258
+003B A3                INC     DPTR
+003C E0                MOVX    A,@DPTR
+003D 24FF              ADD     A,#0FFH
+003F 9200        E     MOV     Scanner_State_NUM_LOCK,C
+                                           ; SOURCE LINE # 1261
+0041 900000      R     MOV     DPTR,#data_byte
+0044 E0                MOVX    A,@DPTR
+0045 FF                MOV     R7,A
+                                           ; SOURCE LINE # 1262
+0046         ?C0174:
+0046 22                RET     
+             ; FUNCTION _Set_Overlay_Mask (END)
+
+             ; FUNCTION Read_Output_Port_2 (BEGIN)
+                                           ; SOURCE LINE # 1300
+                                           ; SOURCE LINE # 1301
+                                           ; SOURCE LINE # 1308
+;---- Variable 'p2byte' assigned to Register 'R7' ----
+0000 7F0D              MOV     R7,#0DH
+                                           ; SOURCE LINE # 1317
+                                           ; SOURCE LINE # 1342
+0002         ?C0175:
+0002 22                RET     
+             ; FUNCTION Read_Output_Port_2 (END)
+
+             ; FUNCTION _Core_60Port (BEGIN)
+                                           ; SOURCE LINE # 1347
+;---- Variable 'KBHIData' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1348
+                                           ; SOURCE LINE # 1349
+0000 EF                MOV     A,R7
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 56  
+
+0001 120000      E     LCALL   ?C?CCASE
+0004 0000        R     DW      ?C0177
+0006 60                DB      060H
+0007 0000        R     DW      ?C0178
+0009 73                DB      073H
+000A 0000        R     DW      ?C0179
+000C 74                DB      074H
+000D 0000        R     DW      ?C0180
+000F 76                DB      076H
+0010 0000        R     DW      ?C0181
+0012 77                DB      077H
+0013 0000        R     DW      ?C0182
+0015 90                DB      090H
+0016 0000        R     DW      ?C0183
+0018 91                DB      091H
+0019 0000        R     DW      ?C0184
+001B 92                DB      092H
+001C 0000        R     DW      ?C0185
+001E 93                DB      093H
+001F 0000        R     DW      ?C0186
+0021 A5                DB      0A5H
+0022 0000        R     DW      ?C0187
+0024 D1                DB      0D1H
+0025 0000        R     DW      ?C0188
+0027 D2                DB      0D2H
+0028 0000        R     DW      ?C0189
+002A D3                DB      0D3H
+002B 0000        R     DW      ?C0190
+002D D4                DB      0D4H
+002E 0000              DW      00H
+0030 0000        R     DW      ?C0192
+                                           ; SOURCE LINE # 1350
+                                           ; SOURCE LINE # 1351
+0032         ?C0177:
+                                           ; SOURCE LINE # 1352
+0032 020000      R     LJMP    Cmd_60Data
+                                           ; SOURCE LINE # 1353
+                                           ; SOURCE LINE # 1355
+0035         ?C0178:
+                                           ; SOURCE LINE # 1356
+0035 020000      R     LJMP    Cmd_73Data
+                                           ; SOURCE LINE # 1357
+                                           ; SOURCE LINE # 1359
+0038         ?C0179:
+                                           ; SOURCE LINE # 1360
+0038 020000      R     LJMP    Cmd_74Data
+                                           ; SOURCE LINE # 1361
+                                           ; SOURCE LINE # 1363
+003B         ?C0180:
+                                           ; SOURCE LINE # 1364
+003B 020000      R     LJMP    Cmd_76Data
+                                           ; SOURCE LINE # 1365
+                                           ; SOURCE LINE # 1367
+003E         ?C0181:
+                                           ; SOURCE LINE # 1368
+003E 020000      R     LJMP    Cmd_77Data
+                                           ; SOURCE LINE # 1369
+                                           ; SOURCE LINE # 1371
+0041         ?C0182:
+                                           ; SOURCE LINE # 1372
+0041 020000      R     LJMP    Cmd_90Data
+                                           ; SOURCE LINE # 1373
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 57  
+
+                                           ; SOURCE LINE # 1375
+0044         ?C0183:
+                                           ; SOURCE LINE # 1376
+0044 020000      R     LJMP    Cmd_91Data
+                                           ; SOURCE LINE # 1377
+                                           ; SOURCE LINE # 1379
+0047         ?C0184:
+                                           ; SOURCE LINE # 1380
+0047 020000      R     LJMP    Cmd_92Data
+                                           ; SOURCE LINE # 1381
+                                           ; SOURCE LINE # 1383
+004A         ?C0185:
+                                           ; SOURCE LINE # 1384
+004A 020000      R     LJMP    Cmd_93Data
+                                           ; SOURCE LINE # 1385
+                                           ; SOURCE LINE # 1387
+004D         ?C0186:
+                                           ; SOURCE LINE # 1388
+004D 020000      R     LJMP    Cmd_A5Data
+                                           ; SOURCE LINE # 1389
+                                           ; SOURCE LINE # 1391
+0050         ?C0187:
+                                           ; SOURCE LINE # 1392
+0050 020000      R     LJMP    Cmd_D1Data
+                                           ; SOURCE LINE # 1393
+                                           ; SOURCE LINE # 1395
+0053         ?C0188:
+                                           ; SOURCE LINE # 1396
+0053 020000      R     LJMP    Cmd_D2Data
+                                           ; SOURCE LINE # 1397
+                                           ; SOURCE LINE # 1399
+0056         ?C0189:
+                                           ; SOURCE LINE # 1400
+0056 020000      R     LJMP    Cmd_D3Data
+                                           ; SOURCE LINE # 1401
+                                           ; SOURCE LINE # 1403
+0059         ?C0190:
+                                           ; SOURCE LINE # 1404
+0059 120000      R     LCALL   Cmd_D4Data
+                                           ; SOURCE LINE # 1405
+                                           ; SOURCE LINE # 1407
+                                           ; SOURCE LINE # 1408
+                                           ; SOURCE LINE # 1409
+                                           ; SOURCE LINE # 1410
+005C         ?C0192:
+005C 22                RET     
+             ; FUNCTION _Core_60Port (END)
+
+             ; FUNCTION _Core_64Port (BEGIN)
+                                           ; SOURCE LINE # 1415
+;---- Variable 'KBHICmd' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1416
+                                           ; SOURCE LINE # 1417
+0000 EF                MOV     A,R7
+0001 120000      E     LCALL   ?C?CCASE
+0004 0000        R     DW      ?C0194
+0006 20                DB      020H
+0007 0000        R     DW      ?C0195
+0009 33                DB      033H
+000A 0000        R     DW      ?C0196
+000C 34                DB      034H
+000D 0000        R     DW      ?C0197
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 58  
+
+000F 36                DB      036H
+0010 0000        R     DW      ?C0198
+0012 37                DB      037H
+0013 0000        R     DW      ?C0199
+0015 60                DB      060H
+0016 0000        R     DW      ?C0200
+0018 73                DB      073H
+0019 0000        R     DW      ?C0201
+001B 74                DB      074H
+001C 0000        R     DW      ?C0202
+001E 76                DB      076H
+001F 0000        R     DW      ?C0203
+0021 77                DB      077H
+0022 0000        R     DW      ?C0204
+0024 90                DB      090H
+0025 0000        R     DW      ?C0205
+0027 91                DB      091H
+0028 0000        R     DW      ?C0206
+002A 92                DB      092H
+002B 0000        R     DW      ?C0207
+002D 93                DB      093H
+002E 0000        R     DW      ?C0208
+0030 A4                DB      0A4H
+0031 0000        R     DW      ?C0209
+0033 A5                DB      0A5H
+0034 0000        R     DW      ?C0210
+0036 A6                DB      0A6H
+0037 0000        R     DW      ?C0211
+0039 A7                DB      0A7H
+003A 0000        R     DW      ?C0212
+003C A8                DB      0A8H
+003D 0000        R     DW      ?C0213
+003F A9                DB      0A9H
+0040 0000        R     DW      ?C0214
+0042 AA                DB      0AAH
+0043 0000        R     DW      ?C0215
+0045 AB                DB      0ABH
+0046 0000        R     DW      ?C0216
+0048 AC                DB      0ACH
+0049 0000        R     DW      ?C0217
+004B AD                DB      0ADH
+004C 0000        R     DW      ?C0218
+004E AE                DB      0AEH
+004F 0000        R     DW      ?C0219
+0051 AF                DB      0AFH
+0052 0000        R     DW      ?C0220
+0054 C0                DB      0C0H
+0055 0000        R     DW      ?C0221
+0057 D0                DB      0D0H
+0058 0000        R     DW      ?C0222
+005A D1                DB      0D1H
+005B 0000        R     DW      ?C0223
+005D D2                DB      0D2H
+005E 0000        R     DW      ?C0224
+0060 D3                DB      0D3H
+0061 0000        R     DW      ?C0225
+0063 D4                DB      0D4H
+0064 0000        R     DW      ?C0226
+0066 E0                DB      0E0H
+0067 0000        R     DW      ?C0242
+0069 F0                DB      0F0H
+006A 0000        R     DW      ?C0242
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 59  
+
+006C F1                DB      0F1H
+006D 0000        R     DW      ?C0242
+006F F2                DB      0F2H
+0070 0000        R     DW      ?C0242
+0072 F3                DB      0F3H
+0073 0000        R     DW      ?C0242
+0075 F4                DB      0F4H
+0076 0000        R     DW      ?C0242
+0078 F5                DB      0F5H
+0079 0000        R     DW      ?C0242
+007B F6                DB      0F6H
+007C 0000        R     DW      ?C0242
+007E F7                DB      0F7H
+007F 0000        R     DW      ?C0242
+0081 F8                DB      0F8H
+0082 0000        R     DW      ?C0242
+0084 F9                DB      0F9H
+0085 0000        R     DW      ?C0242
+0087 FA                DB      0FAH
+0088 0000        R     DW      ?C0242
+008A FB                DB      0FBH
+008B 0000        R     DW      ?C0242
+008D FC                DB      0FCH
+008E 0000        R     DW      ?C0242
+0090 FD                DB      0FDH
+0091 0000        R     DW      ?C0242
+0093 FE                DB      0FEH
+0094 0000        R     DW      ?C0242
+0096 FF                DB      0FFH
+0097 0000              DW      00H
+0099 0000        R     DW      ?C0244
+                                           ; SOURCE LINE # 1418
+                                           ; SOURCE LINE # 1419
+009B         ?C0194:
+                                           ; SOURCE LINE # 1420
+009B 020000      R     LJMP    Cmd_20
+                                           ; SOURCE LINE # 1421
+                                           ; SOURCE LINE # 1423
+009E         ?C0195:
+                                           ; SOURCE LINE # 1424
+009E 020000      R     LJMP    Cmd_33
+                                           ; SOURCE LINE # 1425
+                                           ; SOURCE LINE # 1427
+00A1         ?C0196:
+                                           ; SOURCE LINE # 1428
+00A1 020000      R     LJMP    Cmd_34
+                                           ; SOURCE LINE # 1429
+                                           ; SOURCE LINE # 1431
+00A4         ?C0197:
+                                           ; SOURCE LINE # 1432
+00A4 020000      R     LJMP    Cmd_36
+                                           ; SOURCE LINE # 1433
+                                           ; SOURCE LINE # 1435
+00A7         ?C0198:
+                                           ; SOURCE LINE # 1436
+00A7 020000      R     LJMP    Cmd_37
+                                           ; SOURCE LINE # 1437
+                                           ; SOURCE LINE # 1439
+00AA         ?C0199:
+                                           ; SOURCE LINE # 1440
+00AA 020000      R     LJMP    Cmd_60
+                                           ; SOURCE LINE # 1441
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 60  
+
+                                           ; SOURCE LINE # 1443
+00AD         ?C0200:
+                                           ; SOURCE LINE # 1444
+00AD 020000      R     LJMP    Cmd_73
+                                           ; SOURCE LINE # 1445
+                                           ; SOURCE LINE # 1447
+00B0         ?C0201:
+                                           ; SOURCE LINE # 1448
+00B0 020000      R     LJMP    Cmd_74
+                                           ; SOURCE LINE # 1449
+                                           ; SOURCE LINE # 1451
+00B3         ?C0202:
+                                           ; SOURCE LINE # 1452
+00B3 020000      R     LJMP    Cmd_76
+                                           ; SOURCE LINE # 1453
+                                           ; SOURCE LINE # 1455
+00B6         ?C0203:
+                                           ; SOURCE LINE # 1456
+00B6 020000      R     LJMP    Cmd_77
+                                           ; SOURCE LINE # 1457
+                                           ; SOURCE LINE # 1459
+00B9         ?C0204:
+                                           ; SOURCE LINE # 1460
+00B9 020000      R     LJMP    Cmd_90
+                                           ; SOURCE LINE # 1461
+                                           ; SOURCE LINE # 1463
+00BC         ?C0205:
+                                           ; SOURCE LINE # 1464
+00BC 020000      R     LJMP    Cmd_91
+                                           ; SOURCE LINE # 1465
+                                           ; SOURCE LINE # 1467
+00BF         ?C0206:
+                                           ; SOURCE LINE # 1468
+00BF 020000      R     LJMP    Cmd_92
+                                           ; SOURCE LINE # 1469
+                                           ; SOURCE LINE # 1471
+00C2         ?C0207:
+                                           ; SOURCE LINE # 1472
+00C2 020000      R     LJMP    Cmd_93
+                                           ; SOURCE LINE # 1473
+                                           ; SOURCE LINE # 1475
+00C5         ?C0208:
+                                           ; SOURCE LINE # 1476
+00C5 020000      R     LJMP    Cmd_A4
+                                           ; SOURCE LINE # 1477
+                                           ; SOURCE LINE # 1479
+00C8         ?C0209:
+                                           ; SOURCE LINE # 1480
+00C8 020000      R     LJMP    Cmd_A5
+                                           ; SOURCE LINE # 1481
+                                           ; SOURCE LINE # 1483
+00CB         ?C0210:
+                                           ; SOURCE LINE # 1484
+00CB 020000      R     LJMP    Cmd_A6
+                                           ; SOURCE LINE # 1485
+                                           ; SOURCE LINE # 1487
+00CE         ?C0211:
+                                           ; SOURCE LINE # 1488
+00CE 020000      R     LJMP    Cmd_A7
+                                           ; SOURCE LINE # 1489
+                                           ; SOURCE LINE # 1491
+00D1         ?C0212:
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 61  
+
+                                           ; SOURCE LINE # 1492
+00D1 020000      R     LJMP    Cmd_A8
+                                           ; SOURCE LINE # 1493
+                                           ; SOURCE LINE # 1495
+00D4         ?C0213:
+                                           ; SOURCE LINE # 1496
+00D4 020000      R     LJMP    Cmd_A9
+                                           ; SOURCE LINE # 1497
+                                           ; SOURCE LINE # 1499
+00D7         ?C0214:
+                                           ; SOURCE LINE # 1500
+00D7 020000      R     LJMP    Cmd_AA
+                                           ; SOURCE LINE # 1501
+                                           ; SOURCE LINE # 1503
+00DA         ?C0215:
+                                           ; SOURCE LINE # 1504
+00DA 020000      R     LJMP    Cmd_AB
+                                           ; SOURCE LINE # 1505
+                                           ; SOURCE LINE # 1507
+00DD         ?C0216:
+                                           ; SOURCE LINE # 1508
+00DD 020000      R     LJMP    Cmd_AC
+                                           ; SOURCE LINE # 1509
+                                           ; SOURCE LINE # 1511
+00E0         ?C0217:
+                                           ; SOURCE LINE # 1512
+00E0 020000      R     LJMP    Cmd_AD
+                                           ; SOURCE LINE # 1513
+                                           ; SOURCE LINE # 1515
+00E3         ?C0218:
+                                           ; SOURCE LINE # 1516
+00E3 020000      R     LJMP    Cmd_AE
+                                           ; SOURCE LINE # 1517
+                                           ; SOURCE LINE # 1519
+00E6         ?C0219:
+                                           ; SOURCE LINE # 1520
+00E6 020000      R     LJMP    Cmd_AF
+                                           ; SOURCE LINE # 1521
+                                           ; SOURCE LINE # 1523
+00E9         ?C0220:
+                                           ; SOURCE LINE # 1524
+00E9 020000      R     LJMP    Cmd_C0
+                                           ; SOURCE LINE # 1525
+                                           ; SOURCE LINE # 1527
+00EC         ?C0221:
+                                           ; SOURCE LINE # 1528
+00EC 020000      R     LJMP    Cmd_D0
+                                           ; SOURCE LINE # 1529
+                                           ; SOURCE LINE # 1531
+00EF         ?C0222:
+                                           ; SOURCE LINE # 1532
+00EF 020000      R     LJMP    Cmd_D1
+                                           ; SOURCE LINE # 1533
+                                           ; SOURCE LINE # 1535
+00F2         ?C0223:
+                                           ; SOURCE LINE # 1536
+00F2 020000      R     LJMP    Cmd_D2
+                                           ; SOURCE LINE # 1537
+                                           ; SOURCE LINE # 1539
+00F5         ?C0224:
+                                           ; SOURCE LINE # 1540
+00F5 020000      R     LJMP    Cmd_D3
+C51 COMPILER V8.12   CORE_PORT6064                                                         09/14/2018 11:07:51 PAGE 62  
+
+                                           ; SOURCE LINE # 1541
+                                           ; SOURCE LINE # 1543
+00F8         ?C0225:
+                                           ; SOURCE LINE # 1544
+00F8 020000      R     LJMP    Cmd_D4
+                                           ; SOURCE LINE # 1545
+                                           ; SOURCE LINE # 1547
+00FB         ?C0226:
+                                           ; SOURCE LINE # 1548
+00FB 020000      R     LJMP    Cmd_E0
+                                           ; SOURCE LINE # 1549
+                                           ; SOURCE LINE # 1551
+                                           ; SOURCE LINE # 1552
+                                           ; SOURCE LINE # 1553
+                                           ; SOURCE LINE # 1554
+                                           ; SOURCE LINE # 1555
+                                           ; SOURCE LINE # 1556
+                                           ; SOURCE LINE # 1557
+                                           ; SOURCE LINE # 1558
+                                           ; SOURCE LINE # 1559
+                                           ; SOURCE LINE # 1560
+                                           ; SOURCE LINE # 1561
+                                           ; SOURCE LINE # 1562
+                                           ; SOURCE LINE # 1563
+                                           ; SOURCE LINE # 1564
+                                           ; SOURCE LINE # 1565
+                                           ; SOURCE LINE # 1566
+00FE         ?C0242:
+                                           ; SOURCE LINE # 1567
+00FE 120000      R     LCALL   Cmd_FX
+                                           ; SOURCE LINE # 1568
+                                           ; SOURCE LINE # 1570
+                                           ; SOURCE LINE # 1571
+                                           ; SOURCE LINE # 1572
+                                           ; SOURCE LINE # 1573
+0101         ?C0244:
+0101 22                RET     
+             ; FUNCTION _Core_64Port (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1944    ----
+   CONSTANT SIZE    =    113    ----
+   XDATA SIZE       =   ----       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----       1
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

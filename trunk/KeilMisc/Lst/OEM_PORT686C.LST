@@ -1,0 +1,55 @@
+C51 COMPILER V8.12   OEM_PORT686C                                                          09/14/2018 11:08:29 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_PORT686C
+OBJECT MODULE PLACED IN Code\Oem\OEM_PORT686C.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_PORT686C.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\COR
+                    -E\INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_PORT686C.C
+   3           *
+   4           * Author : Dino
+   5           *
+   6           * Note : These functions are reference only.
+   7           *        Please follow your project software specification to do some modification.
+   8           *---------------------------------------------------------------------------*/
+   9          
+  10          #include <CORE_INCLUDE.H>
+  11          #include <OEM_INCLUDE.H>
+  12          
+  13          //ANGELAS002:S+Support 686C flash EC in windows or Shell
+  14          void PM2_6CCmd_DC(void)
+  15          {
+  16   1          ITE_Flash_Utility_WINF();  //BROOKEW008: support 686C flash EC
+  17   1      }
+  18          //ANGELAS002:E+Support 686C flash EC in windows or Shell
+  19          
+C51 COMPILER V8.12   OEM_PORT686C                                                          09/14/2018 11:08:29 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION PM2_6CCmd_DC (BEGIN)
+                                           ; SOURCE LINE # 14
+                                           ; SOURCE LINE # 15
+                                           ; SOURCE LINE # 16
+0000 020000      E     LJMP    ITE_Flash_Utility_WINF
+             ; FUNCTION PM2_6CCmd_DC (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =      3    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

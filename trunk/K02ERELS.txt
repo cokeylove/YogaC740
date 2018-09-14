@@ -1,0 +1,275 @@
+Filename : K02ERELS.TXT
+
+Release Notification
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E011A.ROM)		12-25-2012
+
+ File name : K02E013A.ROM
+ Base on   : K02E012A.ROM
+ Checksum  : 0x
+ EC Version S/N: 13
+Notification:
+1.> Need flash EC's boot block? --> No
+Fixed:
+1.>	Fixed issue of "Up/Down/Right/Left key has no function at the second screen with external monitor.  " 
+Known issue:
+Modified:
+1.>	Modify GPO7 pin power sequence for S3.
+Add function:
+1.>	Enable CPU Auto mode.
+
+
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E011A.ROM)		12-18-2012
+
+ File name : K02E012A.ROM
+ Base on   : K02E011A.ROM
+ Checksum  : 0x5F23
+ EC Version S/N: 12
+Notification:
+1.> Need flash EC's boot block? --> No
+Fixed:
+1.>	Fixed issue of "Test unit still can power on when battery lower than 5% with battery only mode. Battery LED not blink after press power button with an empty battery¡C "
+2.> Fixed issue of "Unit will auto power on when plug AC in with battery state is low. "
+3.> Fixed issue of "System will turn on from S4/S5 when plug in AC w/ ¡§Always on USB¡¨ disable"
+
+Known issue:
+
+Modified:
+1.>	Modify USB charge port cannot charge in DC mode.
+2.>	Update Fan Table Throttling On temperature.
+
+Add function:
+1.>	Enable ODD Zero Power function.
+2.>	Enable CPU Auto mode.
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E011A.ROM)		12-11-2012
+
+ File name : K02E011A.ROM
+ Base on   : K02E010A.ROM
+ Checksum  : 0x
+ EC Version S/N: 11
+Notification:
+1.> Need flash EC's boot block? --> No
+
+Fixed:
+1.> Fixed issue of "Novo button no function in DC mode.".
+2.> Fixed issue of "Battery capacity less than 98% after system enter S5 about 8 hours."
+3.> Fixed issue of "Battery capacity less than 98% after system enter S4 about 8 hours"
+
+Known issue:
+Modified:
+1.> Modify power sequence..
+2.> Modify PH1 function shutdown voltage.
+3.> Modify USB charge port initial setting.
+4.> EC mute delay 900ms when S3 resume.
+
+Add function:
+1.> Add EDP to LVDS function.
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E010A.ROM)		12-04-2012
+
+ File name : K02E010A.ROM
+ Base on   : K02E009B.ROM
+ Checksum  : 0x105E
+ EC Version S/N: 10
+Notification:
+1.> Need flash EC's boot block? --> No
+
+Fixed:
+1.>	Fixed issue of "Keyboard backlight action sequence not follow project UI SPEC " 
+2.>	Fixed issue of "USB mouse can wake up S3 on usb charge port on AC/DC mode "
+3.>	Fixed issue of "Iphone4/4s can!|t be charged under S3/S4/S5 mode. "
+Known issue:
+Modified:
+1.>	Modify EC mute delay time 150ms.
+2.>	Enable VGA temperature.
+
+Add function:
+1.>	Auto clear keyboard output buffer after 5 second when  Touchpad and keyboard no function sometimes after reboot system to Metro UI.Enable VGA temperature.
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E007B.ROM)		11-20-2012
+
+ File name : K02E007B.ROM
+ Base on   : K02E006A.ROM
+ Checksum  : 0x
+ EC Version S/N: 07
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+Fixed:
+	1. Fix issue of " The Sunon fan test fail by factory control."
+Known issue:
+Modified:
+	1.> Change EC chip from AX to CX.
+	2.> Modify charger IC chip from SMSC to Genesys.
+	3.> Modify turn on backlight of action for BIOS VGA workaround.
+
+Add function:
+	1. Add PH1 function by EC control.
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E006A.ROM)		10-30-2012
+
+ File name : K02E006A.ROM
+ Base on   : K02E005B.ROM
+ Checksum  : 0x2097
+ EC Version S/N: 06
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+Fixed:
+	
+Known issue:
+Modified:
+	1.> Rename EC version from 0.05 to 0.06.
+Add function:
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E006A.ROM)		10-30-2012
+
+ File name : K02E006A.ROM
+ Base on   : K02E005B.ROM
+ Checksum  : 0x
+ EC Version S/N: 06
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+Fixed:
+	
+Known issue:
+Modified:
+	1.> Rename EC version 0.05 to 0.06.
+Add function:
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E005B.ROM)		10-23-2012
+
+ File name : K02E005B.ROM
+ Base on   : K02E004A.ROM
+ Checksum  : 0x0FFE
+ EC Version S/N: 05
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+	1.> Fix issue of "DMI and EEPROM tool are not ready."
+
+Known issue:
+Modified:
+	1.> Update keyboard Scan Table.
+	2.> Update backlight enable timing.
+	3.> Modify S3 cannot resume when plug in AC.
+Add function:
+	
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E004A.ROM)		10-16-2012
+
+ File name : K02E004A.ROM
+ Base on   : K02E003A.ROM
+ Checksum  : 0x33D8
+ EC Version S/N: 04
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+
+Known issue:
+Modified:
+	1.> Update power on/off sequence.
+	2.> Update power beep frequence.
+	3.> Modify power LED blink when plug in AC. 
+	4.> Modify auto reboot when resume from S3 to S0.
+	5.> Enable keyboard type check function.
+
+Add function:
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E003A.ROM)		10-09-2012
+
+ File name : K02E003A.ROM
+ Base on   : K02E002A.ROM
+ Checksum  : 0x
+ EC Version S/N: 03
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+	1.> Fix issue of "Some Fn-Key can't be used when pressed "Fn"+"F12"."
+
+Known issue:
+Modified:
+	1.> Modify EC crisis function.
+	2.> Modify PC Beep of EC portion.
+	3.> Disable battery's SHA1 function.
+
+Add function:
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release (Rev. K02E002A.ROM)		10-02-2012
+
+ File name : K02E002A.ROM
+ Base on   : K02E001A.ROM
+ Checksum  : 0x
+ EC Version S/N: 02
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+	1.> Fix issue of " The can't brightness control under Linpus."
+Known issue:
+Modified:
+	1.> Disable Lan wake function.
+	2.> Modify to read other temperature fail.
+	3.> Adjust VGA of GC6 sequence.
+	4.> Disable Crisis function.
+	5.> Disable EC sleep function.
+
+Add function:
+	1.> Add to auto write eeprom's bank0 0xEB of 0xAA number.
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS release. (Rev. K02E001A.ROM)	09-25-2012
+
+ File name : K02E001A.ROM
+ Base on   : K02E001A.T01
+ Checksum  : 0x4C3B
+ EC Version S/N: 01
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+	1.> Fix issue of "External IO cannot be controlled."
+	2.> Fix issue of "VGA cannot be detected" 
+	3.> Fix issue of "The screen cannot display when plug out 80port"
+
+Known issue:
+Modified:
+	1.>	Modify DGPU Hold Reset and Power Button timing.
+
+Add function:
+
+**************************************************************************
+VIQY0/Yz ITE IT8586 EC BIOS releasee (Rev. K02E001A.T01)	  09-01-2012
+
+ File name : K02E001A.T01
+ Base on   : K01E101A.ROM
+ Checksum  : 0x7D9A
+ EC Version S/N: 0
+ Notification:
+        1.> Need flash EC's boot block? --> No
+
+ Fixed:
+ Known issue:
+ Modified:
+	1.> Follow QIQYx EC v1.01 function.
+ Add function:
+
+**************************************************************************
+

@@ -1,0 +1,2332 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        09/27/2012  10:30:38  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL\C51\BIN\BL51.EXE KEILMISC\OBJ\CORE_IRQ.OBJ, KEILMISC\OBJ\CORE_ITESTRING.OBJ, KEILMISC\OBJ\BBK_MAIN.OBJ, KEILMISC
+>> \OBJ\CORE_CHIPREGS.OBJ, KEILMISC\OBJ\CORE_BITADDR.OBJ, KEILMISC\OBJ\CORE_MEMORY.OBJ, KEILMISC\OBJ\OEM_MEMORY.OBJ, KEI
+>> LMISC\OBJ\OEM_IRQ.OBJ TO BBK_EC.ABS DW (9, 13, 15, 16) CODE (0-0X1FFF, ?CO?CORE_ITESTRING (0X0040), ?PR?MAIN?BBK_MAIN
+>>  (0X100), ?PR?BBK_NORMALMAIN?BBK_MAIN (0X2000)) STACK (?STACK (0C0H)) XDATA (0X700-0X7FF) DATA (0X30) BIT (0X7F) RAMS
+>> IZE (256) NOSORTSIZE RECURSIONS (100)
+
+
+MEMORY MODEL: LARGE
+
+
+INPUT MODULES INCLUDED:
+  KEILMISC\OBJ\CORE_IRQ.OBJ (CORE_IRQ)
+  KEILMISC\OBJ\CORE_ITESTRING.OBJ (CORE_ITESTRING)
+  KEILMISC\OBJ\BBK_MAIN.OBJ (BBK_MAIN)
+  KEILMISC\OBJ\CORE_CHIPREGS.OBJ (CORE_CHIPREGS)
+  KEILMISC\OBJ\CORE_BITADDR.OBJ (CORE_BITADDR)
+  KEILMISC\OBJ\CORE_MEMORY.OBJ (CORE_MEMORY)
+  KEILMISC\OBJ\OEM_MEMORY.OBJ (OEM_MEMORY)
+  KEILMISC\OBJ\OEM_IRQ.OBJ (OEM_IRQ)
+  C:\KEIL\C51\LIB\C51L.LIB (?C_STARTUP)
+  C:\KEIL\C51\LIB\C51L.LIB (?C?IILDX)
+  C:\KEIL\C51\LIB\C51L.LIB (?C?OFFXADD)
+  C:\KEIL\C51\LIB\C51L.LIB (?C?CCASE)
+  C:\KEIL\C51\LIB\C51L.LIB (?C?ICALL)
+  C:\KEIL\C51\LIB\C51L.LIB (?C_INIT)
+
+
+LINK MAP OF MODULE:  BBK_EC.ABS (CORE_IRQ)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0008H     ABSOLUTE     
+            REG     0010H     0008H     ABSOLUTE     "REG BANK 2"
+            DATA    0018H     0008H     ABSOLUTE     
+            DATA    0020H     0001H     ABSOLUTE     
+                    0021H     0001H                  *** GAP ***
+            DATA    0022H     0001H     ABSOLUTE     
+            DATA    0023H     0001H     ABSOLUTE     
+            DATA    0024H     0001H     ABSOLUTE     
+            DATA    0025H     0001H     ABSOLUTE     
+            DATA    0026H     0001H     ABSOLUTE     
+            DATA    0027H     0001H     ABSOLUTE     
+            DATA    0028H     0001H     ABSOLUTE     
+            DATA    0029H     0001H     ABSOLUTE     
+            DATA    002AH     0001H     ABSOLUTE     
+            DATA    002BH     0001H     ABSOLUTE     
+            DATA    002CH     0001H     ABSOLUTE     
+            DATA    002DH     0001H     ABSOLUTE     
+                    002EH     0002H                  *** GAP ***
+            DATA    0030H     0001H     ABSOLUTE     
+            DATA    0031H     0001H     ABSOLUTE     
+            DATA    0032H     0001H     ABSOLUTE     
+            DATA    0033H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 2
+
+
+            DATA    0034H     0001H     ABSOLUTE     
+            DATA    0035H     0001H     ABSOLUTE     
+            DATA    0036H     0001H     ABSOLUTE     
+            DATA    0037H     0001H     ABSOLUTE     
+            DATA    0038H     0001H     ABSOLUTE     
+            DATA    0039H     0001H     ABSOLUTE     
+            DATA    003AH     0001H     ABSOLUTE     
+            DATA    003BH     0001H     ABSOLUTE     
+            DATA    003CH     0001H     ABSOLUTE     
+            DATA    003DH     0001H     ABSOLUTE     
+            DATA    003EH     0001H     ABSOLUTE     
+            DATA    003FH     0001H     ABSOLUTE     
+            DATA    0040H     0001H     ABSOLUTE     
+            DATA    0041H     0001H     ABSOLUTE     
+            DATA    0042H     0001H     ABSOLUTE     
+            DATA    0043H     0001H     ABSOLUTE     
+            DATA    0044H     0001H     ABSOLUTE     
+            DATA    0045H     0001H     ABSOLUTE     
+            DATA    0046H     0001H     ABSOLUTE     
+            DATA    0047H     0001H     ABSOLUTE     
+            DATA    0048H     0001H     ABSOLUTE     
+            DATA    0049H     0001H     ABSOLUTE     
+            DATA    004AH     0003H     ABSOLUTE     
+            DATA    004DH     0001H     ABSOLUTE     
+            DATA    004EH     0001H     ABSOLUTE     
+            DATA    004FH     0001H     ABSOLUTE     
+            DATA    0050H     0003H     ABSOLUTE     
+            DATA    0053H     0001H     ABSOLUTE     
+            DATA    0054H     0001H     ABSOLUTE     
+            DATA    0055H     0002H     ABSOLUTE     
+            DATA    0057H     0001H     ABSOLUTE     
+            DATA    0058H     0001H     ABSOLUTE     
+            DATA    0059H     0001H     ABSOLUTE     
+            DATA    005AH     0001H     ABSOLUTE     
+            DATA    005BH     0001H     ABSOLUTE     
+            DATA    005CH     0001H     ABSOLUTE     
+            DATA    005DH     0001H     ABSOLUTE     
+            DATA    005EH     0001H     ABSOLUTE     
+            DATA    005FH     0001H     ABSOLUTE     
+            IDATA   0060H     0002H     ABSOLUTE     
+            IDATA   0062H     0002H     ABSOLUTE     
+                    0064H     0001H                  *** GAP ***
+            DATA    0065H     0001H     ABSOLUTE     
+            DATA    0066H     0001H     ABSOLUTE     
+            DATA    0067H     0001H     ABSOLUTE     
+            DATA    0068H     0001H     ABSOLUTE     
+            DATA    0069H     0001H     ABSOLUTE     
+            DATA    006AH     0001H     ABSOLUTE     
+            DATA    006BH     0002H     ABSOLUTE     
+            DATA    006DH     0013H     ABSOLUTE     
+            IDATA   0080H     0001H     ABSOLUTE     
+            IDATA   0081H     0001H     ABSOLUTE     
+            IDATA   0082H     0001H     ABSOLUTE     
+            IDATA   0083H     0001H     ABSOLUTE     
+            IDATA   0084H     0001H     ABSOLUTE     
+            IDATA   0085H     0001H     ABSOLUTE     
+            IDATA   0086H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 3
+
+
+            IDATA   0087H     0001H     ABSOLUTE     
+            IDATA   0088H     0003H     ABSOLUTE     
+            IDATA   008BH     0001H     ABSOLUTE     
+            IDATA   008CH     0001H     ABSOLUTE     
+            IDATA   008DH     0003H     ABSOLUTE     
+            IDATA   0090H     0001H     ABSOLUTE     
+            IDATA   0091H     0001H     ABSOLUTE     
+            IDATA   0092H     0001H     ABSOLUTE     
+            IDATA   0093H     0001H     ABSOLUTE     
+            IDATA   0094H     0001H     ABSOLUTE     
+            IDATA   0095H     0001H     ABSOLUTE     
+            IDATA   0096H     0001H     ABSOLUTE     
+            IDATA   0097H     0003H     ABSOLUTE     
+            IDATA   009AH     0001H     ABSOLUTE     
+            IDATA   009BH     0001H     ABSOLUTE     
+            IDATA   009CH     0001H     ABSOLUTE     
+            IDATA   009DH     0001H     ABSOLUTE     
+            IDATA   009EH     0001H     ABSOLUTE     
+            IDATA   009FH     0001H     ABSOLUTE     
+            IDATA   00A0H     0001H     ABSOLUTE     
+            IDATA   00A1H     0001H     ABSOLUTE     
+            IDATA   00A2H     0003H     ABSOLUTE     
+            IDATA   00A5H     0003H     ABSOLUTE     
+            IDATA   00A8H     0001H     ABSOLUTE     
+            IDATA   00A9H     0001H     ABSOLUTE     
+            IDATA   00AAH     0001H     ABSOLUTE     
+            IDATA   00ABH     0001H     ABSOLUTE     
+            IDATA   00ACH     0001H     ABSOLUTE     
+            IDATA   00ADH     0001H     ABSOLUTE     
+            IDATA   00AEH     0001H     ABSOLUTE     
+            IDATA   00AFH     0001H     ABSOLUTE     
+            IDATA   00B0H     0002H     ABSOLUTE     
+            IDATA   00B2H     0002H     ABSOLUTE     
+            IDATA   00B4H     0001H     ABSOLUTE     
+            IDATA   00B5H     0001H     ABSOLUTE     
+                    00B6H     0001H                  *** GAP ***
+            IDATA   00B7H     0002H     ABSOLUTE     
+            IDATA   00B9H     0002H     ABSOLUTE     
+            IDATA   00BBH     0001H     ABSOLUTE     
+            IDATA   00BCH     0001H     ABSOLUTE     
+                    00BDH     0003H                  *** GAP ***
+            IDATA   00C0H     0001H     UNIT         ?STACK
+
+            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
+            XDATA   0000H     0010H     ABSOLUTE     
+            XDATA   0010H     0008H     ABSOLUTE     
+            XDATA   0018H     0001H     ABSOLUTE     
+            XDATA   0019H     0001H     ABSOLUTE     
+            XDATA   001AH     0001H     ABSOLUTE     
+            XDATA   001BH     0001H     ABSOLUTE     
+            XDATA   001CH     0001H     ABSOLUTE     
+            XDATA   001DH     0001H     ABSOLUTE     
+            XDATA   001EH     0001H     ABSOLUTE     
+            XDATA   001FH     0001H     ABSOLUTE     
+            XDATA   0020H     0001H     ABSOLUTE     
+            XDATA   0021H     0001H     ABSOLUTE     
+            XDATA   0022H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 4
+
+
+            XDATA   0023H     0001H     ABSOLUTE     
+            XDATA   0024H     0001H     ABSOLUTE     
+            XDATA   0025H     0001H     ABSOLUTE     
+            XDATA   0026H     0001H     ABSOLUTE     
+            XDATA   0027H     0002H     ABSOLUTE     
+            XDATA   0029H     0002H     ABSOLUTE     
+                    002BH     0015H                  *** GAP ***
+            XDATA   0040H     0001H     ABSOLUTE     
+            XDATA   0041H     0001H     ABSOLUTE     
+            XDATA   0042H     0001H     ABSOLUTE     
+            XDATA   0043H     0001H     ABSOLUTE     
+            XDATA   0044H     0001H     ABSOLUTE     
+            XDATA   0045H     0001H     ABSOLUTE     
+            XDATA   0046H     0001H     ABSOLUTE     
+            XDATA   0047H     0006H     ABSOLUTE     
+            XDATA   004DH     0001H     ABSOLUTE     
+            XDATA   004EH     0001H     ABSOLUTE     
+            XDATA   004FH     0001H     ABSOLUTE     
+            XDATA   0050H     0002H     ABSOLUTE     
+            XDATA   0052H     0002H     ABSOLUTE     
+            XDATA   0054H     0002H     ABSOLUTE     
+            XDATA   0056H     0001H     ABSOLUTE     
+            XDATA   0057H     0001H     ABSOLUTE     
+            XDATA   0058H     0001H     ABSOLUTE     
+            XDATA   0059H     0001H     ABSOLUTE     
+            XDATA   005AH     0001H     ABSOLUTE     
+            XDATA   005BH     0001H     ABSOLUTE     
+            XDATA   005CH     0020H     ABSOLUTE     
+            XDATA   007CH     0001H     ABSOLUTE     
+            XDATA   007DH     0001H     ABSOLUTE     
+                    007EH     0003H                  *** GAP ***
+            XDATA   0081H     0001H     ABSOLUTE     
+            XDATA   0082H     0001H     ABSOLUTE     
+            XDATA   0083H     0001H     ABSOLUTE     
+            XDATA   0084H     0001H     ABSOLUTE     
+            XDATA   0085H     0002H     ABSOLUTE     
+            XDATA   0087H     0002H     ABSOLUTE     
+            XDATA   0089H     0001H     ABSOLUTE     
+            XDATA   008AH     0001H     ABSOLUTE     
+            XDATA   008BH     0001H     ABSOLUTE     
+            XDATA   008CH     0001H     ABSOLUTE     
+            XDATA   008DH     0001H     ABSOLUTE     
+            XDATA   008EH     0001H     ABSOLUTE     
+            XDATA   008FH     0001H     ABSOLUTE     
+            XDATA   0090H     0004H     ABSOLUTE     
+            XDATA   0094H     0001H     ABSOLUTE     
+            XDATA   0095H     0003H     ABSOLUTE     
+            XDATA   0098H     0001H     ABSOLUTE     
+            XDATA   0099H     0001H     ABSOLUTE     
+            XDATA   009AH     0001H     ABSOLUTE     
+            XDATA   009BH     0002H     ABSOLUTE     
+            XDATA   009DH     0001H     ABSOLUTE     
+            XDATA   009EH     0001H     ABSOLUTE     
+                    009FH     0051H                  *** GAP ***
+            XDATA   00F0H     0001H     ABSOLUTE     
+            XDATA   00F1H     0001H     ABSOLUTE     
+                    00F2H     0007H                  *** GAP ***
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 5
+
+
+            XDATA   00F9H     0001H     ABSOLUTE     
+            XDATA   00FAH     0001H     ABSOLUTE     
+            XDATA   00FBH     0001H     ABSOLUTE     
+            XDATA   00FCH     0001H     ABSOLUTE     
+            XDATA   00FDH     0001H     ABSOLUTE     
+            XDATA   00FEH     0001H     ABSOLUTE     
+            XDATA   00FFH     0001H     ABSOLUTE     
+            XDATA   0100H     0001H     ABSOLUTE     
+            XDATA   0101H     0001H     ABSOLUTE     
+            XDATA   0102H     0001H     ABSOLUTE     
+            XDATA   0103H     0002H     ABSOLUTE     
+            XDATA   0105H     0002H     ABSOLUTE     
+                    0107H     0001H                  *** GAP ***
+            XDATA   0108H     0001H     ABSOLUTE     
+            XDATA   0109H     0001H     ABSOLUTE     
+                    010AH     0004H                  *** GAP ***
+            XDATA   010EH     0001H     ABSOLUTE     
+            XDATA   010FH     0001H     ABSOLUTE     
+            XDATA   0110H     0001H     ABSOLUTE     
+            XDATA   0111H     0001H     ABSOLUTE     
+            XDATA   0112H     0001H     ABSOLUTE     
+            XDATA   0113H     0001H     ABSOLUTE     
+            XDATA   0114H     0001H     ABSOLUTE     
+            XDATA   0115H     0001H     ABSOLUTE     
+            XDATA   0116H     0001H     ABSOLUTE     
+            XDATA   0117H     0001H     ABSOLUTE     
+            XDATA   0118H     0001H     ABSOLUTE     
+            XDATA   0119H     0001H     ABSOLUTE     
+            XDATA   011AH     0001H     ABSOLUTE     
+            XDATA   011BH     0001H     ABSOLUTE     
+            XDATA   011CH     0001H     ABSOLUTE     
+            XDATA   011DH     0001H     ABSOLUTE     
+            XDATA   011EH     0001H     ABSOLUTE     
+            XDATA   011FH     0001H     ABSOLUTE     
+            XDATA   0120H     0001H     ABSOLUTE     
+            XDATA   0121H     0001H     ABSOLUTE     
+            XDATA   0122H     0001H     ABSOLUTE     
+            XDATA   0123H     0001H     ABSOLUTE     
+            XDATA   0124H     0001H     ABSOLUTE     
+            XDATA   0125H     0001H     ABSOLUTE     
+            XDATA   0126H     0001H     ABSOLUTE     
+            XDATA   0127H     0001H     ABSOLUTE     
+            XDATA   0128H     0001H     ABSOLUTE     
+            XDATA   0129H     0001H     ABSOLUTE     
+            XDATA   012AH     0002H     ABSOLUTE     
+            XDATA   012CH     0001H     ABSOLUTE     
+            XDATA   012DH     0001H     ABSOLUTE     
+            XDATA   012EH     0001H     ABSOLUTE     
+            XDATA   012FH     0001H     ABSOLUTE     
+            XDATA   0130H     0001H     ABSOLUTE     
+            XDATA   0131H     0001H     ABSOLUTE     
+            XDATA   0132H     0001H     ABSOLUTE     
+            XDATA   0133H     0001H     ABSOLUTE     
+            XDATA   0134H     0001H     ABSOLUTE     
+            XDATA   0135H     0001H     ABSOLUTE     
+            XDATA   0136H     0001H     ABSOLUTE     
+            XDATA   0137H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 6
+
+
+            XDATA   0138H     0001H     ABSOLUTE     
+            XDATA   0139H     0001H     ABSOLUTE     
+            XDATA   013AH     0001H     ABSOLUTE     
+            XDATA   013BH     0001H     ABSOLUTE     
+            XDATA   013CH     0001H     ABSOLUTE     
+            XDATA   013DH     0001H     ABSOLUTE     
+            XDATA   013EH     0001H     ABSOLUTE     
+            XDATA   013FH     0001H     ABSOLUTE     
+            XDATA   0140H     0001H     ABSOLUTE     
+            XDATA   0141H     0001H     ABSOLUTE     
+            XDATA   0142H     0002H     ABSOLUTE     
+                    0144H     0001H                  *** GAP ***
+            XDATA   0145H     0001H     ABSOLUTE     
+            XDATA   0146H     0001H     ABSOLUTE     
+            XDATA   0147H     0002H     ABSOLUTE     
+            XDATA   0149H     0002H     ABSOLUTE     
+            XDATA   014BH     0001H     ABSOLUTE     
+            XDATA   014CH     0001H     ABSOLUTE     
+            XDATA   014DH     0001H     ABSOLUTE     
+            XDATA   014EH     0001H     ABSOLUTE     
+            XDATA   014FH     0001H     ABSOLUTE     
+            XDATA   0150H     0001H     ABSOLUTE     
+            XDATA   0151H     0001H     ABSOLUTE     
+            XDATA   0152H     0001H     ABSOLUTE     
+            XDATA   0153H     0001H     ABSOLUTE     
+            XDATA   0154H     0001H     ABSOLUTE     
+            XDATA   0155H     0001H     ABSOLUTE     
+            XDATA   0156H     0001H     ABSOLUTE     
+            XDATA   0157H     0001H     ABSOLUTE     
+            XDATA   0158H     0001H     ABSOLUTE     
+            XDATA   0159H     0001H     ABSOLUTE     
+            XDATA   015AH     0001H     ABSOLUTE     
+            XDATA   015BH     0001H     ABSOLUTE     
+            XDATA   015CH     0001H     ABSOLUTE     
+            XDATA   015DH     0001H     ABSOLUTE     
+            XDATA   015EH     0001H     ABSOLUTE     
+            XDATA   015FH     0001H     ABSOLUTE     
+            XDATA   0160H     0001H     ABSOLUTE     
+            XDATA   0161H     0001H     ABSOLUTE     
+            XDATA   0162H     0001H     ABSOLUTE     
+            XDATA   0163H     0001H     ABSOLUTE     
+            XDATA   0164H     0001H     ABSOLUTE     
+            XDATA   0165H     0001H     ABSOLUTE     
+            XDATA   0166H     0001H     ABSOLUTE     
+            XDATA   0167H     0001H     ABSOLUTE     
+            XDATA   0168H     0001H     ABSOLUTE     
+            XDATA   0169H     0001H     ABSOLUTE     
+            XDATA   016AH     0001H     ABSOLUTE     
+            XDATA   016BH     0001H     ABSOLUTE     
+            XDATA   016CH     0001H     ABSOLUTE     
+            XDATA   016DH     0001H     ABSOLUTE     
+            XDATA   016EH     0001H     ABSOLUTE     
+            XDATA   016FH     0001H     ABSOLUTE     
+            XDATA   0170H     0001H     ABSOLUTE     
+            XDATA   0171H     0001H     ABSOLUTE     
+            XDATA   0172H     0001H     ABSOLUTE     
+            XDATA   0173H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 7
+
+
+            XDATA   0174H     0001H     ABSOLUTE     
+            XDATA   0175H     0001H     ABSOLUTE     
+            XDATA   0176H     0001H     ABSOLUTE     
+            XDATA   0177H     0001H     ABSOLUTE     
+            XDATA   0178H     0001H     ABSOLUTE     
+            XDATA   0179H     0001H     ABSOLUTE     
+                    017AH     0001H                  *** GAP ***
+            XDATA   017BH     0001H     ABSOLUTE     
+            XDATA   017CH     0001H     ABSOLUTE     
+            XDATA   017DH     0001H     ABSOLUTE     
+            XDATA   017EH     0001H     ABSOLUTE     
+            XDATA   017FH     0001H     ABSOLUTE     
+            XDATA   0180H     0001H     ABSOLUTE     
+            XDATA   0181H     0001H     ABSOLUTE     
+            XDATA   0182H     0002H     ABSOLUTE     
+            XDATA   0184H     0002H     ABSOLUTE     
+            XDATA   0186H     0001H     ABSOLUTE     
+            XDATA   0187H     0001H     ABSOLUTE     
+            XDATA   0188H     0001H     ABSOLUTE     
+            XDATA   0189H     0001H     ABSOLUTE     
+                    018AH     0002H                  *** GAP ***
+            XDATA   018CH     0001H     ABSOLUTE     
+            XDATA   018DH     0001H     ABSOLUTE     
+            XDATA   018EH     0001H     ABSOLUTE     
+            XDATA   018FH     0001H     ABSOLUTE     
+            XDATA   0190H     0001H     ABSOLUTE     
+            XDATA   0191H     0001H     ABSOLUTE     
+            XDATA   0192H     0002H     ABSOLUTE     
+            XDATA   0194H     0001H     ABSOLUTE     
+            XDATA   0195H     0002H     ABSOLUTE     
+            XDATA   0197H     0002H     ABSOLUTE     
+            XDATA   0199H     0001H     ABSOLUTE     
+            XDATA   019AH     0001H     ABSOLUTE     
+            XDATA   019BH     0002H     ABSOLUTE     
+            XDATA   019DH     0002H     ABSOLUTE     
+            XDATA   019FH     0001H     ABSOLUTE     
+            XDATA   01A0H     0001H     ABSOLUTE     
+                    01A1H     0001H                  *** GAP ***
+            XDATA   01A2H     0002H     ABSOLUTE     
+                    01A4H     0004H                  *** GAP ***
+            XDATA   01A8H     0008H     ABSOLUTE     
+                    01B0H     0010H                  *** GAP ***
+            XDATA   01C0H     0002H     ABSOLUTE     
+            XDATA   01C2H     0002H     ABSOLUTE     
+            XDATA   01C4H     0002H     ABSOLUTE     
+            XDATA   01C6H     0001H     ABSOLUTE     
+            XDATA   01C7H     0001H     ABSOLUTE     
+            XDATA   01C8H     0001H     ABSOLUTE     
+                    01C9H     0006H                  *** GAP ***
+            XDATA   01CFH     0001H     ABSOLUTE     
+            XDATA   01D0H     0002H     ABSOLUTE     
+            XDATA   01D2H     0002H     ABSOLUTE     
+            XDATA   01D4H     0002H     ABSOLUTE     
+            XDATA   01D6H     0002H     ABSOLUTE     
+            XDATA   01D8H     0002H     ABSOLUTE     
+            XDATA   01DAH     0002H     ABSOLUTE     
+            XDATA   01DCH     0002H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 8
+
+
+            XDATA   01DEH     0002H     ABSOLUTE     
+            XDATA   01E0H     0001H     ABSOLUTE     
+            XDATA   01E1H     0001H     ABSOLUTE     
+            XDATA   01E2H     0001H     ABSOLUTE     
+            XDATA   01E3H     0002H     ABSOLUTE     
+            XDATA   01E5H     0001H     ABSOLUTE     
+            XDATA   01E6H     0001H     ABSOLUTE     
+            XDATA   01E7H     0002H     ABSOLUTE     
+            XDATA   01E9H     0001H     ABSOLUTE     
+            XDATA   01EAH     0002H     ABSOLUTE     
+            XDATA   01ECH     0001H     ABSOLUTE     
+            XDATA   01EDH     0001H     ABSOLUTE     
+            XDATA   01EEH     0001H     ABSOLUTE     
+            XDATA   01EFH     0001H     ABSOLUTE     
+            XDATA   01F0H     0001H     ABSOLUTE     
+            XDATA   01F1H     0001H     ABSOLUTE     
+            XDATA   01F2H     0001H     ABSOLUTE     
+            XDATA   01F3H     0001H     ABSOLUTE     
+            XDATA   01F4H     0001H     ABSOLUTE     
+            XDATA   01F5H     0001H     ABSOLUTE     
+            XDATA   01F6H     0001H     ABSOLUTE     
+            XDATA   01F7H     0001H     ABSOLUTE     
+            XDATA   01F8H     0001H     ABSOLUTE     
+            XDATA   01F9H     0001H     ABSOLUTE     
+            XDATA   01FAH     0001H     ABSOLUTE     
+            XDATA   01FBH     0001H     ABSOLUTE     
+            XDATA   01FCH     0001H     ABSOLUTE     
+            XDATA   01FDH     0001H     ABSOLUTE     
+            XDATA   01FEH     0001H     ABSOLUTE     
+            XDATA   01FFH     0001H     ABSOLUTE     
+                    0200H     0002H                  *** GAP ***
+            XDATA   0202H     0001H     ABSOLUTE     
+            XDATA   0203H     0001H     ABSOLUTE     
+                    0204H     0007H                  *** GAP ***
+            XDATA   020BH     0001H     ABSOLUTE     
+            XDATA   020CH     0001H     ABSOLUTE     
+                    020DH     0004H                  *** GAP ***
+            XDATA   0211H     0001H     ABSOLUTE     
+                    0212H     0003H                  *** GAP ***
+            XDATA   0215H     0001H     ABSOLUTE     
+                    0216H     004BH                  *** GAP ***
+            XDATA   0261H     0001H     ABSOLUTE     
+            XDATA   0262H     0001H     ABSOLUTE     
+            XDATA   0263H     0001H     ABSOLUTE     
+                    0264H     0002H                  *** GAP ***
+            XDATA   0266H     0001H     ABSOLUTE     
+            XDATA   0267H     0001H     ABSOLUTE     
+            XDATA   0268H     0001H     ABSOLUTE     
+            XDATA   0269H     0001H     ABSOLUTE     
+            XDATA   026AH     0001H     ABSOLUTE     
+                    026BH     0017H                  *** GAP ***
+            XDATA   0282H     0001H     ABSOLUTE     
+            XDATA   0283H     0002H     ABSOLUTE     
+            XDATA   0285H     0001H     ABSOLUTE     
+            XDATA   0286H     0001H     ABSOLUTE     
+            XDATA   0287H     0001H     ABSOLUTE     
+            XDATA   0288H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 9
+
+
+            XDATA   0289H     0001H     ABSOLUTE     
+                    028AH     0076H                  *** GAP ***
+            XDATA   0300H     0001H     ABSOLUTE     
+            XDATA   0301H     0001H     ABSOLUTE     
+            XDATA   0302H     0001H     ABSOLUTE     
+                    0303H     0003H                  *** GAP ***
+            XDATA   0306H     0001H     ABSOLUTE     
+            XDATA   0307H     0001H     ABSOLUTE     
+            XDATA   0308H     0008H     ABSOLUTE     
+            XDATA   0310H     0002H     ABSOLUTE     
+            XDATA   0312H     0002H     ABSOLUTE     
+            XDATA   0314H     0002H     ABSOLUTE     
+            XDATA   0316H     0002H     ABSOLUTE     
+            XDATA   0318H     0001H     ABSOLUTE     
+            XDATA   0319H     0001H     ABSOLUTE     
+                    031AH     0003H                  *** GAP ***
+            XDATA   031DH     0002H     ABSOLUTE     
+            XDATA   031FH     0001H     ABSOLUTE     
+            XDATA   0320H     0028H     ABSOLUTE     
+                    0348H     0008H                  *** GAP ***
+            XDATA   0350H     0001H     ABSOLUTE     
+            XDATA   0351H     0001H     ABSOLUTE     
+            XDATA   0352H     0006H     ABSOLUTE     
+            XDATA   0358H     0001H     ABSOLUTE     
+            XDATA   0359H     0001H     ABSOLUTE     
+            XDATA   035AH     0006H     ABSOLUTE     
+                    0360H     0003H                  *** GAP ***
+            XDATA   0363H     0001H     ABSOLUTE     
+            XDATA   0364H     0001H     ABSOLUTE     
+                    0365H     000BH                  *** GAP ***
+            XDATA   0370H     0001H     ABSOLUTE     
+            XDATA   0371H     0001H     ABSOLUTE     
+                    0372H     008EH                  *** GAP ***
+            XDATA   0400H     0001H     ABSOLUTE     
+            XDATA   0401H     0001H     ABSOLUTE     
+            XDATA   0402H     0001H     ABSOLUTE     
+            XDATA   0403H     0001H     ABSOLUTE     
+            XDATA   0404H     0001H     ABSOLUTE     
+            XDATA   0405H     0001H     ABSOLUTE     
+            XDATA   0406H     0001H     ABSOLUTE     
+            XDATA   0407H     0001H     ABSOLUTE     
+            XDATA   0408H     0001H     ABSOLUTE     
+            XDATA   0409H     0001H     ABSOLUTE     
+            XDATA   040AH     0001H     ABSOLUTE     
+            XDATA   040BH     0001H     ABSOLUTE     
+            XDATA   040CH     0001H     ABSOLUTE     
+            XDATA   040DH     0001H     ABSOLUTE     
+            XDATA   040EH     0001H     ABSOLUTE     
+            XDATA   040FH     0001H     ABSOLUTE     
+            XDATA   0410H     0001H     ABSOLUTE     
+            XDATA   0411H     0001H     ABSOLUTE     
+            XDATA   0412H     0001H     ABSOLUTE     
+            XDATA   0413H     0001H     ABSOLUTE     
+            XDATA   0414H     0001H     ABSOLUTE     
+            XDATA   0415H     0001H     ABSOLUTE     
+            XDATA   0416H     0001H     ABSOLUTE     
+            XDATA   0417H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 10
+
+
+            XDATA   0418H     0001H     ABSOLUTE     
+            XDATA   0419H     0001H     ABSOLUTE     
+            XDATA   041AH     0001H     ABSOLUTE     
+            XDATA   041BH     0001H     ABSOLUTE     
+            XDATA   041CH     0001H     ABSOLUTE     
+            XDATA   041DH     0001H     ABSOLUTE     
+            XDATA   041EH     0001H     ABSOLUTE     
+            XDATA   041FH     0001H     ABSOLUTE     
+            XDATA   0420H     0001H     ABSOLUTE     
+            XDATA   0421H     0001H     ABSOLUTE     
+            XDATA   0422H     0001H     ABSOLUTE     
+            XDATA   0423H     0001H     ABSOLUTE     
+            XDATA   0424H     0001H     ABSOLUTE     
+            XDATA   0425H     0001H     ABSOLUTE     
+            XDATA   0426H     0001H     ABSOLUTE     
+            XDATA   0427H     0001H     ABSOLUTE     
+            XDATA   0428H     0001H     ABSOLUTE     
+            XDATA   0429H     0001H     ABSOLUTE     
+            XDATA   042AH     0001H     ABSOLUTE     
+            XDATA   042BH     0001H     ABSOLUTE     
+            XDATA   042CH     0001H     ABSOLUTE     
+                    042DH     0003H                  *** GAP ***
+            XDATA   0430H     0016H     ABSOLUTE     
+                    0446H     0014H                  *** GAP ***
+            XDATA   045AH     0001H     ABSOLUTE     
+                    045BH     0002H                  *** GAP ***
+            XDATA   045DH     0001H     ABSOLUTE     
+            XDATA   045EH     0001H     ABSOLUTE     
+            XDATA   045FH     0001H     ABSOLUTE     
+            XDATA   0460H     0001H     ABSOLUTE     
+            XDATA   0461H     0001H     ABSOLUTE     
+            XDATA   0462H     0001H     ABSOLUTE     
+            XDATA   0463H     0001H     ABSOLUTE     
+            XDATA   0464H     0001H     ABSOLUTE     
+                    0465H     001FH                  *** GAP ***
+            XDATA   0484H     0001H     ABSOLUTE     
+            XDATA   0485H     0001H     ABSOLUTE     
+            XDATA   0486H     0001H     ABSOLUTE     
+            XDATA   0487H     0001H     ABSOLUTE     
+            XDATA   0488H     0001H     ABSOLUTE     
+            XDATA   0489H     0001H     ABSOLUTE     
+            XDATA   048AH     0001H     ABSOLUTE     
+            XDATA   048BH     0001H     ABSOLUTE     
+                    048CH     0003H                  *** GAP ***
+            XDATA   048FH     0009H     ABSOLUTE     
+            XDATA   0498H     0008H     ABSOLUTE     
+            XDATA   04A0H     0001H     ABSOLUTE     
+            XDATA   04A1H     0001H     ABSOLUTE     
+            XDATA   04A2H     0001H     ABSOLUTE     
+            XDATA   04A3H     0001H     ABSOLUTE     
+            XDATA   04A4H     0001H     ABSOLUTE     
+            XDATA   04A5H     0001H     ABSOLUTE     
+            XDATA   04A6H     0001H     ABSOLUTE     
+            XDATA   04A7H     0001H     ABSOLUTE     
+            XDATA   04A8H     0001H     ABSOLUTE     
+            XDATA   04A9H     0001H     ABSOLUTE     
+            XDATA   04AAH     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 11
+
+
+            XDATA   04ABH     0001H     ABSOLUTE     
+            XDATA   04ACH     0001H     ABSOLUTE     
+            XDATA   04ADH     0001H     ABSOLUTE     
+            XDATA   04AEH     0001H     ABSOLUTE     
+            XDATA   04AFH     0001H     ABSOLUTE     
+            XDATA   04B0H     0001H     ABSOLUTE     
+            XDATA   04B1H     0001H     ABSOLUTE     
+            XDATA   04B2H     0001H     ABSOLUTE     
+            XDATA   04B3H     0001H     ABSOLUTE     
+            XDATA   04B4H     0001H     ABSOLUTE     
+            XDATA   04B5H     0001H     ABSOLUTE     
+            XDATA   04B6H     0001H     ABSOLUTE     
+            XDATA   04B7H     0001H     ABSOLUTE     
+            XDATA   04B8H     0001H     ABSOLUTE     
+            XDATA   04B9H     0001H     ABSOLUTE     
+                    04BAH     0001H                  *** GAP ***
+            XDATA   04BBH     0001H     ABSOLUTE     
+            XDATA   04BCH     0001H     ABSOLUTE     
+            XDATA   04BDH     0001H     ABSOLUTE     
+            XDATA   04BEH     0001H     ABSOLUTE     
+            XDATA   04BFH     0001H     ABSOLUTE     
+            XDATA   04C0H     0001H     ABSOLUTE     
+            XDATA   04C1H     0001H     ABSOLUTE     
+            XDATA   04C2H     0001H     ABSOLUTE     
+            XDATA   04C3H     0001H     ABSOLUTE     
+            XDATA   04C4H     0001H     ABSOLUTE     
+            XDATA   04C5H     0001H     ABSOLUTE     
+            XDATA   04C6H     0001H     ABSOLUTE     
+            XDATA   04C7H     0001H     ABSOLUTE     
+            XDATA   04C8H     0001H     ABSOLUTE     
+            XDATA   04C9H     0001H     ABSOLUTE     
+            XDATA   04CAH     0001H     ABSOLUTE     
+            XDATA   04CBH     0001H     ABSOLUTE     
+            XDATA   04CCH     0001H     ABSOLUTE     
+            XDATA   04CDH     0001H     ABSOLUTE     
+            XDATA   04CEH     0001H     ABSOLUTE     
+            XDATA   04CFH     0001H     ABSOLUTE     
+            XDATA   04D0H     0001H     ABSOLUTE     
+            XDATA   04D1H     0001H     ABSOLUTE     
+            XDATA   04D2H     0001H     ABSOLUTE     
+            XDATA   04D3H     0001H     ABSOLUTE     
+            XDATA   04D4H     0001H     ABSOLUTE     
+            XDATA   04D5H     0001H     ABSOLUTE     
+            XDATA   04D6H     0001H     ABSOLUTE     
+            XDATA   04D7H     0001H     ABSOLUTE     
+            XDATA   04D8H     0001H     ABSOLUTE     
+            XDATA   04D9H     0001H     ABSOLUTE     
+            XDATA   04DAH     0001H     ABSOLUTE     
+            XDATA   04DBH     0001H     ABSOLUTE     
+            XDATA   04DCH     0001H     ABSOLUTE     
+            XDATA   04DDH     0001H     ABSOLUTE     
+            XDATA   04DEH     0001H     ABSOLUTE     
+            XDATA   04DFH     0001H     ABSOLUTE     
+            XDATA   04E0H     0001H     ABSOLUTE     
+            XDATA   04E1H     0001H     ABSOLUTE     
+            XDATA   04E2H     0001H     ABSOLUTE     
+            XDATA   04E3H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 12
+
+
+            XDATA   04E4H     0001H     ABSOLUTE     
+            XDATA   04E5H     0001H     ABSOLUTE     
+            XDATA   04E6H     0001H     ABSOLUTE     
+            XDATA   04E7H     0001H     ABSOLUTE     
+            XDATA   04E8H     0001H     ABSOLUTE     
+            XDATA   04E9H     0001H     ABSOLUTE     
+            XDATA   04EAH     0001H     ABSOLUTE     
+            XDATA   04EBH     0001H     ABSOLUTE     
+            XDATA   04ECH     0001H     ABSOLUTE     
+            XDATA   04EDH     0001H     ABSOLUTE     
+            XDATA   04EEH     0001H     ABSOLUTE     
+            XDATA   04EFH     0001H     ABSOLUTE     
+            XDATA   04F0H     0001H     ABSOLUTE     
+            XDATA   04F1H     0001H     ABSOLUTE     
+            XDATA   04F2H     0001H     ABSOLUTE     
+            XDATA   04F3H     0001H     ABSOLUTE     
+            XDATA   04F4H     0001H     ABSOLUTE     
+            XDATA   04F5H     0001H     ABSOLUTE     
+            XDATA   04F6H     0001H     ABSOLUTE     
+            XDATA   04F7H     0001H     ABSOLUTE     
+            XDATA   04F8H     0001H     ABSOLUTE     
+                    04F9H     0006H                  *** GAP ***
+            XDATA   04FFH     0001H     ABSOLUTE     
+                    0500H     000BH                  *** GAP ***
+            XDATA   050BH     0001H     ABSOLUTE     
+            XDATA   050CH     0001H     ABSOLUTE     
+            XDATA   050DH     0001H     ABSOLUTE     
+            XDATA   050EH     0002H     ABSOLUTE     
+            XDATA   0510H     0002H     ABSOLUTE     
+            XDATA   0512H     0002H     ABSOLUTE     
+            XDATA   0514H     0002H     ABSOLUTE     
+            XDATA   0516H     0002H     ABSOLUTE     
+            XDATA   0518H     0002H     ABSOLUTE     
+            XDATA   051AH     0002H     ABSOLUTE     
+            XDATA   051CH     0002H     ABSOLUTE     
+                    051EH     0002H                  *** GAP ***
+            XDATA   0520H     0001H     ABSOLUTE     
+            XDATA   0521H     0001H     ABSOLUTE     
+                    0522H     0002H                  *** GAP ***
+            XDATA   0524H     0001H     ABSOLUTE     
+            XDATA   0525H     0001H     ABSOLUTE     
+                    0526H     0013H                  *** GAP ***
+            XDATA   0539H     0001H     ABSOLUTE     
+            XDATA   053AH     0001H     ABSOLUTE     
+            XDATA   053BH     0001H     ABSOLUTE     
+            XDATA   053CH     0001H     ABSOLUTE     
+            XDATA   053DH     0001H     ABSOLUTE     
+                    053EH     0002H                  *** GAP ***
+            XDATA   0540H     0002H     ABSOLUTE     
+            XDATA   0542H     0002H     ABSOLUTE     
+                    0544H     0028H                  *** GAP ***
+            XDATA   056CH     0001H     ABSOLUTE     
+                    056DH     0003H                  *** GAP ***
+            XDATA   0570H     0001H     ABSOLUTE     
+            XDATA   0571H     0001H     ABSOLUTE     
+            XDATA   0572H     0001H     ABSOLUTE     
+            XDATA   0573H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 13
+
+
+            XDATA   0574H     0001H     ABSOLUTE     
+            XDATA   0575H     0001H     ABSOLUTE     
+            XDATA   0576H     0001H     ABSOLUTE     
+                    0577H     0009H                  *** GAP ***
+            XDATA   0580H     0001H     ABSOLUTE     
+            XDATA   0581H     0001H     ABSOLUTE     
+            XDATA   0582H     0001H     ABSOLUTE     
+            XDATA   0583H     0001H     ABSOLUTE     
+            XDATA   0584H     0001H     ABSOLUTE     
+            XDATA   0585H     0001H     ABSOLUTE     
+            XDATA   0586H     0001H     ABSOLUTE     
+            XDATA   0587H     0001H     ABSOLUTE     
+            XDATA   0588H     0001H     ABSOLUTE     
+            XDATA   0589H     0001H     ABSOLUTE     
+                    058AH     0077H                  *** GAP ***
+            XDATA   0601H     0001H     ABSOLUTE     
+                    0602H     0003H                  *** GAP ***
+            XDATA   0605H     0001H     ABSOLUTE     
+            XDATA   0606H     0001H     ABSOLUTE     
+            XDATA   0607H     0001H     ABSOLUTE     
+                    0608H     0007H                  *** GAP ***
+            XDATA   060FH     0001H     ABSOLUTE     
+                    0610H     0005H                  *** GAP ***
+            XDATA   0615H     0001H     ABSOLUTE     
+                    0616H     0015H                  *** GAP ***
+            XDATA   062BH     0001H     ABSOLUTE     
+            XDATA   062CH     0001H     ABSOLUTE     
+                    062DH     0036H                  *** GAP ***
+            XDATA   0663H     0001H     ABSOLUTE     
+                    0664H     0013H                  *** GAP ***
+            XDATA   0677H     0001H     ABSOLUTE     
+                    0678H     0001H                  *** GAP ***
+            XDATA   0679H     0001H     ABSOLUTE     
+            XDATA   067AH     0001H     ABSOLUTE     
+            XDATA   067BH     0001H     ABSOLUTE     
+                    067CH     000EH                  *** GAP ***
+            XDATA   068AH     0001H     ABSOLUTE     
+                    068BH     000CH                  *** GAP ***
+            XDATA   0697H     0001H     ABSOLUTE     
+            XDATA   0698H     0001H     ABSOLUTE     
+            XDATA   0699H     0001H     ABSOLUTE     
+                    069AH     0026H                  *** GAP ***
+            XDATA   06C0H     0002H     ABSOLUTE     
+            XDATA   06C2H     0002H     ABSOLUTE     
+                    06C4H     0006H                  *** GAP ***
+            XDATA   06CAH     0002H     ABSOLUTE     
+            XDATA   06CCH     0002H     ABSOLUTE     
+                    06CEH     0032H                  *** GAP ***
+            XDATA   0700H     0002H     UNIT         ?XD?_BB_KBDATATOHOSTWAITRX?BBK_MAIN
+            XDATA   0702H     0002H     UNIT         _XDATA_GROUP_
+                    0704H     00FCH                  *** GAP ***
+            XDATA   0800H     0080H     ABSOLUTE     
+            XDATA   0880H     0018H     ABSOLUTE     
+                    0898H     00EAH                  *** GAP ***
+            XDATA   0982H     0001H     ABSOLUTE     
+            XDATA   0983H     0008H     ABSOLUTE     
+            XDATA   098BH     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 14
+
+
+            XDATA   098CH     0001H     ABSOLUTE     
+            XDATA   098DH     0001H     ABSOLUTE     
+            XDATA   098EH     0001H     ABSOLUTE     
+            XDATA   098FH     0001H     ABSOLUTE     
+            XDATA   0990H     0001H     ABSOLUTE     
+            XDATA   0991H     0001H     ABSOLUTE     
+                    0992H     004EH                  *** GAP ***
+            XDATA   09E0H     0001H     ABSOLUTE     
+                    09E1H     000FH                  *** GAP ***
+            XDATA   09F0H     0001H     ABSOLUTE     
+            XDATA   09F1H     0001H     ABSOLUTE     
+            XDATA   09F2H     0001H     ABSOLUTE     
+            XDATA   09F3H     0001H     ABSOLUTE     
+            XDATA   09F4H     0001H     ABSOLUTE     
+            XDATA   09F5H     0001H     ABSOLUTE     
+                    09F6H     0004H                  *** GAP ***
+            XDATA   09FAH     0001H     ABSOLUTE     
+            XDATA   09FBH     0001H     ABSOLUTE     
+            XDATA   09FCH     0001H     ABSOLUTE     
+            XDATA   09FDH     0001H     ABSOLUTE     
+                    09FEH     0001H                  *** GAP ***
+            XDATA   09FFH     0001H     ABSOLUTE     
+                    0A00H     0100H                  *** GAP ***
+            XDATA   0B00H     0001H     ABSOLUTE     
+            XDATA   0B01H     0001H     ABSOLUTE     
+            XDATA   0B02H     0001H     ABSOLUTE     
+            XDATA   0B03H     0001H     ABSOLUTE     
+            XDATA   0B04H     0001H     ABSOLUTE     
+            XDATA   0B05H     0001H     ABSOLUTE     
+            XDATA   0B06H     0001H     ABSOLUTE     
+            XDATA   0B07H     0001H     ABSOLUTE     
+            XDATA   0B08H     0001H     ABSOLUTE     
+            XDATA   0B09H     0001H     ABSOLUTE     
+            XDATA   0B0AH     0001H     ABSOLUTE     
+            XDATA   0B0BH     0001H     ABSOLUTE     
+            XDATA   0B0CH     0001H     ABSOLUTE     
+            XDATA   0B0DH     0001H     ABSOLUTE     
+            XDATA   0B0EH     0001H     ABSOLUTE     
+            XDATA   0B0FH     0001H     ABSOLUTE     
+            XDATA   0B10H     0001H     ABSOLUTE     
+            XDATA   0B11H     0001H     ABSOLUTE     
+            XDATA   0B12H     0001H     ABSOLUTE     
+            XDATA   0B13H     0001H     ABSOLUTE     
+            XDATA   0B14H     0001H     ABSOLUTE     
+            XDATA   0B15H     0001H     ABSOLUTE     
+            XDATA   0B16H     0001H     ABSOLUTE     
+            XDATA   0B17H     0001H     ABSOLUTE     
+            XDATA   0B18H     0001H     ABSOLUTE     
+            XDATA   0B19H     0001H     ABSOLUTE     
+            XDATA   0B1AH     0001H     ABSOLUTE     
+            XDATA   0B1BH     0001H     ABSOLUTE     
+            XDATA   0B1CH     0001H     ABSOLUTE     
+            XDATA   0B1DH     0001H     ABSOLUTE     
+            XDATA   0B1EH     0001H     ABSOLUTE     
+            XDATA   0B1FH     0002H     ABSOLUTE     
+            XDATA   0B21H     0001H     ABSOLUTE     
+            XDATA   0B22H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 15
+
+
+            XDATA   0B23H     0001H     ABSOLUTE     
+            XDATA   0B24H     0001H     ABSOLUTE     
+            XDATA   0B25H     0001H     ABSOLUTE     
+            XDATA   0B26H     0001H     ABSOLUTE     
+            XDATA   0B27H     0001H     ABSOLUTE     
+            XDATA   0B28H     0001H     ABSOLUTE     
+            XDATA   0B29H     0001H     ABSOLUTE     
+            XDATA   0B2AH     0001H     ABSOLUTE     
+            XDATA   0B2BH     0001H     ABSOLUTE     
+            XDATA   0B2CH     0001H     ABSOLUTE     
+            XDATA   0B2DH     0001H     ABSOLUTE     
+            XDATA   0B2EH     0001H     ABSOLUTE     
+            XDATA   0B2FH     0001H     ABSOLUTE     
+            XDATA   0B30H     0001H     ABSOLUTE     
+                    0B31H     0007H                  *** GAP ***
+            XDATA   0B38H     0001H     ABSOLUTE     
+            XDATA   0B39H     0001H     ABSOLUTE     
+            XDATA   0B3AH     0001H     ABSOLUTE     
+            XDATA   0B3BH     0001H     ABSOLUTE     
+            XDATA   0B3CH     0001H     ABSOLUTE     
+            XDATA   0B3DH     0001H     ABSOLUTE     
+                    0B3EH     0002H                  *** GAP ***
+            XDATA   0B40H     0014H     ABSOLUTE     
+                    0B54H     000CH                  *** GAP ***
+            XDATA   0B60H     0004H     ABSOLUTE     
+            XDATA   0B64H     0004H     ABSOLUTE     
+            XDATA   0B68H     0004H     ABSOLUTE     
+            XDATA   0B6CH     0004H     ABSOLUTE     
+            XDATA   0B70H     0004H     ABSOLUTE     
+                    0B74H     000CH                  *** GAP ***
+            XDATA   0B80H     0014H     ABSOLUTE     
+                    0B94H     006CH                  *** GAP ***
+            XDATA   0C00H     0140H     ABSOLUTE     
+            XDATA   0D40H     0004H     ABSOLUTE     
+                    0D44H     000CH                  *** GAP ***
+            XDATA   0D50H     0004H     ABSOLUTE     
+            XDATA   0D54H     0004H     ABSOLUTE     
+            XDATA   0D58H     0004H     ABSOLUTE     
+            XDATA   0D5CH     0004H     ABSOLUTE     
+            XDATA   0D60H     0004H     ABSOLUTE     
+            XDATA   0D64H     0004H     ABSOLUTE     
+            XDATA   0D68H     0004H     ABSOLUTE     
+            XDATA   0D6CH     0004H     ABSOLUTE     
+            XDATA   0D70H     0004H     ABSOLUTE     
+            XDATA   0D74H     0004H     ABSOLUTE     
+            XDATA   0D78H     0004H     ABSOLUTE     
+            XDATA   0D7CH     0004H     ABSOLUTE     
+            XDATA   0D80H     0004H     ABSOLUTE     
+            XDATA   0D84H     0004H     ABSOLUTE     
+            XDATA   0D88H     0004H     ABSOLUTE     
+            XDATA   0D8CH     0004H     ABSOLUTE     
+            XDATA   0D90H     0004H     ABSOLUTE     
+            XDATA   0D94H     0004H     ABSOLUTE     
+            XDATA   0D98H     0004H     ABSOLUTE     
+            XDATA   0D9CH     0004H     ABSOLUTE     
+            XDATA   0DA0H     0004H     ABSOLUTE     
+                    0DA4H     025CH                  *** GAP ***
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 16
+
+
+            XDATA   1000H     0001H     ABSOLUTE     
+            XDATA   1001H     0001H     ABSOLUTE     
+                    1002H     0003H                  *** GAP ***
+            XDATA   1005H     0001H     ABSOLUTE     
+                    1006H     0001H                  *** GAP ***
+            XDATA   1007H     0001H     ABSOLUTE     
+                    1008H     0018H                  *** GAP ***
+            XDATA   1020H     0001H     ABSOLUTE     
+                    1021H     0001H                  *** GAP ***
+            XDATA   1022H     0001H     ABSOLUTE     
+                    1023H     000EH                  *** GAP ***
+            XDATA   1031H     0001H     ABSOLUTE     
+            XDATA   1032H     0001H     ABSOLUTE     
+            XDATA   1033H     0001H     ABSOLUTE     
+            XDATA   1034H     0001H     ABSOLUTE     
+                    1035H     0001H                  *** GAP ***
+            XDATA   1036H     0001H     ABSOLUTE     
+                    1037H     0002H                  *** GAP ***
+            XDATA   1039H     0001H     ABSOLUTE     
+            XDATA   103AH     0001H     ABSOLUTE     
+            XDATA   103BH     0001H     ABSOLUTE     
+            XDATA   103CH     0001H     ABSOLUTE     
+            XDATA   103DH     0001H     ABSOLUTE     
+            XDATA   103EH     0001H     ABSOLUTE     
+            XDATA   103FH     0001H     ABSOLUTE     
+            XDATA   1040H     0001H     ABSOLUTE     
+            XDATA   1041H     0001H     ABSOLUTE     
+            XDATA   1042H     0001H     ABSOLUTE     
+            XDATA   1043H     0001H     ABSOLUTE     
+            XDATA   1044H     0001H     ABSOLUTE     
+            XDATA   1045H     0001H     ABSOLUTE     
+            XDATA   1046H     0001H     ABSOLUTE     
+            XDATA   1047H     0001H     ABSOLUTE     
+            XDATA   1048H     0001H     ABSOLUTE     
+            XDATA   1049H     0001H     ABSOLUTE     
+            XDATA   104AH     0001H     ABSOLUTE     
+            XDATA   104BH     0001H     ABSOLUTE     
+            XDATA   104CH     0001H     ABSOLUTE     
+            XDATA   104DH     0001H     ABSOLUTE     
+            XDATA   104EH     0001H     ABSOLUTE     
+            XDATA   104FH     0001H     ABSOLUTE     
+            XDATA   1050H     0001H     ABSOLUTE     
+            XDATA   1051H     0001H     ABSOLUTE     
+            XDATA   1052H     0001H     ABSOLUTE     
+            XDATA   1053H     0001H     ABSOLUTE     
+            XDATA   1054H     0001H     ABSOLUTE     
+            XDATA   1055H     0001H     ABSOLUTE     
+            XDATA   1056H     0001H     ABSOLUTE     
+            XDATA   1057H     0001H     ABSOLUTE     
+            XDATA   1058H     0001H     ABSOLUTE     
+            XDATA   1059H     0001H     ABSOLUTE     
+            XDATA   105AH     0001H     ABSOLUTE     
+            XDATA   105BH     0001H     ABSOLUTE     
+            XDATA   105CH     0001H     ABSOLUTE     
+            XDATA   105DH     0001H     ABSOLUTE     
+            XDATA   105EH     0001H     ABSOLUTE     
+            XDATA   105FH     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 17
+
+
+                    1060H     0003H                  *** GAP ***
+            XDATA   1063H     0001H     ABSOLUTE     
+                    1064H     009CH                  *** GAP ***
+            XDATA   1100H     0001H     ABSOLUTE     
+            XDATA   1101H     0001H     ABSOLUTE     
+            XDATA   1102H     0001H     ABSOLUTE     
+            XDATA   1103H     0001H     ABSOLUTE     
+            XDATA   1104H     0001H     ABSOLUTE     
+            XDATA   1105H     0001H     ABSOLUTE     
+            XDATA   1106H     0001H     ABSOLUTE     
+            XDATA   1107H     0001H     ABSOLUTE     
+            XDATA   1108H     0001H     ABSOLUTE     
+            XDATA   1109H     0001H     ABSOLUTE     
+            XDATA   110AH     0001H     ABSOLUTE     
+            XDATA   110BH     0001H     ABSOLUTE     
+            XDATA   110CH     0001H     ABSOLUTE     
+            XDATA   110DH     0001H     ABSOLUTE     
+            XDATA   110EH     0001H     ABSOLUTE     
+            XDATA   110FH     0001H     ABSOLUTE     
+            XDATA   1110H     0001H     ABSOLUTE     
+            XDATA   1111H     0001H     ABSOLUTE     
+            XDATA   1112H     0001H     ABSOLUTE     
+                    1113H     0001H                  *** GAP ***
+            XDATA   1114H     0001H     ABSOLUTE     
+            XDATA   1115H     0001H     ABSOLUTE     
+            XDATA   1116H     0001H     ABSOLUTE     
+            XDATA   1117H     0001H     ABSOLUTE     
+            XDATA   1118H     0001H     ABSOLUTE     
+            XDATA   1119H     0001H     ABSOLUTE     
+            XDATA   111AH     0001H     ABSOLUTE     
+            XDATA   111BH     0001H     ABSOLUTE     
+            XDATA   111CH     0001H     ABSOLUTE     
+            XDATA   111DH     0001H     ABSOLUTE     
+            XDATA   111EH     0001H     ABSOLUTE     
+            XDATA   111FH     0001H     ABSOLUTE     
+            XDATA   1120H     0001H     ABSOLUTE     
+            XDATA   1121H     0001H     ABSOLUTE     
+            XDATA   1122H     0001H     ABSOLUTE     
+            XDATA   1123H     0001H     ABSOLUTE     
+            XDATA   1124H     0001H     ABSOLUTE     
+            XDATA   1125H     0001H     ABSOLUTE     
+            XDATA   1126H     0001H     ABSOLUTE     
+            XDATA   1127H     0001H     ABSOLUTE     
+            XDATA   1128H     0001H     ABSOLUTE     
+            XDATA   1129H     0001H     ABSOLUTE     
+            XDATA   112AH     0001H     ABSOLUTE     
+            XDATA   112BH     0001H     ABSOLUTE     
+                    112CH     00D4H                  *** GAP ***
+            XDATA   1200H     0001H     ABSOLUTE     
+            XDATA   1201H     0001H     ABSOLUTE     
+            XDATA   1202H     0001H     ABSOLUTE     
+            XDATA   1203H     0001H     ABSOLUTE     
+            XDATA   1204H     0001H     ABSOLUTE     
+            XDATA   1205H     0001H     ABSOLUTE     
+                    1206H     00FAH                  *** GAP ***
+            XDATA   1300H     0001H     ABSOLUTE     
+                    1301H     0001H                  *** GAP ***
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 18
+
+
+            XDATA   1302H     0001H     ABSOLUTE     
+                    1303H     0001H                  *** GAP ***
+            XDATA   1304H     0001H     ABSOLUTE     
+                    1305H     0001H                  *** GAP ***
+            XDATA   1306H     0001H     ABSOLUTE     
+                    1307H     0001H                  *** GAP ***
+            XDATA   1308H     0001H     ABSOLUTE     
+                    1309H     0001H                  *** GAP ***
+            XDATA   130AH     0001H     ABSOLUTE     
+                    130BH     00F5H                  *** GAP ***
+            XDATA   1400H     0001H     ABSOLUTE     
+                    1401H     0001H                  *** GAP ***
+            XDATA   1402H     0001H     ABSOLUTE     
+                    1403H     0001H                  *** GAP ***
+            XDATA   1404H     0001H     ABSOLUTE     
+                    1405H     0003H                  *** GAP ***
+            XDATA   1408H     0001H     ABSOLUTE     
+                    1409H     0001H                  *** GAP ***
+            XDATA   140AH     0001H     ABSOLUTE     
+                    140BH     0001H                  *** GAP ***
+            XDATA   140CH     0001H     ABSOLUTE     
+                    140DH     0001H                  *** GAP ***
+            XDATA   140EH     0001H     ABSOLUTE     
+                    140FH     0001H                  *** GAP ***
+            XDATA   1410H     0001H     ABSOLUTE     
+                    1411H     00EFH                  *** GAP ***
+            XDATA   1500H     0001H     ABSOLUTE     
+            XDATA   1501H     0001H     ABSOLUTE     
+            XDATA   1502H     0001H     ABSOLUTE     
+            XDATA   1503H     0001H     ABSOLUTE     
+            XDATA   1504H     0001H     ABSOLUTE     
+            XDATA   1505H     0001H     ABSOLUTE     
+            XDATA   1506H     0001H     ABSOLUTE     
+            XDATA   1507H     0001H     ABSOLUTE     
+            XDATA   1508H     0001H     ABSOLUTE     
+                    1509H     0007H                  *** GAP ***
+            XDATA   1510H     0001H     ABSOLUTE     
+            XDATA   1511H     0001H     ABSOLUTE     
+            XDATA   1512H     0001H     ABSOLUTE     
+            XDATA   1513H     0001H     ABSOLUTE     
+            XDATA   1514H     0001H     ABSOLUTE     
+            XDATA   1515H     0001H     ABSOLUTE     
+            XDATA   1516H     0001H     ABSOLUTE     
+            XDATA   1517H     0001H     ABSOLUTE     
+            XDATA   1518H     0001H     ABSOLUTE     
+            XDATA   1519H     0001H     ABSOLUTE     
+                    151AH     0006H                  *** GAP ***
+            XDATA   1520H     0001H     ABSOLUTE     
+            XDATA   1521H     0001H     ABSOLUTE     
+            XDATA   1522H     0001H     ABSOLUTE     
+            XDATA   1523H     0001H     ABSOLUTE     
+            XDATA   1524H     0001H     ABSOLUTE     
+            XDATA   1525H     0001H     ABSOLUTE     
+                    1526H     000AH                  *** GAP ***
+            XDATA   1530H     0001H     ABSOLUTE     
+            XDATA   1531H     0001H     ABSOLUTE     
+            XDATA   1532H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 19
+
+
+            XDATA   1533H     0001H     ABSOLUTE     
+            XDATA   1534H     0001H     ABSOLUTE     
+            XDATA   1535H     0001H     ABSOLUTE     
+                    1536H     00BAH                  *** GAP ***
+            XDATA   15F0H     0010H     ABSOLUTE     
+            XDATA   1600H     0001H     ABSOLUTE     
+            XDATA   1601H     0001H     ABSOLUTE     
+            XDATA   1602H     0001H     ABSOLUTE     
+            XDATA   1603H     0001H     ABSOLUTE     
+            XDATA   1604H     0001H     ABSOLUTE     
+            XDATA   1605H     0001H     ABSOLUTE     
+            XDATA   1606H     0001H     ABSOLUTE     
+            XDATA   1607H     0001H     ABSOLUTE     
+            XDATA   1608H     0001H     ABSOLUTE     
+            XDATA   1609H     0001H     ABSOLUTE     
+            XDATA   160AH     0001H     ABSOLUTE     
+                    160BH     0002H                  *** GAP ***
+            XDATA   160DH     0001H     ABSOLUTE     
+                    160EH     0002H                  *** GAP ***
+            XDATA   1610H     0001H     ABSOLUTE     
+            XDATA   1611H     0001H     ABSOLUTE     
+            XDATA   1612H     0001H     ABSOLUTE     
+            XDATA   1613H     0001H     ABSOLUTE     
+            XDATA   1614H     0001H     ABSOLUTE     
+            XDATA   1615H     0001H     ABSOLUTE     
+            XDATA   1616H     0001H     ABSOLUTE     
+            XDATA   1617H     0001H     ABSOLUTE     
+            XDATA   1618H     0001H     ABSOLUTE     
+            XDATA   1619H     0001H     ABSOLUTE     
+            XDATA   161AH     0001H     ABSOLUTE     
+            XDATA   161BH     0001H     ABSOLUTE     
+            XDATA   161CH     0001H     ABSOLUTE     
+            XDATA   161DH     0001H     ABSOLUTE     
+            XDATA   161EH     0001H     ABSOLUTE     
+            XDATA   161FH     0001H     ABSOLUTE     
+            XDATA   1620H     0001H     ABSOLUTE     
+            XDATA   1621H     0001H     ABSOLUTE     
+            XDATA   1622H     0001H     ABSOLUTE     
+            XDATA   1623H     0001H     ABSOLUTE     
+            XDATA   1624H     0001H     ABSOLUTE     
+            XDATA   1625H     0001H     ABSOLUTE     
+            XDATA   1626H     0001H     ABSOLUTE     
+            XDATA   1627H     0001H     ABSOLUTE     
+            XDATA   1628H     0001H     ABSOLUTE     
+            XDATA   1629H     0001H     ABSOLUTE     
+            XDATA   162AH     0001H     ABSOLUTE     
+            XDATA   162BH     0001H     ABSOLUTE     
+            XDATA   162CH     0001H     ABSOLUTE     
+            XDATA   162DH     0001H     ABSOLUTE     
+            XDATA   162EH     0001H     ABSOLUTE     
+            XDATA   162FH     0001H     ABSOLUTE     
+            XDATA   1630H     0001H     ABSOLUTE     
+            XDATA   1631H     0001H     ABSOLUTE     
+            XDATA   1632H     0001H     ABSOLUTE     
+            XDATA   1633H     0001H     ABSOLUTE     
+            XDATA   1634H     0001H     ABSOLUTE     
+            XDATA   1635H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 20
+
+
+            XDATA   1636H     0001H     ABSOLUTE     
+            XDATA   1637H     0001H     ABSOLUTE     
+            XDATA   1638H     0001H     ABSOLUTE     
+            XDATA   1639H     0001H     ABSOLUTE     
+            XDATA   163AH     0001H     ABSOLUTE     
+            XDATA   163BH     0001H     ABSOLUTE     
+            XDATA   163CH     0001H     ABSOLUTE     
+            XDATA   163DH     0001H     ABSOLUTE     
+            XDATA   163EH     0001H     ABSOLUTE     
+            XDATA   163FH     0001H     ABSOLUTE     
+            XDATA   1640H     0001H     ABSOLUTE     
+            XDATA   1641H     0001H     ABSOLUTE     
+            XDATA   1642H     0001H     ABSOLUTE     
+            XDATA   1643H     0001H     ABSOLUTE     
+            XDATA   1644H     0001H     ABSOLUTE     
+            XDATA   1645H     0001H     ABSOLUTE     
+            XDATA   1646H     0001H     ABSOLUTE     
+            XDATA   1647H     0001H     ABSOLUTE     
+            XDATA   1648H     0001H     ABSOLUTE     
+            XDATA   1649H     0001H     ABSOLUTE     
+            XDATA   164AH     0001H     ABSOLUTE     
+            XDATA   164BH     0001H     ABSOLUTE     
+            XDATA   164CH     0001H     ABSOLUTE     
+            XDATA   164DH     0001H     ABSOLUTE     
+            XDATA   164EH     0001H     ABSOLUTE     
+                    164FH     0001H                  *** GAP ***
+            XDATA   1650H     0001H     ABSOLUTE     
+            XDATA   1651H     0001H     ABSOLUTE     
+            XDATA   1652H     0001H     ABSOLUTE     
+            XDATA   1653H     0001H     ABSOLUTE     
+            XDATA   1654H     0001H     ABSOLUTE     
+            XDATA   1655H     0001H     ABSOLUTE     
+            XDATA   1656H     0001H     ABSOLUTE     
+            XDATA   1657H     0001H     ABSOLUTE     
+            XDATA   1658H     0001H     ABSOLUTE     
+            XDATA   1659H     0001H     ABSOLUTE     
+            XDATA   165AH     0001H     ABSOLUTE     
+            XDATA   165BH     0001H     ABSOLUTE     
+            XDATA   165CH     0001H     ABSOLUTE     
+            XDATA   165DH     0001H     ABSOLUTE     
+            XDATA   165EH     0001H     ABSOLUTE     
+            XDATA   165FH     0001H     ABSOLUTE     
+                    1660H     0001H                  *** GAP ***
+            XDATA   1661H     0001H     ABSOLUTE     
+            XDATA   1662H     0001H     ABSOLUTE     
+            XDATA   1663H     0001H     ABSOLUTE     
+            XDATA   1664H     0001H     ABSOLUTE     
+            XDATA   1665H     0001H     ABSOLUTE     
+            XDATA   1666H     0001H     ABSOLUTE     
+            XDATA   1667H     0001H     ABSOLUTE     
+            XDATA   1668H     0001H     ABSOLUTE     
+            XDATA   1669H     0001H     ABSOLUTE     
+            XDATA   166AH     0001H     ABSOLUTE     
+                    166BH     0002H                  *** GAP ***
+            XDATA   166DH     0001H     ABSOLUTE     
+                    166EH     0003H                  *** GAP ***
+            XDATA   1671H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 21
+
+
+            XDATA   1672H     0001H     ABSOLUTE     
+                    1673H     0001H                  *** GAP ***
+            XDATA   1674H     0001H     ABSOLUTE     
+            XDATA   1675H     0001H     ABSOLUTE     
+                    1676H     0002H                  *** GAP ***
+            XDATA   1678H     0001H     ABSOLUTE     
+                    1679H     0027H                  *** GAP ***
+            XDATA   16A0H     0001H     ABSOLUTE     
+            XDATA   16A1H     0001H     ABSOLUTE     
+            XDATA   16A2H     0001H     ABSOLUTE     
+            XDATA   16A3H     0001H     ABSOLUTE     
+            XDATA   16A4H     0001H     ABSOLUTE     
+            XDATA   16A5H     0001H     ABSOLUTE     
+            XDATA   16A6H     0001H     ABSOLUTE     
+                    16A7H     0049H                  *** GAP ***
+            XDATA   16F0H     0001H     ABSOLUTE     
+            XDATA   16F1H     0001H     ABSOLUTE     
+            XDATA   16F2H     0001H     ABSOLUTE     
+            XDATA   16F3H     0001H     ABSOLUTE     
+            XDATA   16F4H     0001H     ABSOLUTE     
+            XDATA   16F5H     0001H     ABSOLUTE     
+            XDATA   16F6H     0001H     ABSOLUTE     
+            XDATA   16F7H     0001H     ABSOLUTE     
+            XDATA   16F8H     0001H     ABSOLUTE     
+            XDATA   16F9H     0001H     ABSOLUTE     
+            XDATA   16FAH     0001H     ABSOLUTE     
+            XDATA   16FBH     0001H     ABSOLUTE     
+            XDATA   16FCH     0001H     ABSOLUTE     
+            XDATA   16FDH     0001H     ABSOLUTE     
+            XDATA   16FEH     0001H     ABSOLUTE     
+            XDATA   16FFH     0001H     ABSOLUTE     
+            XDATA   1700H     0001H     ABSOLUTE     
+            XDATA   1701H     0001H     ABSOLUTE     
+            XDATA   1702H     0001H     ABSOLUTE     
+                    1703H     0001H                  *** GAP ***
+            XDATA   1704H     0001H     ABSOLUTE     
+            XDATA   1705H     0001H     ABSOLUTE     
+            XDATA   1706H     0001H     ABSOLUTE     
+                    1707H     0001H                  *** GAP ***
+            XDATA   1708H     0001H     ABSOLUTE     
+            XDATA   1709H     0001H     ABSOLUTE     
+            XDATA   170AH     0001H     ABSOLUTE     
+                    170BH     0001H                  *** GAP ***
+            XDATA   170CH     0001H     ABSOLUTE     
+            XDATA   170DH     0001H     ABSOLUTE     
+            XDATA   170EH     0001H     ABSOLUTE     
+                    170FH     00F1H                  *** GAP ***
+            XDATA   1800H     0001H     ABSOLUTE     
+            XDATA   1801H     0001H     ABSOLUTE     
+            XDATA   1802H     0001H     ABSOLUTE     
+            XDATA   1803H     0001H     ABSOLUTE     
+            XDATA   1804H     0001H     ABSOLUTE     
+            XDATA   1805H     0001H     ABSOLUTE     
+            XDATA   1806H     0001H     ABSOLUTE     
+            XDATA   1807H     0001H     ABSOLUTE     
+            XDATA   1808H     0001H     ABSOLUTE     
+            XDATA   1809H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 22
+
+
+            XDATA   180AH     0001H     ABSOLUTE     
+            XDATA   180BH     0001H     ABSOLUTE     
+            XDATA   180CH     0001H     ABSOLUTE     
+            XDATA   180DH     0001H     ABSOLUTE     
+            XDATA   180EH     0001H     ABSOLUTE     
+            XDATA   180FH     0001H     ABSOLUTE     
+                    1810H     000EH                  *** GAP ***
+            XDATA   181EH     0001H     ABSOLUTE     
+            XDATA   181FH     0001H     ABSOLUTE     
+            XDATA   1820H     0001H     ABSOLUTE     
+            XDATA   1821H     0001H     ABSOLUTE     
+            XDATA   1822H     0001H     ABSOLUTE     
+            XDATA   1823H     0001H     ABSOLUTE     
+            XDATA   1824H     0001H     ABSOLUTE     
+                    1825H     0002H                  *** GAP ***
+            XDATA   1827H     0001H     ABSOLUTE     
+            XDATA   1828H     0001H     ABSOLUTE     
+                    1829H     0002H                  *** GAP ***
+            XDATA   182BH     0001H     ABSOLUTE     
+            XDATA   182CH     0001H     ABSOLUTE     
+            XDATA   182DH     0001H     ABSOLUTE     
+            XDATA   182EH     0001H     ABSOLUTE     
+                    182FH     0011H                  *** GAP ***
+            XDATA   1840H     0001H     ABSOLUTE     
+            XDATA   1841H     0001H     ABSOLUTE     
+            XDATA   1842H     0001H     ABSOLUTE     
+            XDATA   1843H     0001H     ABSOLUTE     
+            XDATA   1844H     0001H     ABSOLUTE     
+            XDATA   1845H     0001H     ABSOLUTE     
+            XDATA   1846H     0001H     ABSOLUTE     
+            XDATA   1847H     0001H     ABSOLUTE     
+            XDATA   1848H     0001H     ABSOLUTE     
+            XDATA   1849H     0001H     ABSOLUTE     
+                    184AH     00B6H                  *** GAP ***
+            XDATA   1900H     0001H     ABSOLUTE     
+            XDATA   1901H     0001H     ABSOLUTE     
+            XDATA   1902H     0001H     ABSOLUTE     
+                    1903H     0001H                  *** GAP ***
+            XDATA   1904H     0001H     ABSOLUTE     
+            XDATA   1905H     0001H     ABSOLUTE     
+            XDATA   1906H     0001H     ABSOLUTE     
+            XDATA   1907H     0001H     ABSOLUTE     
+            XDATA   1908H     0001H     ABSOLUTE     
+            XDATA   1909H     0001H     ABSOLUTE     
+            XDATA   190AH     0001H     ABSOLUTE     
+            XDATA   190BH     0001H     ABSOLUTE     
+            XDATA   190CH     0001H     ABSOLUTE     
+            XDATA   190DH     0001H     ABSOLUTE     
+            XDATA   190EH     0001H     ABSOLUTE     
+                    190FH     0005H                  *** GAP ***
+            XDATA   1914H     0001H     ABSOLUTE     
+            XDATA   1915H     0001H     ABSOLUTE     
+                    1916H     0002H                  *** GAP ***
+            XDATA   1918H     0001H     ABSOLUTE     
+            XDATA   1919H     0001H     ABSOLUTE     
+                    191AH     0002H                  *** GAP ***
+            XDATA   191CH     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 23
+
+
+            XDATA   191DH     0001H     ABSOLUTE     
+                    191EH     00E3H                  *** GAP ***
+            XDATA   1A01H     0001H     ABSOLUTE     
+            XDATA   1A02H     0001H     ABSOLUTE     
+            XDATA   1A03H     0001H     ABSOLUTE     
+            XDATA   1A04H     0001H     ABSOLUTE     
+            XDATA   1A05H     0001H     ABSOLUTE     
+            XDATA   1A06H     0001H     ABSOLUTE     
+            XDATA   1A07H     0001H     ABSOLUTE     
+                    1A08H     00F8H                  *** GAP ***
+            XDATA   1B00H     0001H     ABSOLUTE     
+            XDATA   1B01H     0001H     ABSOLUTE     
+            XDATA   1B02H     0001H     ABSOLUTE     
+            XDATA   1B03H     0001H     ABSOLUTE     
+            XDATA   1B04H     0001H     ABSOLUTE     
+            XDATA   1B05H     0001H     ABSOLUTE     
+            XDATA   1B06H     0001H     ABSOLUTE     
+            XDATA   1B07H     0001H     ABSOLUTE     
+            XDATA   1B08H     0001H     ABSOLUTE     
+            XDATA   1B09H     0001H     ABSOLUTE     
+            XDATA   1B0AH     0001H     ABSOLUTE     
+            XDATA   1B0BH     0001H     ABSOLUTE     
+                    1B0CH     0004H                  *** GAP ***
+            XDATA   1B10H     0001H     ABSOLUTE     
+            XDATA   1B11H     0001H     ABSOLUTE     
+            XDATA   1B12H     0001H     ABSOLUTE     
+                    1B13H     0001H                  *** GAP ***
+            XDATA   1B14H     0001H     ABSOLUTE     
+            XDATA   1B15H     0001H     ABSOLUTE     
+            XDATA   1B16H     0001H     ABSOLUTE     
+                    1B17H     00E9H                  *** GAP ***
+            XDATA   1C00H     0001H     ABSOLUTE     
+            XDATA   1C01H     0001H     ABSOLUTE     
+            XDATA   1C02H     0001H     ABSOLUTE     
+            XDATA   1C03H     0001H     ABSOLUTE     
+            XDATA   1C04H     0001H     ABSOLUTE     
+            XDATA   1C05H     0001H     ABSOLUTE     
+            XDATA   1C06H     0001H     ABSOLUTE     
+            XDATA   1C07H     0001H     ABSOLUTE     
+            XDATA   1C08H     0001H     ABSOLUTE     
+            XDATA   1C09H     0001H     ABSOLUTE     
+            XDATA   1C0AH     0001H     ABSOLUTE     
+            XDATA   1C0BH     0001H     ABSOLUTE     
+            XDATA   1C0CH     0001H     ABSOLUTE     
+            XDATA   1C0DH     0001H     ABSOLUTE     
+            XDATA   1C0EH     0001H     ABSOLUTE     
+            XDATA   1C0FH     0001H     ABSOLUTE     
+            XDATA   1C10H     0001H     ABSOLUTE     
+            XDATA   1C11H     0001H     ABSOLUTE     
+            XDATA   1C12H     0001H     ABSOLUTE     
+            XDATA   1C13H     0001H     ABSOLUTE     
+            XDATA   1C14H     0001H     ABSOLUTE     
+            XDATA   1C15H     0001H     ABSOLUTE     
+            XDATA   1C16H     0001H     ABSOLUTE     
+            XDATA   1C17H     0001H     ABSOLUTE     
+            XDATA   1C18H     0001H     ABSOLUTE     
+            XDATA   1C19H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 24
+
+
+            XDATA   1C1AH     0001H     ABSOLUTE     
+            XDATA   1C1BH     0001H     ABSOLUTE     
+            XDATA   1C1CH     0001H     ABSOLUTE     
+            XDATA   1C1DH     0001H     ABSOLUTE     
+            XDATA   1C1EH     0001H     ABSOLUTE     
+            XDATA   1C1FH     0001H     ABSOLUTE     
+            XDATA   1C20H     0001H     ABSOLUTE     
+            XDATA   1C21H     0001H     ABSOLUTE     
+            XDATA   1C22H     0001H     ABSOLUTE     
+            XDATA   1C23H     0001H     ABSOLUTE     
+            XDATA   1C24H     0001H     ABSOLUTE     
+            XDATA   1C25H     0001H     ABSOLUTE     
+            XDATA   1C26H     0001H     ABSOLUTE     
+            XDATA   1C27H     0001H     ABSOLUTE     
+            XDATA   1C28H     0001H     ABSOLUTE     
+            XDATA   1C29H     0001H     ABSOLUTE     
+            XDATA   1C2AH     0001H     ABSOLUTE     
+            XDATA   1C2BH     0001H     ABSOLUTE     
+            XDATA   1C2CH     0001H     ABSOLUTE     
+            XDATA   1C2DH     0001H     ABSOLUTE     
+            XDATA   1C2EH     0001H     ABSOLUTE     
+            XDATA   1C2FH     0001H     ABSOLUTE     
+            XDATA   1C30H     0001H     ABSOLUTE     
+            XDATA   1C31H     0001H     ABSOLUTE     
+            XDATA   1C32H     0001H     ABSOLUTE     
+            XDATA   1C33H     0001H     ABSOLUTE     
+            XDATA   1C34H     0001H     ABSOLUTE     
+            XDATA   1C35H     0001H     ABSOLUTE     
+            XDATA   1C36H     0001H     ABSOLUTE     
+            XDATA   1C37H     0001H     ABSOLUTE     
+            XDATA   1C38H     0001H     ABSOLUTE     
+            XDATA   1C39H     0001H     ABSOLUTE     
+            XDATA   1C3AH     0001H     ABSOLUTE     
+            XDATA   1C3BH     0001H     ABSOLUTE     
+            XDATA   1C3CH     0001H     ABSOLUTE     
+            XDATA   1C3DH     0001H     ABSOLUTE     
+            XDATA   1C3EH     0001H     ABSOLUTE     
+            XDATA   1C3FH     0001H     ABSOLUTE     
+            XDATA   1C40H     0001H     ABSOLUTE     
+            XDATA   1C41H     0001H     ABSOLUTE     
+            XDATA   1C42H     0001H     ABSOLUTE     
+            XDATA   1C43H     0001H     ABSOLUTE     
+            XDATA   1C44H     0001H     ABSOLUTE     
+                    1C45H     00BBH                  *** GAP ***
+            XDATA   1D00H     0001H     ABSOLUTE     
+            XDATA   1D01H     0001H     ABSOLUTE     
+            XDATA   1D02H     0001H     ABSOLUTE     
+            XDATA   1D03H     0001H     ABSOLUTE     
+            XDATA   1D04H     0001H     ABSOLUTE     
+            XDATA   1D05H     0001H     ABSOLUTE     
+            XDATA   1D06H     0001H     ABSOLUTE     
+            XDATA   1D07H     0001H     ABSOLUTE     
+            XDATA   1D08H     0001H     ABSOLUTE     
+            XDATA   1D09H     0001H     ABSOLUTE     
+            XDATA   1D0AH     0001H     ABSOLUTE     
+            XDATA   1D0BH     0001H     ABSOLUTE     
+            XDATA   1D0CH     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 25
+
+
+            XDATA   1D0DH     0001H     ABSOLUTE     
+            XDATA   1D0EH     0001H     ABSOLUTE     
+            XDATA   1D0FH     0001H     ABSOLUTE     
+                    1D10H     00F1H                  *** GAP ***
+            XDATA   1E01H     0001H     ABSOLUTE     
+            XDATA   1E02H     0001H     ABSOLUTE     
+            XDATA   1E03H     0001H     ABSOLUTE     
+            XDATA   1E04H     0001H     ABSOLUTE     
+            XDATA   1E05H     0001H     ABSOLUTE     
+            XDATA   1E06H     0001H     ABSOLUTE     
+            XDATA   1E07H     0001H     ABSOLUTE     
+                    1E08H     00F9H                  *** GAP ***
+            XDATA   1F01H     0001H     ABSOLUTE     
+            XDATA   1F02H     0001H     ABSOLUTE     
+            XDATA   1F03H     0001H     ABSOLUTE     
+            XDATA   1F04H     0001H     ABSOLUTE     
+            XDATA   1F05H     0001H     ABSOLUTE     
+            XDATA   1F06H     0001H     ABSOLUTE     
+            XDATA   1F07H     0001H     ABSOLUTE     
+                    1F08H     0001H                  *** GAP ***
+            XDATA   1F09H     0001H     ABSOLUTE     
+            XDATA   1F0AH     0001H     ABSOLUTE     
+            XDATA   1F0BH     0001H     ABSOLUTE     
+            XDATA   1F0CH     0001H     ABSOLUTE     
+                    1F0DH     0001H                  *** GAP ***
+            XDATA   1F0EH     0001H     ABSOLUTE     
+                    1F0FH     00F1H                  *** GAP ***
+            XDATA   2000H     0001H     ABSOLUTE     
+            XDATA   2001H     0001H     ABSOLUTE     
+            XDATA   2002H     0001H     ABSOLUTE     
+                    2003H     0001H                  *** GAP ***
+            XDATA   2004H     0001H     ABSOLUTE     
+                    2005H     0001H                  *** GAP ***
+            XDATA   2006H     0001H     ABSOLUTE     
+            XDATA   2007H     0001H     ABSOLUTE     
+            XDATA   2008H     0001H     ABSOLUTE     
+            XDATA   2009H     0001H     ABSOLUTE     
+            XDATA   200AH     0001H     ABSOLUTE     
+            XDATA   200BH     0001H     ABSOLUTE     
+            XDATA   200CH     0001H     ABSOLUTE     
+            XDATA   200DH     0001H     ABSOLUTE     
+            XDATA   200EH     0001H     ABSOLUTE     
+            XDATA   200FH     0001H     ABSOLUTE     
+            XDATA   2010H     0001H     ABSOLUTE     
+            XDATA   2011H     0001H     ABSOLUTE     
+            XDATA   2012H     0001H     ABSOLUTE     
+                    2013H     0001H                  *** GAP ***
+            XDATA   2014H     0001H     ABSOLUTE     
+            XDATA   2015H     0001H     ABSOLUTE     
+            XDATA   2016H     0001H     ABSOLUTE     
+                    2017H     0002H                  *** GAP ***
+            XDATA   2019H     0001H     ABSOLUTE     
+            XDATA   201AH     0001H     ABSOLUTE     
+            XDATA   201BH     0001H     ABSOLUTE     
+            XDATA   201CH     0001H     ABSOLUTE     
+                    201DH     0003H                  *** GAP ***
+            XDATA   2020H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 26
+
+
+            XDATA   2021H     0001H     ABSOLUTE     
+            XDATA   2022H     0001H     ABSOLUTE     
+            XDATA   2023H     0001H     ABSOLUTE     
+            XDATA   2024H     0001H     ABSOLUTE     
+            XDATA   2025H     0001H     ABSOLUTE     
+            XDATA   2026H     0001H     ABSOLUTE     
+            XDATA   2027H     0001H     ABSOLUTE     
+                    2028H     0002H                  *** GAP ***
+            XDATA   202AH     0001H     ABSOLUTE     
+            XDATA   202BH     0001H     ABSOLUTE     
+            XDATA   202CH     0001H     ABSOLUTE     
+                    202DH     00D3H                  *** GAP ***
+            XDATA   2100H     0001H     ABSOLUTE     
+            XDATA   2101H     0001H     ABSOLUTE     
+            XDATA   2102H     0001H     ABSOLUTE     
+            XDATA   2103H     0001H     ABSOLUTE     
+                    2104H     00FCH                  *** GAP ***
+            XDATA   2200H     0080H     ABSOLUTE     
+            XDATA   2280H     0040H     ABSOLUTE     
+                    22C0H     0040H                  *** GAP ***
+            XDATA   2300H     0001H     ABSOLUTE     
+            XDATA   2301H     0001H     ABSOLUTE     
+            XDATA   2302H     0001H     ABSOLUTE     
+            XDATA   2303H     0001H     ABSOLUTE     
+            XDATA   2304H     0001H     ABSOLUTE     
+            XDATA   2305H     0001H     ABSOLUTE     
+            XDATA   2306H     0001H     ABSOLUTE     
+            XDATA   2307H     0001H     ABSOLUTE     
+            XDATA   2308H     0001H     ABSOLUTE     
+            XDATA   2309H     0001H     ABSOLUTE     
+            XDATA   230AH     0001H     ABSOLUTE     
+            XDATA   230BH     0001H     ABSOLUTE     
+            XDATA   230CH     0001H     ABSOLUTE     
+            XDATA   230DH     0001H     ABSOLUTE     
+            XDATA   230EH     0001H     ABSOLUTE     
+            XDATA   230FH     0001H     ABSOLUTE     
+            XDATA   2310H     0001H     ABSOLUTE     
+                    2311H     01FFH                  *** GAP ***
+            XDATA   2510H     0001H     ABSOLUTE     
+            XDATA   2511H     0001H     ABSOLUTE     
+            XDATA   2512H     0001H     ABSOLUTE     
+            XDATA   2513H     0001H     ABSOLUTE     
+            XDATA   2514H     0001H     ABSOLUTE     
+            XDATA   2515H     0001H     ABSOLUTE     
+            XDATA   2516H     0001H     ABSOLUTE     
+            XDATA   2517H     0001H     ABSOLUTE     
+            XDATA   2518H     0001H     ABSOLUTE     
+                    2519H     00E7H                  *** GAP ***
+            XDATA   2600H     0001H     ABSOLUTE     
+            XDATA   2601H     0001H     ABSOLUTE     
+            XDATA   2602H     0001H     ABSOLUTE     
+            XDATA   2603H     0001H     ABSOLUTE     
+            XDATA   2604H     0001H     ABSOLUTE     
+                    2605H     00FBH                  *** GAP ***
+            XDATA   2700H     0001H     ABSOLUTE     
+            XDATA   2701H     0001H     ABSOLUTE     
+            XDATA   2702H     0001H     ABSOLUTE     
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 27
+
+
+            XDATA   2703H     0001H     ABSOLUTE     
+            XDATA   2704H     0001H     ABSOLUTE     
+            XDATA   2705H     0001H     ABSOLUTE     
+            XDATA   2706H     0001H     ABSOLUTE     
+            XDATA   2707H     0001H     ABSOLUTE     
+            XDATA   2708H     0001H     ABSOLUTE     
+                    2709H     00F7H                  *** GAP ***
+            XDATA   2800H     0001H     ABSOLUTE     
+            XDATA   2801H     0001H     ABSOLUTE     
+            XDATA   2802H     0001H     ABSOLUTE     
+            XDATA   2803H     0001H     ABSOLUTE     
+            XDATA   2804H     0001H     ABSOLUTE     
+            XDATA   2805H     0001H     ABSOLUTE     
+            XDATA   2806H     0001H     ABSOLUTE     
+            XDATA   2807H     0001H     ABSOLUTE     
+            XDATA   2808H     0001H     ABSOLUTE     
+                    2809H     00F7H                  *** GAP ***
+            XDATA   2900H     0001H     ABSOLUTE     
+            XDATA   2901H     0001H     ABSOLUTE     
+            XDATA   2902H     0001H     ABSOLUTE     
+            XDATA   2903H     0001H     ABSOLUTE     
+            XDATA   2904H     0001H     ABSOLUTE     
+            XDATA   2905H     0001H     ABSOLUTE     
+            XDATA   2906H     0001H     ABSOLUTE     
+            XDATA   2907H     0001H     ABSOLUTE     
+            XDATA   2908H     0001H     ABSOLUTE     
+            XDATA   2909H     0001H     ABSOLUTE     
+            XDATA   290AH     0001H     ABSOLUTE     
+            XDATA   290BH     0001H     ABSOLUTE     
+            XDATA   290CH     0001H     ABSOLUTE     
+                    290DH     042EH                  *** GAP ***
+            XDATA   2D3BH     0001H     ABSOLUTE     
+            XDATA   2D3CH     0001H     ABSOLUTE     
+            XDATA   2D3DH     0001H     ABSOLUTE     
+            XDATA   2D3EH     0001H     ABSOLUTE     
+            XDATA   2D3FH     0001H     ABSOLUTE     
+                    2D40H     02C0H                  *** GAP ***
+            XDATA   3000H     0001H     ABSOLUTE     
+            XDATA   3001H     0001H     ABSOLUTE     
+            XDATA   3002H     0001H     ABSOLUTE     
+            XDATA   3003H     0001H     ABSOLUTE     
+            XDATA   3004H     0001H     ABSOLUTE     
+            XDATA   3005H     0001H     ABSOLUTE     
+            XDATA   3006H     0001H     ABSOLUTE     
+            XDATA   3007H     0001H     ABSOLUTE     
+            XDATA   3008H     0001H     ABSOLUTE     
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0003H     ABSOLUTE     
+            CODE    0006H     0001H     UNIT         ?PR?IRQ_INT0_NULL?CORE_IRQ
+            CODE    0007H     0003H     UNIT         ?PR?IRQ_INT1_WKO20?CORE_IRQ
+            CODE    000AH     0001H     UNIT         ?PR?ISR_INT0?CORE_IRQ
+            CODE    000BH     0003H     ABSOLUTE     
+            CODE    000EH     0003H     UNIT         ?PR?IRQ_INT2_KBCOBE?CORE_IRQ
+            CODE    0011H     0001H     UNIT         ?PR?ISR_UART?CORE_IRQ
+            CODE    0012H     0001H     UNIT         ?PR?ISR_TMR2?CORE_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 28
+
+
+            CODE    0013H     0003H     ABSOLUTE     
+            CODE    0016H     0003H     UNIT         ?PR?IRQ_INT3_PMCPMC1OBE?CORE_IRQ
+            CODE    0019H     0001H     UNIT         ?PR?BBK_ACPI?BBK_MAIN
+            CODE    001AH     0001H     UNIT         ?PR?BBK_INITFLASH?BBK_MAIN
+            CODE    001BH     0003H     ABSOLUTE     
+            CODE    001EH     0003H     UNIT         ?PR?IRQ_INT4_SMBUSD?CORE_IRQ
+            CODE    0021H     0001H     UNIT         ?PR?BBK_INITSMBUS?BBK_MAIN
+            CODE    0022H     0001H     UNIT         ?PR?BB_OEMPROCESSECDATA?BBK_MAIN
+            CODE    0023H     0003H     ABSOLUTE     
+            CODE    0026H     0003H     UNIT         ?PR?IRQ_INT5_WKINTAD?CORE_IRQ
+            CODE    0029H     0001H     UNIT         ?PR?BBK_50MSTIMEREVENT?BBK_MAIN
+            CODE    002AH     0001H     UNIT         ?PR?BBK_100MSTIMEREVENT?BBK_MAIN
+            CODE    002BH     0003H     ABSOLUTE     
+            CODE    002EH     0007H     UNIT         ?PR?IRQLOCK_SCAN?CORE_IRQ
+            CODE    0035H     0003H     UNIT         ?PR?IRQ_INT6_WKO23?CORE_IRQ
+            CODE    0038H     0003H     UNIT         ?PR?IRQ_INT7_PWM?CORE_IRQ
+            CODE    003BH     0003H     UNIT         ?PR?IRQ_INT8_ADC?CORE_IRQ
+            CODE    003EH     0001H     UNIT         ?PR?BBK_500MSTIMEREVENT?BBK_MAIN
+            CODE    003FH     0001H     UNIT         ?PR?BBK_1SECTIMEREVENT?BBK_MAIN
+            CODE    0040H     001FH     UNIT         ?CO?CORE_ITESTRING
+            CODE    005FH     0003H     UNIT         ?PR?IRQ_INT9_SMBUSA?CORE_IRQ
+            CODE    0062H     0003H     UNIT         ?PR?IRQ_INT10_SMBUSB?CORE_IRQ
+            CODE    0065H     0012H     UNIT         ?PR?IRQ_INT11_KBMATRIXSCAN?CORE_IRQ
+            CODE    0077H     0003H     UNIT         ?PR?IRQ_INT12_WKO26?CORE_IRQ
+            CODE    007AH     0003H     UNIT         ?PR?IRQ_INT13_WKINTC?CORE_IRQ
+            CODE    007DH     0003H     UNIT         ?PR?IRQ_INT14_WKO25?CORE_IRQ
+            CODE    0080H     0003H     UNIT         ?PR?IRQ_INT15_CIR?CORE_IRQ
+            CODE    0083H     0003H     UNIT         ?PR?IRQ_INT16_SMBUSC?CORE_IRQ
+            CODE    0086H     0003H     UNIT         ?PR?IRQ_INT17_WKO24?CORE_IRQ
+            CODE    0089H     0003H     UNIT         ?PR?IRQ_INT21_WKO22?CORE_IRQ
+            CODE    008CH     0003H     UNIT         ?PR?IRQ_INT22_SMFISEMAPHORE?CORE_IRQ
+            CODE    008FH     0003H     UNIT         ?PR?IRQ_INT23_NULL?CORE_IRQ
+            CODE    0092H     0015H     UNIT         ?PR?IRQ_INT24_KBCIBF?CORE_IRQ
+            CODE    00A7H     001DH     UNIT         ?PR?IRQ_INT25_PMCPMC1IBF?CORE_IRQ
+            CODE    00C4H     0003H     UNIT         ?PR?IRQ_INT26_PMC2OBE?CORE_IRQ
+            CODE    00C7H     0003H     UNIT         ?PR?IRQ_INT27_PMC2IBF?CORE_IRQ
+            CODE    00CAH     0003H     UNIT         ?PR?IRQ_INT28_GINTOFGPD5?CORE_IRQ
+            CODE    00CDH     0003H     UNIT         ?PR?IRQ_INT29_EGPC?CORE_IRQ
+            CODE    00D0H     0003H     UNIT         ?PR?IRQ_INT30_ET1?CORE_IRQ
+            CODE    00D3H     0003H     UNIT         ?PR?IRQ_INT31_WKO21?CORE_IRQ
+            CODE    00D6H     0003H     UNIT         ?PR?IRQ_INT32_GPINT0?CORE_IRQ
+            CODE    00D9H     0003H     UNIT         ?PR?IRQ_INT33_GPINT1?CORE_IRQ
+            CODE    00DCH     0003H     UNIT         ?PR?IRQ_INT34_GPINT2?CORE_IRQ
+            CODE    00DFH     0003H     UNIT         ?PR?IRQ_INT35_GPINT3?CORE_IRQ
+            CODE    00E2H     0003H     UNIT         ?PR?IRQ_INT36_CIRGPINT?CORE_IRQ
+            CODE    00E5H     0003H     UNIT         ?PR?IRQ_INT37_SSPI?CORE_IRQ
+            CODE    00E8H     0003H     UNIT         ?PR?IRQ_INT38_UART1?CORE_IRQ
+            CODE    00EBH     0003H     UNIT         ?PR?IRQ_INT39_UART2?CORE_IRQ
+            CODE    00EEH     0003H     UNIT         ?PR?IRQ_INT40_NULL?CORE_IRQ
+            CODE    00F1H     0003H     UNIT         ?PR?IRQ_INT41_NULL?CORE_IRQ
+            CODE    00F4H     0003H     UNIT         ?PR?IRQ_INT42_NULL?CORE_IRQ
+            CODE    00F7H     0003H     UNIT         ?PR?IRQ_INT43_NULL?CORE_IRQ
+            CODE    00FAH     0003H     UNIT         ?PR?IRQ_INT44_NULL?CORE_IRQ
+            CODE    00FDH     0003H     UNIT         ?PR?IRQ_INT45_NULL?CORE_IRQ
+            CODE    0100H     0055H     UNIT         ?PR?MAIN?BBK_MAIN
+            CODE    0155H     008BH     UNIT         ?PR?IRQ_INT18_PS2INTERRUPT2?CORE_IRQ
+            CODE    01E0H     008BH     UNIT         ?PR?IRQ_INT19_PS2INTERRUPT1?CORE_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 29
+
+
+            CODE    026BH     008BH     UNIT         ?PR?IRQ_INT20_PS2INTERRUPT0?CORE_IRQ
+            CODE    02F6H     0003H     UNIT         ?PR?IRQ_INT46_NULL?CORE_IRQ
+            CODE    02F9H     0003H     UNIT         ?PR?IRQ_INT47_NULL?CORE_IRQ
+            CODE    02FCH     0003H     UNIT         ?PR?IRQ_INT48_WKO60?CORE_IRQ
+            CODE    02FFH     0003H     UNIT         ?PR?IRQ_INT49_WKO61?CORE_IRQ
+            CODE    0302H     0003H     UNIT         ?PR?IRQ_INT50_WKO62?CORE_IRQ
+            CODE    0305H     0003H     UNIT         ?PR?IRQ_INT51_WKO63?CORE_IRQ
+            CODE    0308H     0003H     UNIT         ?PR?IRQ_INT52_WKO64?CORE_IRQ
+            CODE    030BH     0003H     UNIT         ?PR?IRQ_INT53_WKO65?CORE_IRQ
+            CODE    030EH     0003H     UNIT         ?PR?IRQ_INT54_WKO66?CORE_IRQ
+            CODE    0311H     0003H     UNIT         ?PR?IRQ_INT55_WKO67?CORE_IRQ
+            CODE    0314H     0003H     UNIT         ?PR?IRQ_INT56_NULL?CORE_IRQ
+            CODE    0317H     0003H     UNIT         ?PR?IRQ_INT57_NULL?CORE_IRQ
+            CODE    031AH     0003H     UNIT         ?PR?IRQ_INT58_ET2?CORE_IRQ
+            CODE    031DH     0003H     UNIT         ?PR?IRQ_INT59_DEFERREDSPIINSTRUCTION?CORE_IRQ
+            CODE    0320H     0003H     UNIT         ?PR?IRQ_INT60_TMRINTA0?CORE_IRQ
+            CODE    0323H     0003H     UNIT         ?PR?IRQ_INT61_TMRINTA1?CORE_IRQ
+            CODE    0326H     0003H     UNIT         ?PR?IRQ_INT62_TMRINTB0?CORE_IRQ
+            CODE    0329H     0003H     UNIT         ?PR?IRQ_INT63_TMRINTB1?CORE_IRQ
+            CODE    032CH     0003H     UNIT         ?PR?IRQ_INT64_PMC2EXOBE?CORE_IRQ
+            CODE    032FH     0003H     UNIT         ?PR?IRQ_INT65_PMC2EXIBF?CORE_IRQ
+            CODE    0332H     0003H     UNIT         ?PR?IRQ_INT66_PMC3OBE?CORE_IRQ
+            CODE    0335H     0003H     UNIT         ?PR?IRQ_INT67_PMC3IBF?CORE_IRQ
+            CODE    0338H     0003H     UNIT         ?PR?IRQ_INT68_PMC4OBE?CORE_IRQ
+            CODE    033BH     0003H     UNIT         ?PR?IRQ_INT69_PMC4IBF?CORE_IRQ
+            CODE    033EH     0003H     UNIT         ?PR?IRQ_INT70_NULL?CORE_IRQ
+            CODE    0341H     0003H     UNIT         ?PR?IRQ_INT71_I2BRAM?CORE_IRQ
+            CODE    0344H     0003H     UNIT         ?PR?IRQ_INT72_WKO70?CORE_IRQ
+            CODE    0347H     0003H     UNIT         ?PR?IRQ_INT73_WKO71?CORE_IRQ
+            CODE    034AH     0003H     UNIT         ?PR?IRQ_INT74_WKO72?CORE_IRQ
+            CODE    034DH     0003H     UNIT         ?PR?IRQ_INT75_WKO73?CORE_IRQ
+            CODE    0350H     0003H     UNIT         ?PR?IRQ_INT76_WKO74?CORE_IRQ
+            CODE    0353H     0003H     UNIT         ?PR?IRQ_INT77_WKO75?CORE_IRQ
+            CODE    0356H     0003H     UNIT         ?PR?IRQ_INT78_WKO76?CORE_IRQ
+            CODE    0359H     0003H     UNIT         ?PR?IRQ_INT79_WKO77?CORE_IRQ
+            CODE    035CH     000BH     UNIT         ?PR?ISR_TMR0?CORE_IRQ
+            CODE    0367H     0064H     UNIT         ?PR?ISR_INT1?CORE_IRQ
+            CODE    03CBH     001FH     UNIT         ?PR?ISR_TMR1?CORE_IRQ
+            CODE    03EAH     000EH     UNIT         ?PR?DISABLEALLINTERRUPT?CORE_IRQ
+            CODE    03F8H     0003H     UNIT         ?PR?ENABLEALLINTERRUPT?CORE_IRQ
+            CODE    03FBH     0008H     UNIT         ?PR?ENABLEKBCIBFINT?CORE_IRQ
+            CODE    0403H     0008H     UNIT         ?PR?ENABLEPMCIBFINT?CORE_IRQ
+            CODE    040BH     002FH     UNIT         ?PR?INITENABLEINTERRUPT?CORE_IRQ
+            CODE    043AH     000CH     UNIT         ?PR?ENABLEMODULEINTERRUPT?CORE_IRQ
+            CODE    0446H     00A0H     UNIT         ?CO?CORE_IRQ
+            CODE    04E6H     0033H     UNIT         ?PR?UBOOT_INITREGS?BBK_MAIN
+            CODE    0519H     006CH     UNIT         ?PR?BB_CORE_INITSIO?BBK_MAIN
+            CODE    0585H     0018H     UNIT         ?PR?_BB_DELAY1MS?BBK_MAIN
+            CODE    059DH     0020H     UNIT         ?PR?BB_OEM_SYSONINIT?BBK_MAIN
+            CODE    05BDH     0068H     UNIT         ?PR?BB_CHK_SUSACK?BBK_MAIN
+            CODE    0625H     004EH     UNIT         ?PR?BB_CHK_DRAMRST_CNTRL?BBK_MAIN
+            CODE    0673H     008DH     UNIT         ?PR?BB_SETS0GPIO?BBK_MAIN
+            CODE    0700H     0145H     UNIT         ?PR?BB_SYSONSEQUENCE?BBK_MAIN
+            CODE    0845H     000EH     UNIT         ?PR?BBK_INITCLEARINTERNALRAM?BBK_MAIN
+            CODE    0853H     0048H     UNIT         ?PR?BBK_INITCLEAREXTERNALRAM?BBK_MAIN
+            CODE    089BH     001DH     UNIT         ?PR?BBK_INITTIMERS?BBK_MAIN
+            CODE    08B8H     001BH     UNIT         ?PR?BBKINIT_UART?BBK_MAIN
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 30
+
+
+            CODE    08D3H     008EH     UNIT         ?PR?_BBK_CACHEDMA?BBK_MAIN
+            CODE    0961H     002BH     UNIT         ?PR?BBK_INITGPIO?BBK_MAIN
+            CODE    098CH     0037H     UNIT         ?PR?_BB_KBDATATOHOSTWAITRX?BBK_MAIN
+            CODE    09C3H     000BH     UNIT         ?PR?BBK_LOAD_TIMEROUT_TIMER?BBK_MAIN
+            CODE    09CEH     0022H     UNIT         ?PR?_BBK_DATA_TO_HOST?BBK_MAIN
+            CODE    09F0H     0022H     UNIT         ?PR?_BBK_DATA_TO_HOST_NWAIT?BBK_MAIN
+            CODE    0A12H     001DH     UNIT         ?PR?_BBK_DATA_TO_PM1_NWAIT?BBK_MAIN
+            CODE    0A2FH     0016H     UNIT         ?PR?_BBK_DATA2PORT?BBK_MAIN
+            CODE    0A45H     0081H     UNIT         ?PR?BBK_PROCESS6064COMMAND?BBK_MAIN
+            CODE    0AC6H     000EH     UNIT         ?PR?BB_OEMCHECKECCMD?BBK_MAIN
+            CODE    0AD4H     0028H     UNIT         ?PR?BBK_PROCESSACPICOMMAND?BBK_MAIN
+            CODE    0AFCH     0022H     UNIT         ?PR?_BBK_DELAYXMS?BBK_MAIN
+            CODE    0B1EH     001EH     UNIT         ?PR?BBK_BACKLIGHT_CONTROL?BBK_MAIN
+            CODE    0B3CH     0081H     UNIT         ?PR?BBK_CHECK_BATTERYIN?BBK_MAIN
+            CODE    0BBDH     004BH     UNIT         ?PR?BBK_BATTERY_LED?BBK_MAIN
+            CODE    0C08H     0003H     UNIT         ?PR?BBK_HOOK_5MSTIMEREVENT?BBK_MAIN
+            CODE    0C0BH     0006H     UNIT         ?PR?BBK_10MSTIMEREVENT?BBK_MAIN
+            CODE    0C11H     0051H     UNIT         ?PR?BBK_5MSTIMEREVENT?BBK_MAIN
+            CODE    0C62H     005AH     UNIT         ?PR?BBK_RECOVERY?BBK_MAIN
+            CODE    0CBCH     0053H     UNIT         ?PR?BBK_CHECKENTERBOOTBLOCKMODE?BBK_MAIN
+            CODE    0D0FH     005AH     UNIT         ?PR?BBKEFLASH_CMDRAMCODE?BBK_MAIN
+            CODE    0D69H     003DH     UNIT         ?PR?_BBKOUT7SEGLED?BBK_MAIN
+            CODE    0DA6H     000AH     UNIT         ?PR?BBKDARK7SEGLED?BBK_MAIN
+            CODE    0DB0H     003AH     UNIT         ?PR?_BBKP80LEDOUT?BBK_MAIN
+            CODE    0DEAH     004FH     UNIT         ?PR?BBKPOLLINGBIOS80PORT?BBK_MAIN
+            CODE    0E39H     01CBH     UNIT         ?CO?BBK_MAIN
+            CODE    1004H     0001H     UNIT         ?PR?HOOK_IRQ_INT1_WKO20?OEM_IRQ
+            CODE    1005H     0001H     UNIT         ?PR?HOOK_IRQ_INT2_KBCOBE?OEM_IRQ
+            CODE    1006H     0001H     UNIT         ?PR?HOOK_IRQ_INT3_PMCPMC1OBE?OEM_IRQ
+            CODE    1007H     0001H     UNIT         ?PR?HOOK_IRQ_INT4_SMBUSD?OEM_IRQ
+            CODE    1008H     0001H     UNIT         ?PR?HOOK_IRQ_INT5_WKINTAD?OEM_IRQ
+            CODE    1009H     0001H     UNIT         ?PR?HOOK_IRQ_INT6_WKO23?OEM_IRQ
+            CODE    100AH     0001H     UNIT         ?PR?HOOK_IRQ_INT7_PWM?OEM_IRQ
+            CODE    100BH     0001H     UNIT         ?PR?HOOK_IRQ_INT8_ADC?OEM_IRQ
+            CODE    100CH     0001H     UNIT         ?PR?HOOK_IRQ_INT9_SMBUSA?OEM_IRQ
+            CODE    100DH     0001H     UNIT         ?PR?HOOK_IRQ_INT10_SMBUSB?OEM_IRQ
+            CODE    100EH     0001H     UNIT         ?PR?HOOK_IRQ_INT11_KBMATRIXSCAN?OEM_IRQ
+            CODE    100FH     0001H     UNIT         ?PR?HOOK_IRQ_INT12_WKO26?OEM_IRQ
+            CODE    1010H     0001H     UNIT         ?PR?HOOK_IRQ_INT13_WKINTC?OEM_IRQ
+            CODE    1011H     0013H     UNIT         ?PR?HOOK_IRQ_INT14_WKO25?OEM_IRQ
+            CODE    1024H     0001H     UNIT         ?PR?HOOK_IRQ_INT15_CIR?OEM_IRQ
+            CODE    1025H     0001H     UNIT         ?PR?HOOK_IRQ_INT16_SMBUSC?OEM_IRQ
+            CODE    1026H     0001H     UNIT         ?PR?HOOK_IRQ_INT17_WKO24?OEM_IRQ
+            CODE    1027H     0001H     UNIT         ?PR?HOOK_IRQ_INT18_PS2INTERRUPT2?OEM_IRQ
+            CODE    1028H     0001H     UNIT         ?PR?HOOK_IRQ_INT19_PS2INTERRUPT1?OEM_IRQ
+            CODE    1029H     0001H     UNIT         ?PR?HOOK_IRQ_INT20_PS2INTERRUPT0?OEM_IRQ
+            CODE    102AH     0028H     UNIT         ?PR?HOOK_IRQ_INT21_WKO22?OEM_IRQ
+            CODE    1052H     0001H     UNIT         ?PR?HOOK_IRQ_INT22_SMFISEMAPHORE?OEM_IRQ
+            CODE    1053H     0001H     UNIT         ?PR?HOOK_IRQ_INT23_NULL?OEM_IRQ
+            CODE    1054H     0001H     UNIT         ?PR?HOOK_IRQ_INT24_KBCIBF?OEM_IRQ
+            CODE    1055H     0001H     UNIT         ?PR?HOOK_IRQ_INT25_PMCPMC1IBF?OEM_IRQ
+            CODE    1056H     0001H     UNIT         ?PR?HOOK_IRQ_INT26_PMC2OBE?OEM_IRQ
+            CODE    1057H     0001H     UNIT         ?PR?HOOK_IRQ_INT27_PMC2IBF?OEM_IRQ
+            CODE    1058H     0001H     UNIT         ?PR?HOOK_IRQ_INT28_GINTOFGPD5?OEM_IRQ
+            CODE    1059H     0001H     UNIT         ?PR?HOOK_IRQ_INT29_EGPC?OEM_IRQ
+            CODE    105AH     0001H     UNIT         ?PR?HOOK_IRQ_INT30_ET1?OEM_IRQ
+            CODE    105BH     0001H     UNIT         ?PR?HOOK_IRQ_INT31_WKO21?OEM_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 31
+
+
+            CODE    105CH     0001H     UNIT         ?PR?HOOK_IRQ_INT32_GPINT0?OEM_IRQ
+            CODE    105DH     0001H     UNIT         ?PR?HOOK_IRQ_INT33_GPINT1?OEM_IRQ
+            CODE    105EH     0001H     UNIT         ?PR?HOOK_IRQ_INT34_GPINT2?OEM_IRQ
+            CODE    105FH     0001H     UNIT         ?PR?HOOK_IRQ_INT35_GPINT3?OEM_IRQ
+            CODE    1060H     0001H     UNIT         ?PR?HOOK_IRQ_INT36_CIRGPINT?OEM_IRQ
+            CODE    1061H     0001H     UNIT         ?PR?HOOK_IRQ_INT37_SSPI?OEM_IRQ
+            CODE    1062H     0001H     UNIT         ?PR?HOOK_IRQ_INT38_UART1?OEM_IRQ
+            CODE    1063H     0001H     UNIT         ?PR?HOOK_IRQ_INT39_UART2?OEM_IRQ
+            CODE    1064H     0001H     UNIT         ?PR?HOOK_IRQ_INT40_NULL?OEM_IRQ
+            CODE    1065H     0001H     UNIT         ?PR?HOOK_IRQ_INT41_NULL?OEM_IRQ
+            CODE    1066H     0001H     UNIT         ?PR?HOOK_IRQ_INT42_NULL?OEM_IRQ
+            CODE    1067H     0001H     UNIT         ?PR?HOOK_IRQ_INT43_NULL?OEM_IRQ
+            CODE    1068H     0001H     UNIT         ?PR?HOOK_IRQ_INT44_NULL?OEM_IRQ
+            CODE    1069H     0001H     UNIT         ?PR?HOOK_IRQ_INT45_NULL?OEM_IRQ
+            CODE    106AH     0001H     UNIT         ?PR?HOOK_IRQ_INT46_NULL?OEM_IRQ
+            CODE    106BH     0001H     UNIT         ?PR?HOOK_IRQ_INT47_NULL?OEM_IRQ
+            CODE    106CH     0001H     UNIT         ?PR?HOOK_IRQ_INT48_WKO60?OEM_IRQ
+            CODE    106DH     0001H     UNIT         ?PR?HOOK_IRQ_INT49_WKO61?OEM_IRQ
+            CODE    106EH     0001H     UNIT         ?PR?HOOK_IRQ_INT50_WKO62?OEM_IRQ
+            CODE    106FH     0001H     UNIT         ?PR?HOOK_IRQ_INT51_WKO63?OEM_IRQ
+            CODE    1070H     0001H     UNIT         ?PR?HOOK_IRQ_INT52_WKO64?OEM_IRQ
+            CODE    1071H     0001H     UNIT         ?PR?HOOK_IRQ_INT53_WKO65?OEM_IRQ
+            CODE    1072H     0001H     UNIT         ?PR?HOOK_IRQ_INT54_WKO66?OEM_IRQ
+            CODE    1073H     0001H     UNIT         ?PR?HOOK_IRQ_INT55_WKO67?OEM_IRQ
+            CODE    1074H     0001H     UNIT         ?PR?HOOK_IRQ_INT56_NULL?OEM_IRQ
+            CODE    1075H     0001H     UNIT         ?PR?HOOK_IRQ_INT57_NULL?OEM_IRQ
+            CODE    1076H     0001H     UNIT         ?PR?HOOK_IRQ_INT58_ET2?OEM_IRQ
+            CODE    1077H     0001H     UNIT         ?PR?HOOK_IRQ_INT59_DEFERREDSPIINSTRUCTION?OEM_IRQ
+            CODE    1078H     0001H     UNIT         ?PR?HOOK_IRQ_INT60_TMRINTA0?OEM_IRQ
+            CODE    1079H     0001H     UNIT         ?PR?HOOK_IRQ_INT61_TMRINTA1?OEM_IRQ
+            CODE    107AH     0001H     UNIT         ?PR?HOOK_IRQ_INT62_TMRINTB0?OEM_IRQ
+            CODE    107BH     0001H     UNIT         ?PR?HOOK_IRQ_INT63_TMRINTB1?OEM_IRQ
+            CODE    107CH     0001H     UNIT         ?PR?HOOK_IRQ_INT64_PMC2EXOBE?OEM_IRQ
+            CODE    107DH     0001H     UNIT         ?PR?HOOK_IRQ_INT65_PMC2EXIBF?OEM_IRQ
+            CODE    107EH     0001H     UNIT         ?PR?HOOK_IRQ_INT66_PMC3OBE?OEM_IRQ
+            CODE    107FH     0001H     UNIT         ?PR?HOOK_IRQ_INT67_PMC3IBF?OEM_IRQ
+            CODE    1080H     0001H     UNIT         ?PR?HOOK_IRQ_INT68_PMC4OBE?OEM_IRQ
+            CODE    1081H     0001H     UNIT         ?PR?HOOK_IRQ_INT69_PMC4IBF?OEM_IRQ
+            CODE    1082H     0001H     UNIT         ?PR?HOOK_IRQ_INT70_NULL?OEM_IRQ
+            CODE    1083H     0001H     UNIT         ?PR?HOOK_IRQ_INT71_I2BRAM?OEM_IRQ
+            CODE    1084H     0014H     UNIT         ?PR?HOOK_IRQ_INT72_WKO70?OEM_IRQ
+            CODE    1098H     0001H     UNIT         ?PR?HOOK_IRQ_INT73_WKO71?OEM_IRQ
+            CODE    1099H     0001H     UNIT         ?PR?HOOK_IRQ_INT74_WKO72?OEM_IRQ
+            CODE    109AH     0001H     UNIT         ?PR?HOOK_IRQ_INT75_WKO73?OEM_IRQ
+            CODE    109BH     0001H     UNIT         ?PR?HOOK_IRQ_INT76_WKO74?OEM_IRQ
+            CODE    109CH     0001H     UNIT         ?PR?HOOK_IRQ_INT77_WKO75?OEM_IRQ
+            CODE    109DH     0001H     UNIT         ?PR?HOOK_IRQ_INT78_WKO76?OEM_IRQ
+            CODE    109EH     0001H     UNIT         ?PR?HOOK_IRQ_INT79_WKO77?OEM_IRQ
+            CODE    109FH     0001H     UNIT         ?PR?HOOK_ENABLEINTERRUPT?OEM_IRQ
+            CODE    10A0H     0001H     UNIT         ?PR?HOOK_OEM_ISR_INT1?OEM_IRQ
+            CODE    10A1H     008CH     UNIT         ?C_C51STARTUP
+            CODE    112DH     004EH     UNIT         ?C?LIB_CODE
+            CODE    117BH     0001H     UNIT         ?C_INITSEG
+                    117CH     0E84H                  *** GAP ***
+            CODE    2000H     0001H     UNIT         ?PR?BBK_NORMALMAIN?BBK_MAIN
+
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 32
+
+
+
+OVERLAY MAP OF MODULE:   BBK_EC.ABS (CORE_IRQ)
+
+
+SEGMENT                                            XDATA_GROUP
+  +--> CALLED SEGMENT                            START    LENGTH
+----------------------------------------------------------------
+?PR?ISR_INT1?CORE_IRQ                            -----    -----
+  +--> ?PR?HOOK_OEM_ISR_INT1?OEM_IRQ
+  +--> ?PR?IRQ_INT18_PS2INTERRUPT2?CORE_IRQ
+  +--> ?PR?IRQ_INT19_PS2INTERRUPT1?CORE_IRQ
+  +--> ?PR?IRQ_INT20_PS2INTERRUPT0?CORE_IRQ
+  +--> ?CO?CORE_IRQ
+
+?PR?IRQ_INT18_PS2INTERRUPT2?CORE_IRQ             -----    -----
+  +--> ?PR?HOOK_IRQ_INT18_PS2INTERRUPT2?OEM_IRQ
+
+?PR?IRQ_INT19_PS2INTERRUPT1?CORE_IRQ             -----    -----
+  +--> ?PR?HOOK_IRQ_INT19_PS2INTERRUPT1?OEM_IRQ
+
+?PR?IRQ_INT20_PS2INTERRUPT0?CORE_IRQ             -----    -----
+  +--> ?PR?HOOK_IRQ_INT20_PS2INTERRUPT0?OEM_IRQ
+
+?CO?CORE_IRQ                                     -----    -----
+  +--> ?PR?IRQ_INT0_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT1_WKO20?CORE_IRQ
+  +--> ?PR?IRQ_INT2_KBCOBE?CORE_IRQ
+  +--> ?PR?IRQ_INT3_PMCPMC1OBE?CORE_IRQ
+  +--> ?PR?IRQ_INT4_SMBUSD?CORE_IRQ
+  +--> ?PR?IRQ_INT5_WKINTAD?CORE_IRQ
+  +--> ?PR?IRQ_INT6_WKO23?CORE_IRQ
+  +--> ?PR?IRQ_INT7_PWM?CORE_IRQ
+  +--> ?PR?IRQ_INT8_ADC?CORE_IRQ
+  +--> ?PR?IRQ_INT9_SMBUSA?CORE_IRQ
+  +--> ?PR?IRQ_INT10_SMBUSB?CORE_IRQ
+  +--> ?PR?IRQ_INT11_KBMATRIXSCAN?CORE_IRQ
+  +--> ?PR?IRQ_INT12_WKO26?CORE_IRQ
+  +--> ?PR?IRQ_INT13_WKINTC?CORE_IRQ
+  +--> ?PR?IRQ_INT14_WKO25?CORE_IRQ
+  +--> ?PR?IRQ_INT15_CIR?CORE_IRQ
+  +--> ?PR?IRQ_INT16_SMBUSC?CORE_IRQ
+  +--> ?PR?IRQ_INT17_WKO24?CORE_IRQ
+  +--> ?PR?IRQ_INT18_PS2INTERRUPT2?CORE_IRQ
+  +--> ?PR?IRQ_INT19_PS2INTERRUPT1?CORE_IRQ
+  +--> ?PR?IRQ_INT20_PS2INTERRUPT0?CORE_IRQ
+  +--> ?PR?IRQ_INT21_WKO22?CORE_IRQ
+  +--> ?PR?IRQ_INT22_SMFISEMAPHORE?CORE_IRQ
+  +--> ?PR?IRQ_INT23_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT24_KBCIBF?CORE_IRQ
+  +--> ?PR?IRQ_INT25_PMCPMC1IBF?CORE_IRQ
+  +--> ?PR?IRQ_INT26_PMC2OBE?CORE_IRQ
+  +--> ?PR?IRQ_INT27_PMC2IBF?CORE_IRQ
+  +--> ?PR?IRQ_INT28_GINTOFGPD5?CORE_IRQ
+  +--> ?PR?IRQ_INT29_EGPC?CORE_IRQ
+  +--> ?PR?IRQ_INT30_ET1?CORE_IRQ
+  +--> ?PR?IRQ_INT31_WKO21?CORE_IRQ
+  +--> ?PR?IRQ_INT32_GPINT0?CORE_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 33
+
+
+  +--> ?PR?IRQ_INT33_GPINT1?CORE_IRQ
+  +--> ?PR?IRQ_INT34_GPINT2?CORE_IRQ
+  +--> ?PR?IRQ_INT35_GPINT3?CORE_IRQ
+  +--> ?PR?IRQ_INT36_CIRGPINT?CORE_IRQ
+  +--> ?PR?IRQ_INT37_SSPI?CORE_IRQ
+  +--> ?PR?IRQ_INT38_UART1?CORE_IRQ
+  +--> ?PR?IRQ_INT39_UART2?CORE_IRQ
+  +--> ?PR?IRQ_INT40_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT41_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT42_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT43_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT44_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT45_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT46_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT47_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT48_WKO60?CORE_IRQ
+  +--> ?PR?IRQ_INT49_WKO61?CORE_IRQ
+  +--> ?PR?IRQ_INT50_WKO62?CORE_IRQ
+  +--> ?PR?IRQ_INT51_WKO63?CORE_IRQ
+  +--> ?PR?IRQ_INT52_WKO64?CORE_IRQ
+  +--> ?PR?IRQ_INT53_WKO65?CORE_IRQ
+  +--> ?PR?IRQ_INT54_WKO66?CORE_IRQ
+  +--> ?PR?IRQ_INT55_WKO67?CORE_IRQ
+  +--> ?PR?IRQ_INT56_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT57_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT58_ET2?CORE_IRQ
+  +--> ?PR?IRQ_INT59_DEFERREDSPIINSTRUCTION?...
+  +--> ?PR?IRQ_INT60_TMRINTA0?CORE_IRQ
+  +--> ?PR?IRQ_INT61_TMRINTA1?CORE_IRQ
+  +--> ?PR?IRQ_INT62_TMRINTB0?CORE_IRQ
+  +--> ?PR?IRQ_INT63_TMRINTB1?CORE_IRQ
+  +--> ?PR?IRQ_INT64_PMC2EXOBE?CORE_IRQ
+  +--> ?PR?IRQ_INT65_PMC2EXIBF?CORE_IRQ
+  +--> ?PR?IRQ_INT66_PMC3OBE?CORE_IRQ
+  +--> ?PR?IRQ_INT67_PMC3IBF?CORE_IRQ
+  +--> ?PR?IRQ_INT68_PMC4OBE?CORE_IRQ
+  +--> ?PR?IRQ_INT69_PMC4IBF?CORE_IRQ
+  +--> ?PR?IRQ_INT70_NULL?CORE_IRQ
+  +--> ?PR?IRQ_INT71_I2BRAM?CORE_IRQ
+  +--> ?PR?IRQ_INT72_WKO70?CORE_IRQ
+  +--> ?PR?IRQ_INT73_WKO71?CORE_IRQ
+  +--> ?PR?IRQ_INT74_WKO72?CORE_IRQ
+  +--> ?PR?IRQ_INT75_WKO73?CORE_IRQ
+  +--> ?PR?IRQ_INT76_WKO74?CORE_IRQ
+  +--> ?PR?IRQ_INT77_WKO75?CORE_IRQ
+  +--> ?PR?IRQ_INT78_WKO76?CORE_IRQ
+  +--> ?PR?IRQ_INT79_WKO77?CORE_IRQ
+
+?PR?IRQ_INT1_WKO20?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT1_WKO20?OEM_IRQ
+
+?PR?IRQ_INT2_KBCOBE?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT2_KBCOBE?OEM_IRQ
+
+?PR?IRQ_INT3_PMCPMC1OBE?CORE_IRQ                 -----    -----
+  +--> ?PR?HOOK_IRQ_INT3_PMCPMC1OBE?OEM_IRQ
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 34
+
+
+?PR?IRQ_INT4_SMBUSD?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT4_SMBUSD?OEM_IRQ
+
+?PR?IRQ_INT5_WKINTAD?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT5_WKINTAD?OEM_IRQ
+
+?PR?IRQ_INT6_WKO23?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT6_WKO23?OEM_IRQ
+
+?PR?IRQ_INT7_PWM?CORE_IRQ                        -----    -----
+  +--> ?PR?HOOK_IRQ_INT7_PWM?OEM_IRQ
+
+?PR?IRQ_INT8_ADC?CORE_IRQ                        -----    -----
+  +--> ?PR?HOOK_IRQ_INT8_ADC?OEM_IRQ
+
+?PR?IRQ_INT9_SMBUSA?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT9_SMBUSA?OEM_IRQ
+
+?PR?IRQ_INT10_SMBUSB?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT10_SMBUSB?OEM_IRQ
+
+?PR?IRQ_INT11_KBMATRIXSCAN?CORE_IRQ              -----    -----
+  +--> ?PR?HOOK_IRQ_INT11_KBMATRIXSCAN?OEM_IRQ
+
+?PR?IRQ_INT12_WKO26?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT12_WKO26?OEM_IRQ
+
+?PR?IRQ_INT13_WKINTC?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT13_WKINTC?OEM_IRQ
+
+?PR?IRQ_INT14_WKO25?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT14_WKO25?OEM_IRQ
+
+?PR?IRQ_INT15_CIR?CORE_IRQ                       -----    -----
+  +--> ?PR?HOOK_IRQ_INT15_CIR?OEM_IRQ
+
+?PR?IRQ_INT16_SMBUSC?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT16_SMBUSC?OEM_IRQ
+
+?PR?IRQ_INT17_WKO24?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT17_WKO24?OEM_IRQ
+
+?PR?IRQ_INT21_WKO22?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT21_WKO22?OEM_IRQ
+
+?PR?IRQ_INT22_SMFISEMAPHORE?CORE_IRQ             -----    -----
+  +--> ?PR?HOOK_IRQ_INT22_SMFISEMAPHORE?OEM_IRQ
+
+?PR?IRQ_INT23_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT23_NULL?OEM_IRQ
+
+?PR?IRQ_INT24_KBCIBF?CORE_IRQ                    -----    -----
+  +--> ?PR?IRQLOCK_SCAN?CORE_IRQ
+  +--> ?PR?HOOK_IRQ_INT24_KBCIBF?OEM_IRQ
+
+?PR?IRQ_INT25_PMCPMC1IBF?CORE_IRQ                -----    -----
+  +--> ?PR?HOOK_IRQ_INT25_PMCPMC1IBF?OEM_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 35
+
+
+
+?PR?IRQ_INT26_PMC2OBE?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT26_PMC2OBE?OEM_IRQ
+
+?PR?IRQ_INT27_PMC2IBF?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT27_PMC2IBF?OEM_IRQ
+
+?PR?IRQ_INT28_GINTOFGPD5?CORE_IRQ                -----    -----
+  +--> ?PR?HOOK_IRQ_INT28_GINTOFGPD5?OEM_IRQ
+
+?PR?IRQ_INT29_EGPC?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT29_EGPC?OEM_IRQ
+
+?PR?IRQ_INT30_ET1?CORE_IRQ                       -----    -----
+  +--> ?PR?HOOK_IRQ_INT30_ET1?OEM_IRQ
+
+?PR?IRQ_INT31_WKO21?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT31_WKO21?OEM_IRQ
+
+?PR?IRQ_INT32_GPINT0?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT32_GPINT0?OEM_IRQ
+
+?PR?IRQ_INT33_GPINT1?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT33_GPINT1?OEM_IRQ
+
+?PR?IRQ_INT34_GPINT2?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT34_GPINT2?OEM_IRQ
+
+?PR?IRQ_INT35_GPINT3?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT35_GPINT3?OEM_IRQ
+
+?PR?IRQ_INT36_CIRGPINT?CORE_IRQ                  -----    -----
+  +--> ?PR?HOOK_IRQ_INT36_CIRGPINT?OEM_IRQ
+
+?PR?IRQ_INT37_SSPI?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT37_SSPI?OEM_IRQ
+
+?PR?IRQ_INT38_UART1?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT38_UART1?OEM_IRQ
+
+?PR?IRQ_INT39_UART2?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT39_UART2?OEM_IRQ
+
+?PR?IRQ_INT40_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT40_NULL?OEM_IRQ
+
+?PR?IRQ_INT41_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT41_NULL?OEM_IRQ
+
+?PR?IRQ_INT42_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT42_NULL?OEM_IRQ
+
+?PR?IRQ_INT43_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT43_NULL?OEM_IRQ
+
+?PR?IRQ_INT44_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT44_NULL?OEM_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 36
+
+
+
+?PR?IRQ_INT45_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT45_NULL?OEM_IRQ
+
+?PR?IRQ_INT46_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT46_NULL?OEM_IRQ
+
+?PR?IRQ_INT47_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT47_NULL?OEM_IRQ
+
+?PR?IRQ_INT48_WKO60?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT48_WKO60?OEM_IRQ
+
+?PR?IRQ_INT49_WKO61?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT49_WKO61?OEM_IRQ
+
+?PR?IRQ_INT50_WKO62?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT50_WKO62?OEM_IRQ
+
+?PR?IRQ_INT51_WKO63?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT51_WKO63?OEM_IRQ
+
+?PR?IRQ_INT52_WKO64?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT52_WKO64?OEM_IRQ
+
+?PR?IRQ_INT53_WKO65?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT53_WKO65?OEM_IRQ
+
+?PR?IRQ_INT54_WKO66?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT54_WKO66?OEM_IRQ
+
+?PR?IRQ_INT55_WKO67?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT55_WKO67?OEM_IRQ
+
+?PR?IRQ_INT56_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT56_NULL?OEM_IRQ
+
+?PR?IRQ_INT57_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT57_NULL?OEM_IRQ
+
+?PR?IRQ_INT58_ET2?CORE_IRQ                       -----    -----
+  +--> ?PR?HOOK_IRQ_INT58_ET2?OEM_IRQ
+
+?PR?IRQ_INT59_DEFERREDSPIINSTRUCTION?...         -----    -----
+  +--> ?PR?HOOK_IRQ_INT59_DEFERREDSPIINSTRUC...
+
+?PR?IRQ_INT60_TMRINTA0?CORE_IRQ                  -----    -----
+  +--> ?PR?HOOK_IRQ_INT60_TMRINTA0?OEM_IRQ
+
+?PR?IRQ_INT61_TMRINTA1?CORE_IRQ                  -----    -----
+  +--> ?PR?HOOK_IRQ_INT61_TMRINTA1?OEM_IRQ
+
+?PR?IRQ_INT62_TMRINTB0?CORE_IRQ                  -----    -----
+  +--> ?PR?HOOK_IRQ_INT62_TMRINTB0?OEM_IRQ
+
+?PR?IRQ_INT63_TMRINTB1?CORE_IRQ                  -----    -----
+  +--> ?PR?HOOK_IRQ_INT63_TMRINTB1?OEM_IRQ
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 37
+
+
+
+?PR?IRQ_INT64_PMC2EXOBE?CORE_IRQ                 -----    -----
+  +--> ?PR?HOOK_IRQ_INT64_PMC2EXOBE?OEM_IRQ
+
+?PR?IRQ_INT65_PMC2EXIBF?CORE_IRQ                 -----    -----
+  +--> ?PR?HOOK_IRQ_INT65_PMC2EXIBF?OEM_IRQ
+
+?PR?IRQ_INT66_PMC3OBE?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT66_PMC3OBE?OEM_IRQ
+
+?PR?IRQ_INT67_PMC3IBF?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT67_PMC3IBF?OEM_IRQ
+
+?PR?IRQ_INT68_PMC4OBE?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT68_PMC4OBE?OEM_IRQ
+
+?PR?IRQ_INT69_PMC4IBF?CORE_IRQ                   -----    -----
+  +--> ?PR?HOOK_IRQ_INT69_PMC4IBF?OEM_IRQ
+
+?PR?IRQ_INT70_NULL?CORE_IRQ                      -----    -----
+  +--> ?PR?HOOK_IRQ_INT70_NULL?OEM_IRQ
+
+?PR?IRQ_INT71_I2BRAM?CORE_IRQ                    -----    -----
+  +--> ?PR?HOOK_IRQ_INT71_I2BRAM?OEM_IRQ
+
+?PR?IRQ_INT72_WKO70?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT72_WKO70?OEM_IRQ
+
+?PR?IRQ_INT73_WKO71?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT73_WKO71?OEM_IRQ
+
+?PR?IRQ_INT74_WKO72?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT74_WKO72?OEM_IRQ
+
+?PR?IRQ_INT75_WKO73?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT75_WKO73?OEM_IRQ
+
+?PR?IRQ_INT76_WKO74?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT76_WKO74?OEM_IRQ
+
+?PR?IRQ_INT77_WKO75?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT77_WKO75?OEM_IRQ
+
+?PR?IRQ_INT78_WKO76?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT78_WKO76?OEM_IRQ
+
+?PR?IRQ_INT79_WKO77?CORE_IRQ                     -----    -----
+  +--> ?PR?HOOK_IRQ_INT79_WKO77?OEM_IRQ
+
+*** NEW ROOT ***************************************************
+
+?C_C51STARTUP                                    -----    -----
+  +--> ?PR?MAIN?BBK_MAIN
+  +--> ?C_INITSEG
+
+?PR?MAIN?BBK_MAIN                                -----    -----
+  +--> ?PR?BBK_CHECKENTERBOOTBLOCKMODE?BBK_MAIN
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 38
+
+
+  +--> ?PR?BBK_INITCLEARINTERNALRAM?BBK_MAIN
+  +--> ?PR?BBK_INITCLEAREXTERNALRAM?BBK_MAIN
+  +--> ?PR?BBK_RECOVERY?BBK_MAIN
+  +--> ?PR?_BB_DELAY1MS?BBK_MAIN
+  +--> ?PR?BBK_NORMALMAIN?BBK_MAIN
+
+?PR?BBK_CHECKENTERBOOTBLOCKMODE?BBK_MAIN         -----    -----
+  +--> ?PR?UBOOT_INITREGS?BBK_MAIN
+
+?PR?UBOOT_INITREGS?BBK_MAIN                      -----    -----
+  +--> ?CO?BBK_MAIN
+
+?PR?BBK_RECOVERY?BBK_MAIN                        -----    -----
+  +--> ?PR?BBK_INITGPIO?BBK_MAIN
+  +--> ?PR?BBK_INITSMBUS?BBK_MAIN
+  +--> ?PR?BBK_INITFLASH?BBK_MAIN
+  +--> ?PR?BBK_ACPI?BBK_MAIN
+  +--> ?PR?BBK_INITTIMERS?BBK_MAIN
+  +--> ?PR?BBKINIT_UART?BBK_MAIN
+  +--> ?PR?_BB_DELAY1MS?BBK_MAIN
+  +--> ?PR?BB_CHK_SUSACK?BBK_MAIN
+  +--> ?PR?BB_CHK_DRAMRST_CNTRL?BBK_MAIN
+  +--> ?PR?BB_SYSONSEQUENCE?BBK_MAIN
+  +--> ?PR?BBK_PROCESS6064COMMAND?BBK_MAIN
+  +--> ?PR?BBK_PROCESSACPICOMMAND?BBK_MAIN
+  +--> ?PR?BBK_5MSTIMEREVENT?BBK_MAIN
+
+?PR?BBK_INITGPIO?BBK_MAIN                        -----    -----
+  +--> ?CO?BBK_MAIN
+
+?PR?BB_SYSONSEQUENCE?BBK_MAIN                    -----    -----
+  +--> ?PR?BB_SETS0GPIO?BBK_MAIN
+
+?PR?BB_SETS0GPIO?BBK_MAIN                        -----    -----
+  +--> ?PR?BB_CORE_INITSIO?BBK_MAIN
+
+?PR?BB_CORE_INITSIO?BBK_MAIN                     -----    -----
+  +--> ?CO?BBK_MAIN
+
+?PR?BBK_PROCESS6064COMMAND?BBK_MAIN              -----    -----
+  +--> ?PR?BBKEFLASH_CMDRAMCODE?BBK_MAIN
+  +--> ?PR?_BBK_CACHEDMA?BBK_MAIN
+  +--> ?PR?_BBK_DATA2PORT?BBK_MAIN
+
+?PR?_BBK_CACHEDMA?BBK_MAIN                       0702H    0002H
+
+?PR?_BBK_DATA2PORT?BBK_MAIN                      -----    -----
+  +--> ?PR?_BBK_DATA_TO_HOST_NWAIT?BBK_MAIN
+  +--> ?PR?_BBK_DATA_TO_PM1_NWAIT?BBK_MAIN
+
+?PR?_BBK_DATA_TO_HOST_NWAIT?BBK_MAIN             -----    -----
+  +--> ?PR?_BBK_DATA_TO_HOST?BBK_MAIN
+  +--> ?PR?BBK_LOAD_TIMEROUT_TIMER?BBK_MAIN
+
+?PR?_BBK_DATA_TO_PM1_NWAIT?BBK_MAIN              -----    -----
+  +--> ?PR?BBK_LOAD_TIMEROUT_TIMER?BBK_MAIN
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/27/2012  10:30:38  PAGE 39
+
+
+?PR?BBK_PROCESSACPICOMMAND?BBK_MAIN              -----    -----
+  +--> ?PR?BB_OEMCHECKECCMD?BBK_MAIN
+  +--> ?PR?BB_OEMPROCESSECDATA?BBK_MAIN
+
+?PR?BB_OEMCHECKECCMD?BBK_MAIN                    -----    -----
+  +--> ?PR?_BBK_DATA2PORT?BBK_MAIN
+
+?PR?BBK_5MSTIMEREVENT?BBK_MAIN                   0702H    0001H
+  +--> ?PR?BBK_HOOK_5MSTIMEREVENT?BBK_MAIN
+  +--> ?PR?BBK_10MSTIMEREVENT?BBK_MAIN
+  +--> ?PR?BBK_50MSTIMEREVENT?BBK_MAIN
+  +--> ?PR?BBK_100MSTIMEREVENT?BBK_MAIN
+  +--> ?PR?BBK_500MSTIMEREVENT?BBK_MAIN
+  +--> ?PR?BBK_1SECTIMEREVENT?BBK_MAIN
+
+?PR?BBK_HOOK_5MSTIMEREVENT?BBK_MAIN              -----    -----
+  +--> ?PR?BBK_BACKLIGHT_CONTROL?BBK_MAIN
+
+?PR?BBK_10MSTIMEREVENT?BBK_MAIN                  -----    -----
+  +--> ?PR?BBK_CHECK_BATTERYIN?BBK_MAIN
+  +--> ?PR?BBK_BATTERY_LED?BBK_MAIN
+
+
+
+SYMBOL TABLE OF MODULE:  BBK_EC.ABS (CORE_IRQ)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        ?C?IILDX
+  C:112DH         PUBLIC        ?C?IILDX
+  -------         ENDMOD        ?C?IILDX
+
+  -------         MODULE        ?C?OFFXADD
+  C:1143H         PUBLIC        ?C?OFFXADD
+  -------         ENDMOD        ?C?OFFXADD
+
+  -------         MODULE        ?C?CCASE
+  C:114FH         PUBLIC        ?C?CCASE
+  -------         ENDMOD        ?C?CCASE
+
+  -------         MODULE        ?C?ICALL
+  C:1175H         PUBLIC        ?C?ICALL
+  C:1179H         PUBLIC        ?C?ICALL2
+  -------         ENDMOD        ?C?ICALL
+
+Program Size: data=185.0 xdata=2242 code=4477
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

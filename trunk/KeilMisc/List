@@ -1,0 +1,4050 @@
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE BBK_MAIN
+OBJECT MODULE PLACED IN Code\BBK\BBK_Main.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\BBK\BBK_Main.c LA WL(1) CD OT(8,SIZE) NOAREGS OR INCDIR(.\Code\CORE\IN
+                    -CLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\;.\Code\BBK\INCLUDE\)
+
+line level    source
+
+   1          /*----------------------------------------------------------------------------
+   2           * Filename: BBK_Main.C  For Chipset: ITE.IT85XX
+   3           *
+   4           * Function: Boot block main function
+   5           *
+   6           * Copyright (c) 2012 - , ITE Tech. Inc. All Rights Reserved.
+   7           *
+   8           * You may not present,reproduce,distribute,publish,display,modify,adapt,
+   9           * perform,transmit,broadcast,recite,release,license or otherwise exploit
+  10           * any part of this publication in any form,by any means,without the prior
+  11           * written permission of ITE Tech. Inc.
+  12           *---------------------------------------------------------------------------*/
+  13          
+  14          #include <CORE_INCLUDE.H>
+  15          #include <OEM_INCLUDE.H>
+  16          
+  17          //-----------------------------------------------------------------------------
+  18          // Never change or removing or useing this one.
+  19          //-----------------------------------------------------------------------------
+  20          IBYTE   Pre_Allocate_Bank1_Register_Range_For_Main_Code[8]    _at_ 0x08;
+  21          IBYTE   Pre_Allocate_Bank3_Register_Range_For_Main_Code[8]    _at_ 0x18;
+  22          
+  23          //----------------------------------------------------------------------------
+  24          // FUNCTION: Boot block main function
+  25          //----------------------------------------------------------------------------
+  26          void main(void)
+  27          {
+  28   1              EA = 0;                                                                 // Disable globe interrupt
+  29   1          _nop_();
+  30   1          _nop_();
+  31   1          _nop_();
+  32   1          _nop_();
+  33   1      
+  34   1              SP = 0xC0;                                                              // Reset stack point
+  35   1              DCache = 0x03;
+  36   1      
+  37   1      //    BBK_InitClearInternalRam();                               // To chear internel ram
+  38   1      //    BBK_InitClearExternalRam();                               // To chear externel ram
+  39   1      
+  40   1              while(1)
+  41   1          {
+  42   2                      if(BBK_CheckEnterBootBlockMode()==0x01  && (WinFlashMark!= 0x33))
+  43   2                      {
+  44   3                              if(IS_MASK_CLEAR(GPDRE,BIT(4)))         // Enter BBK mode
+  45   3                              {
+  46   4                                      SET_MASK(SYS_MISC1,Crisis_On);
+  47   4                                      BBK_InitClearInternalRam();     // To chear internel ram
+  48   4                                      BBK_InitClearExternalRam();     // To chear externel ram
+  49   4                                      ECCodeStatus = ECCodeStatus_BBK;
+  50   4                                      BBK_Recovery();                                 // recovery mode.
+  51   4                                      break;
+  52   4                              }
+  53   3                              BB_Delay1MS(5);
+  54   3                      }
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 2   
+
+  55   2                      else
+  56   2                  { break; }
+  57   2          }
+  58   1              CLR_MASK(SYS_MISC1,Crisis_On);
+  59   1          ECCodeStatus = ECCodeStatus_Normal;
+  60   1          BBK_NormalMain();                                           // Jump to 0x2000, normal mode.
+  61   1      }
+  62          
+  63          
+  64          //-----------------------------------------------------------------------------
+  65          // The table of GPIO register init.
+  66          //-----------------------------------------------------------------------------
+  67          struct BB_REG_INIT
+  68          {
+  69              unsigned char xdata       *address;
+  70              unsigned char             initdata;
+  71          };
+  72          
+  73          //-----------------------------------------------------------------------------
+  74          // The table of register init.
+  75          //-----------------------------------------------------------------------------
+  76          const struct BB_REG_INIT code BB_reg_init[] =
+  77          {
+  78              // HOST interface
+  79              { &BADRSEL      ,0x01               },               /* 1:4E/4F */ //EC Base address 0x00:2E/2F 0x01:4E/4F 0x02:User def
+             -ine
+  80              { &RSTS         ,0x84                       },                       //Disable KBC IRQ
+  81              { &SPCTRL1      ,0x83                       },
+  82              { &KBIRQR       ,0x00                       },              //Disable KBC IRQ
+  83              { &KBHICR       ,BIT0+BIT3+BIT6 },                  //KBC port control IBFCIE+PMICIE
+  84              { &PM1CTL       ,BIT0+BIT6      },                  //EC port control  IBFCIE+SCI low active
+  85              { &PM2CTL       ,BIT0+BIT6      },                  //EC port control  IBFCIE+SCI low active
+  86          //  { &PM3CTL           ,BIT0                   },
+  87          
+  88              { &IER3         ,BIT1+BIT0      },                  //EC port2 control IBFCIE+SCI low active
+  89              { &KSOCTRL      ,BIT0+BIT2      },                  //
+  90          // Key Scan
+  91                  { &KSOCTRL              ,KSOOD + KSOPU          },      //
+  92                  { &KSICTRL              ,KSIPU                          },      //
+  93          
+  94          //PWM
+  95                          { &ZTIER                ,0x00                           },      // Disable
+  96                          { &C0CPRS               ,0x47                           },      // Channel 0 Clock Prescaler Register
+  97                          { &CTR                  ,0xFF                           },      // Cycle Time 0
+  98                          //{ &DCR0               ,0xFF                           },      // Channel 0 PWM Duty Cycle
+  99                          { &DCR1                 ,0xFF                           },      // Channel 1 PWM Duty Cycle
+ 100                          { &DCR2                 ,0xFF                           },      // Channel 2 PWM Duty Cycle
+ 101                          //{ &DCR3                       ,0x00                           },      // Channel 3 PWM Duty Cycle
+ 102                          //{ &DCR4                       ,0x00                           },      // Channel 4 PWM Duty Cycle
+ 103                          //{ &DCR5                       ,0x00                           },      // Channel 5 PWM Duty Cycle
+ 104                          //{ &DCR6               ,0x00                           },      // Channel 6 PWM Duty Cycle
+ 105                          //{ &DCR7                       ,0x00                           },      // Channel 7 PWM Duty Cycle
+ 106                          { &PWMPOL               ,0x00                           },      // PWM Polarity
+ 107                          { &PCFSR                ,0x05                           },      // bit7=1: Disable CR256 channel 1 output. bit0-bit3: 0 => select 32.768 kHz, 1=> 
+             -select EC clock frequency
+ 108                          { &PCSSGL               ,0x14                           },      // Select channel 0-3 Group
+ 109                          { &PCSSGH               ,0xCA                           },      // Select channel 4-7 Group
+ 110                          { &CR256PCSSG   ,0x80                           },      // CR256 Prescaler Clock Source Select Group
+ 111                          { &PCSGR                ,0x00                           },      // Prescaler Clock Source Gating Register
+ 112                          { &C4CPRS               ,0xE3                           },      // Channel 4 Clock Prescaler Register
+ 113                          { &C4MCPRS              ,0x00                           },      // Channel 4 Clock Prescaler MSB Register
+ 114                          { &C6CPRS               ,0x01                           },      // 23KHz Channel 6 Clock Prescaler Register
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 3   
+
+ 115                          { &C6MCPRS              ,0x00                           },      // 23KHz Channel 6 Clock Prescaler MSB Register
+ 116                          { &C7CPRS               ,0x30                           },      // Channel 7 Clock Prescaler Register
+ 117                          { &C7MCPRS              ,0x00                           },      // Channel 7 Clock Prescaler MSB Register
+ 118                          { &CLK6MSEL             ,0x18                           },      // PWM Clock 6MHz Select Register
+ 119                          { &CTR1                 ,0xFF                           },      // Cycle Time 1
+ 120                          { &CTR2                 ,0xC8                           },      // 23KHz Cycle Time 2(Fan used)
+ 121                          { &CTR3                 ,0xFF                           },      // Cycle Time 3(Panel used)
+ 122                          { &PWMODENR             ,0x00                           },      // PWM output open-drain
+ 123                          { &TSWCTRL              ,0x0A                           },      // Enable TACH0A,TACH1A speed.
+ 124                          { &ZTIER                ,0x02                           },      // Enable
+ 125          
+ 126          };
+ 127          
+ 128          
+ 129          /**++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 130             <Function Name> uBoot_InitRegs
+ 131          
+ 132             Parameters : None
+ 133          
+ 134             Returns :    None
+ 135          
+ 136             Description: (Boot block) The function of register init.
+ 137          
+ 138          -----------------------------------------------------------------------------*/
+ 139          void uBoot_InitRegs(void)
+ 140          {
+ 141   1          BYTE index;
+ 142   1          index = 0x00;
+ 143   1      
+ 144   1          while(index < (sizeof(BB_reg_init)/3) )
+ 145   1          {
+ 146   2              *BB_reg_init[index].address=BB_reg_init[index].initdata;
+ 147   2              index ++;
+ 148   2          }
+ 149   1      
+ 150   1      }
+ 151          
+ 152          
+ 153          //----------------------------------------------------------------------------
+ 154          // Kernel Init super IO function
+ 155          //----------------------------------------------------------------------------
+ 156          const BYTE code BB_Core_initsio_table[]=
+ 157          {
+ 158                                          // Configure and Enable Logical Device 06h(KBD)
+ 159                  0x07 ,0x06,     // Select Logical Device 06h(KBD)
+ 160                  0x70 ,0x01,     // Set IRQ=01h for Logical Device 06h(KBD)
+ 161                  0x30 ,0x01,     // Enable Logical Device 06h(Mouse)
+ 162                                          // Configure and Enable Logical Device 05h(Mouse)
+ 163                  0x07 ,0x05,     // Select Logical Device 05h(Mouse)
+ 164                  0x70 ,0x0C,     // Set IRQ=0Ch for Logical Device 05h(Mouse)
+ 165                  0x30 ,0x01,     // Enable Logical Device 05h(Mouse)
+ 166                                          // Enable Logical Device 11h(PM1)
+ 167                  0x07 ,0x11,     // Select Logical Device 11h(PM1)
+ 168                  0x70 ,0x00,     // Clear IRQ=0 for  Logical Device 11h(PM1)
+ 169                  0x30 ,0x01,     // Enable Logical Device 11h(PM1)
+ 170                                          // Enable Logical Device 12h(PM2)
+ 171                  0x07 ,0x12,     // Select Logical Device 12h(PM2)
+ 172                  0x70 ,0x00,     // Clear IRQ=0 for  Logical Device 12h(PM2)
+ 173                  0x30 ,0x01,     // Enable Logical Device 12h(PM2)
+ 174                                          // Enable Logical Device 04h(MSWC)
+ 175                  0x07 ,0x04,     // Logical Device 04h(MSWC)
+ 176                  0x30 ,0x01,     // Enable MSWC
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 4   
+
+ 177          
+ 178                  0x07 ,0x10,     // Logical Device 10h(BRAM)
+ 179                  0x62 ,0x05,
+ 180                  0x63 ,0x00,     // BRAMLD address is 0x500ndex) and 0x501ata)
+ 181                  0xF3 ,0x3F, // msmart test
+ 182                  0x30 ,0x01,     // Enable BRAM
+ 183          
+ 184                  0x07 ,0x0F,     // Logical Device 0Fh(Shared Memory)
+ 185                  0x60 ,0x02, // Set Base address 200h
+ 186                  0x61 ,0x00,
+ 187          
+ 188                                          // Define EC internal RAM base address on LPC memory space.
+ 189                  0xF5 ,0x00, // H2RAM-HLPC Base Address Bits [15:12] (HLPCRAMBA[15:12]) high nibble
+ 190                  0xF6 ,0x00, // H2RAM-HLPC Base Address Bits [23:16] (HLPCRAMBA[23:16])
+ 191          
+ 192                  0x30 ,0x01,     // MSWC Shared Memory
+ 193          
+ 194              0x07 ,0x17, // Select Logical Device 17h(PM3)
+ 195                  0x62 ,0x00, // IO Port 6A4
+ 196                  0x63 ,0x6C, //
+ 197                  0x60 ,0x00, // IO Port 6A0
+ 198                  0x61 ,0x68, //
+ 199                  0x30 ,0x01,     // Enable Logical Device 17h(PM3)
+ 200          };
+ 201          
+ 202          void BB_Core_InitSio(void)
+ 203          {
+ 204   1          BYTE code * data_pntr;
+ 205   1          BYTE cnt;
+ 206   1      
+ 207   1              SET_MASK(LSIOHA,LKCFG);
+ 208   1              SET_MASK(IBMAE,CFGAE);
+ 209   1              SET_MASK(IBCTL,CSAE);
+ 210   1      
+ 211   1          cnt=0;
+ 212   1          data_pntr=BB_Core_initsio_table;
+ 213   1          while(cnt < (sizeof(BB_Core_initsio_table)/2) )
+ 214   1          {
+ 215   2              IHIOA=0;                                                // Set indirect Host I/O Address
+ 216   2              IHD=*data_pntr;
+ 217   2              while( IS_MASK_SET(IBCTL,CWIB));
+ 218   2              data_pntr ++;
+ 219   2      
+ 220   2              IHIOA=1;                                                // Set indirect Host I/O Address
+ 221   2              IHD=*data_pntr;
+ 222   2              while( IS_MASK_SET(IBCTL,CWIB));
+ 223   2              data_pntr ++;
+ 224   2              cnt ++;
+ 225   2          }
+ 226   1      
+ 227   1              CLEAR_MASK(LSIOHA,LKCFG);
+ 228   1              CLEAR_MASK(IBMAE,CFGAE);
+ 229   1              CLEAR_MASK(IBCTL,CSAE);
+ 230   1      }
+ 231          
+ 232          
+ 233          //----------------------------------------------------------------------------
+ 234          // Delay 1ms function use timer 1
+ 235          //----------------------------------------------------------------------------
+ 236          void BB_Delay1MS(BYTE bMS)
+ 237          {
+ 238   1          for (;bMS!=0;bMS--)
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 5   
+
+ 239   1          {
+ 240   2              TH1=(Timer_1ms)>>8;
+ 241   2              TL1=(Timer_1ms);
+ 242   2              TR1=1;
+ 243   2              TF1=0;
+ 244   2              while (!TF1);
+ 245   2              TF1=0;
+ 246   2              TR1=0;
+ 247   2          }
+ 248   1      }
+ 249          
+ 250          
+ 251          //---------------------------------------------------------------------------
+ 252          // Boot block System Power On RAM & Register configuration
+ 253          //---------------------------------------------------------------------------
+ 254          void BB_Oem_SysOnInit(void)
+ 255          {
+ 256   1              SysPowState=SYSTEM_S0;
+ 257   1              SWCTL2 = 0;                                                     //Set sysetm power on
+ 258   1          FMSSR = 0x0F;                                                       //For 1M Bytes Share Rom
+ 259   1          SET_MASK(FPCFG,BIT4);                                       //Enable LPC Bust mode
+ 260   1          CLEAR_MASK(KBHISR,BIT2);
+ 261   1      }
+ 262          
+ 263          
+ 264          void BB_CHK_SUSACK(void)
+ 265          {
+ 266   1              if(!Read_SUSWARN())
+ 267   1              {
+ 268   2                      if (Read_SUSACK())
+ 269   2                      {
+ 270   3                              if (SUSACK_LOW_CNT > 20)
+ 271   3                              {
+ 272   4                                      SUSACK_LOW();
+ 273   4                              }
+ 274   3                              else
+ 275   3                              {
+ 276   4                                      SUSACK_LOW_CNT++;
+ 277   4                              }
+ 278   3                      }
+ 279   2                      else
+ 280   2                      {       SUSACK_LOW_CNT = 0;     }
+ 281   2              }
+ 282   1              else
+ 283   1              {
+ 284   2                      if (!Read_SUSACK())
+ 285   2                      {
+ 286   3                              if (SUSACK_HI_CNT > 20)
+ 287   3                              {
+ 288   4                                      SUSACK_HI();
+ 289   4                              }
+ 290   3                              else
+ 291   3                              {
+ 292   4                                      SUSACK_HI_CNT++;
+ 293   4                              }
+ 294   3                      }
+ 295   2                      else
+ 296   2                      {       SUSACK_HI_CNT = 0;              }
+ 297   2              }
+ 298   1      
+ 299   1      }
+ 300          
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 6   
+
+ 301          void BB_CHK_DRAMRST_CNTRL(void)
+ 302          {
+ 303   1              if (Read_VR_ON())
+ 304   1              {
+ 305   2                      if (!Read_DRAMRST_CNTRL_EC())
+ 306   2                      {
+ 307   3                              if (DRAMRST_CNTRL_CNT > 200)
+ 308   3                              {
+ 309   4                                      DRAMRST_CNTRL_EC_HI();
+ 310   4                              }
+ 311   3                              else
+ 312   3                              {
+ 313   4                                      DRAMRST_CNTRL_CNT++;
+ 314   4                              }
+ 315   3                      }
+ 316   2              }
+ 317   1              else
+ 318   1              {
+ 319   2                      DRAMRST_CNTRL_CNT = 0;
+ 320   2              }
+ 321   1      
+ 322   1              if (!Read_SLPS3())
+ 323   1              {
+ 324   2                      DRAMRST_CNTRL_EC_LOW();
+ 325   2              }
+ 326   1              else
+ 327   1              {
+ 328   2                      DRAMRST_CNTRL_LOW_CNT = 0;
+ 329   2              }
+ 330   1      }
+ 331          
+ 332          void BB_SetS0GPIO(void)
+ 333          {
+ 334   1              SCI_HI();                               //RUNSCI Hi
+ 335   1              SMI_HI();                               //GA20 Hi
+ 336   1              GATEA20_HI();
+ 337   1              RCING_HI();
+ 338   1      
+ 339   1              //VGA_AC_DET_HI();
+ 340   1              LAN_PWR_ON_LO();
+ 341   1              CMOS_Cam_ON();                  // Turn on Camera power.
+ 342   1              SUSACK_HI();
+ 343   1              AOAC_PWRON();                   // Turn on WLAN power.
+ 344   1      
+ 345   1              TP_CLK_ALT;                             // TP_CLK to alternate pin
+ 346   1              TP_DATA_ALT;                    // TP_DATA to alternate pin
+ 347   1              SMBus2_CLK_ALT;                 // SMBus2 CLK to alternate pin
+ 348   1              SMBus2_DAT_ALT;                 // SMBus2 DATA to alternate pin
+ 349   1      
+ 350   1              GPCRA5 = OUTPUT;                // Set FAN_PWM OUTPUT.
+ 351   1              EC_FAN_PWM_HI();
+ 352   1      
+ 353   1              FAN_SPEED_ALT;                  // Set FAN Speed Alt.
+ 354   1              SLI_FAN_PWM_INPUT;              // Set SLI PWM input.
+ 355   1              SLI_SPEED_INPUT;                // Set SLI Speed input.
+ 356   1      //      ODD_DA_INPUT;
+ 357   1              BB_Core_InitSio();
+ 358   1      
+ 359   1              KBHISR = 0x00;
+ 360   1              KBHIKDOR = 0x00;
+ 361   1              CLEAR_MASK(KBHISR,SYSF);
+ 362   1      
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 7   
+
+ 363   1              SPCTRL1 = 0x83;                 //msmart test
+ 364   1              BRAM3E =0;
+ 365   1              BRAM3F =0;
+ 366   1      
+ 367   1      //      BKOFF_ON();
+ 368   1              EC_INVT_PWM_OUTPUT;
+ 369   1              EC_INVT_PWM_HI();
+ 370   1      //      Fan_Init();
+ 371   1      }
+ 372          
+ 373          
+ 374          //---------------------------------------------------------------------------
+ 375          // FUNCTION: System Power On Sequence for Boot block
+ 376          // TimeHook: 5mSec
+ 377          //---------------------------------------------------------------------------
+ 378          void BB_SysOnSequence(void)
+ 379          {
+ 380   1              if (PowSeqDelay)  PowSeqDelay--;
+ 381   1              if ( PowSeqDelay ) return;
+ 382   1      
+ 383   1              switch (PWSeqStep)    //Step 5mSec
+ 384   1          {
+ 385   2              case 0:
+ 386   2                              PWR_LED_ON();
+ 387   2                              EC_ON_HI();
+ 388   2                              DPWROK_EC_HI();
+ 389   2                      PowSeqDelay=10;
+ 390   2                  break;
+ 391   2      
+ 392   2                      case 1:
+ 393   2                              PCH_PWR_EN_ON();
+ 394   2                              DRAMRST_CNTRL_EC_HI();
+ 395   2                              PowSeqDelay=50;
+ 396   2                              break;
+ 397   2      
+ 398   2                      case 2:
+ 399   2                              PM_PWRBTN_HI();
+ 400   2                              RSMRST_HI();
+ 401   2                              AC_PRESENT_HI();
+ 402   2                      PowSeqDelay=50;
+ 403   2                              break;
+ 404   2      
+ 405   2                      case 3:
+ 406   2                              PM_PWRBTN_LOW();
+ 407   2                              AC_PRESENT_HI();
+ 408   2                      PowSeqDelay=30;
+ 409   2                              break;
+ 410   2      
+ 411   2                      case 4:
+ 412   2                              PM_PWRBTN_HI();
+ 413   2                              break;
+ 414   2      
+ 415   2                      case 5:
+ 416   2                      if ( Read_SLPS3()!=HighActive ) return;
+ 417   2                  if ( Read_SLPS4()!=HighActive ) return;
+ 418   2                              SYSON_HI();
+ 419   2                              LAN_PWR_ON_LO();
+ 420   2                      PowSeqDelay=30;
+ 421   2                              break;
+ 422   2      
+ 423   2                      case 6:
+ 424   2                              SUSP_HI();
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 8   
+
+ 425   2                              BB_SetS0GPIO();
+ 426   2                              break;
+ 427   2      
+ 428   2                      case 7:
+ 429   2                              if(Read_VDDQ_PGOOD()!=HighActive) return;
+ 430   2                              USB_ON_OUTPUT;
+ 431   2                              USB_ON_LOW();
+ 432   2                              PowSeqDelay=5;
+ 433   2                              break;
+ 434   2      
+ 435   2                      case 8:
+ 436   2                              VR_ON_HI();
+ 437   2                              PCH_PWROK_HI();
+ 438   2                              PowSeqDelay=50;
+ 439   2                              break;
+ 440   2      
+ 441   2                      default:
+ 442   2                              PWSeqStep=0xFF;   // End Of BBK Power On
+ 443   2                              return;
+ 444   2              }
+ 445   1          PWSeqStep++;
+ 446   1      }
+ 447          
+ 448          
+ 449          
+ 450          
+ 451          
+ 452          //----------------------------------------------------------------------------
+ 453          // Name: BBK_InitClearInternalRam
+ 454          // Description: Clear internal RAM from 0x20 to 0xBF
+ 455          //----------------------------------------------------------------------------
+ 456          void BBK_InitClearInternalRam(void)
+ 457          {
+ 458   1              IIBYTE *iibRamIndex;
+ 459   1      
+ 460   1              iibRamIndex = 0x20;
+ 461   1              while(iibRamIndex<0xC0)                 // Clear internal RAM (0x20~0xBF)
+ 462   1          {
+ 463   2              *iibRamIndex=0;
+ 464   2              iibRamIndex ++;
+ 465   2          }
+ 466   1      }
+ 467          
+ 468          //----------------------------------------------------------------------------
+ 469          // Name: BBK_InitClearExternalRam
+ 470          // Description: Clear external RAM from 0x000 to 0x0FF
+ 471          //----------------------------------------------------------------------------
+ 472          void BBK_InitClearExternalRam(void)
+ 473          {
+ 474   1              BYTE Temp0;
+ 475   1              BYTE Temp1;
+ 476   1              PORT_BYTE_PNTR byte_register_pntr;
+ 477   1      
+ 478   1              byte_register_pntr = 0x000;
+ 479   1              Temp0 = WinFlashMark;
+ 480   1              Temp1 = WinFlashMark2;
+ 481   1              while(byte_register_pntr < 0x700)// Clear external RAM (0x000~0x6FF)
+ 482   1              {
+ 483   2                      *byte_register_pntr = 0;
+ 484   2                      byte_register_pntr++;
+ 485   2              }
+ 486   1              WinFlashMark = Temp0;
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 9   
+
+ 487   1              WinFlashMark2 = Temp1;
+ 488   1              byte_register_pntr = 0x800;
+ 489   1              while(byte_register_pntr < 0x1000)// Clear external RAM (0x800~0xFFF)
+ 490   1              {
+ 491   2                      *byte_register_pntr = 0;
+ 492   2                      byte_register_pntr++;
+ 493   2              }
+ 494   1      }
+ 495          
+ 496          //-----------------------------------------------------------------
+ 497          // Boot block init timers function
+ 498          //-----------------------------------------------------------------
+ 499          void BBK_InitTimers(void)
+ 500          {
+ 501   1          ET0 = 0;                    // Disable timer0 interrupt
+ 502   1          ET1 = 0;                        // Disable timer1 interrupt
+ 503   1              TMOD  = 0x11;           // 16 bit
+ 504   1              TF0 = TR0 = 0;          // Stop timer 0 and clear interrupt
+ 505   1          TF1 = TR1 = 0;          // Stop timer 1 and clear interrupt
+ 506   1      
+ 507   1          TL0 = Timer_5ms;            // Reload timer
+ 508   1              TH0 = Timer_5ms>>8;         // 5ms
+ 509   1              TR0 = 1;                // To enable timer 0
+ 510   1      
+ 511   1          BBK_Timer5msCnt = 0x00;
+ 512   1      }
+ 513          
+ 514          void BBKInit_UART(void)
+ 515          {
+ 516   1              //GPCRB0=ALT;
+ 517   1          GPCRB1=ALT;
+ 518   1          SCON=0x40;
+ 519   1          T2CON &= 0xF0;               /* EXEN2=0; TR2=0; C/T2#=0; CP/RL2#=0; */
+ 520   1          T2CON |= 0x30;               /* RCLK = 1; TCLK=1; */
+ 521   1          T2MOD=0x00;
+ 522   1          RCAP2H=R2HV;
+ 523   1          RCAP2L=R2LV;
+ 524   1          TR2=1;
+ 525   1          TI = 1;
+ 526   1      }
+ 527          
+ 528          
+ 529          //-----------------------------------------------------------------
+ 530          // Boot block cache dma function
+ 531          //-----------------------------------------------------------------
+ 532          void BBK_CacheDma(BYTE num ,WORD addr)
+ 533          {
+ 534   1              switch(num)
+ 535   1              {
+ 536   2                      case 0:             // 0x800 ~ 0xBFF
+ 537   2                              SCRA1H = 0x80;
+ 538   2                              SCRA1L = addr ;
+ 539   2                              SCRA1M = addr >>8 ;
+ 540   2                              SCRA1H = 0x00;
+ 541   2                              break;
+ 542   2      
+ 543   2                      case 1:                 // 0xC00 ~ 0xDFF
+ 544   2                              SCRA2H = 0x80;
+ 545   2                              SCRA2L = addr;
+ 546   2                              SCRA2M = addr >> 8;
+ 547   2                              SCRA2H = 0x00;
+ 548   2                              break;
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 10  
+
+ 549   2      
+ 550   2                      case 2:             // 0xE00 ~ 0xEFF
+ 551   2                              SCRA3H = 0x80;
+ 552   2                              SCRA3L = addr;
+ 553   2                              SCRA3M = addr >> 8;
+ 554   2                              SCRA3H  = 0x00;
+ 555   2                              break;
+ 556   2      
+ 557   2                      case 3:             // 0xF00 ~ 0xFFF
+ 558   2                              SCRA4H = 0x80;
+ 559   2                              SCRA4L = addr;
+ 560   2                              SCRA4M = addr >> 8;
+ 561   2                              SCRA4H  = 0x00;
+ 562   2                              break;
+ 563   2      
+ 564   2                      default:
+ 565   2                              break;
+ 566   2              }
+ 567   1      }
+ 568          
+ 569          //----------------------------------------------------------------------------
+ 570          // FUNCTION: Boot block init. ACPI function
+ 571          //----------------------------------------------------------------------------
+ 572          void BBK_ACPI(void)
+ 573          {
+ 574   1      
+ 575   1      }
+ 576          
+ 577          //----------------------------------------------------------------------------
+ 578          // FUNCTION: Boot block init. flash function
+ 579          //----------------------------------------------------------------------------
+ 580          void BBK_InitFlash(void)
+ 581          {
+ 582   1      
+ 583   1      }
+ 584          
+ 585          
+ 586          //-----------------------------------------------------------------------------
+ 587          // The table of GPIO register init.
+ 588          //-----------------------------------------------------------------------------
+ 589          const sInitGPIOReg code uBootInitGPIOReg[] =
+ 590          {
+ 591                          { &GCR,         GCR_Init                },      //
+ 592                          { &GCR2,        GCR2_Init               },      //
+ 593                          { &GPOTA,       0x00                    },      // msmart  /AC
+ 594          
+ 595                          { &GPDRA,       PortA_Init              },      // Port A Data port Init
+ 596                          { &GPDRB,       PortB_Init              },      // Port B Data port Init
+ 597                          { &GPDRC,       PortC_Init              },      // Port C Data port Init
+ 598                          { &GPDRD,       PortD_Init              },      // Port D Data port Init
+ 599                          { &GPDRE,       PortE_Init              },      // Port E Data port Init
+ 600                          { &GPDRF,       PortF_Init              },      // Port F Data port Init
+ 601                          { &GPDRG,       PortG_Init              },      // Port G Data port Init
+ 602                          { &GPDRH,       PortH_Init              },      // Port H Data port Init
+ 603                          { &GPDRI,       PortI_Init              },      // Port I Data port Init
+ 604                          { &GPDRJ,       PortJ_Init              },      // Port J Data port Init
+ 605          
+ 606                          { &GPCRA0,      PortA0_Ctrl     },
+ 607                          { &GPCRA1,      PortA1_Ctrl     },
+ 608                          { &GPCRA2,      PortA2_Ctrl     },
+ 609                          { &GPCRA3,      PortA3_Ctrl     },
+ 610                          { &GPCRA4,      PortA4_Ctrl     },
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 11  
+
+ 611                          { &GPCRA5,      PortA5_Ctrl     },
+ 612                          { &GPCRA6,      PortA6_Ctrl     },
+ 613                          { &GPCRA7,      PortA7_Ctrl     },
+ 614          
+ 615                          { &GPCRB0,      PortB0_Ctrl     },
+ 616                          { &GPCRB1,      PortB1_Ctrl     },
+ 617                          { &GPCRB2,      PortB2_Ctrl     },
+ 618                          { &GPCRB3,      PortB3_Ctrl     },
+ 619                          { &GPCRB4,      PortB4_Ctrl     },
+ 620                          { &GPCRB5,      PortB5_Ctrl     },
+ 621                          { &GPCRB6,      PortB6_Ctrl     },
+ 622                          { &GPCRB7,      PortB7_Ctrl     },
+ 623          
+ 624                          { &GPCRC0,      PortC0_Ctrl     },
+ 625                          { &GPCRC1,      PortC1_Ctrl     },
+ 626                          { &GPCRC2,      PortC2_Ctrl     },
+ 627                          { &GPCRC3,      PortC3_Ctrl     },
+ 628                          { &GPCRC4,      PortC4_Ctrl     },
+ 629                          { &GPCRC5,      PortC5_Ctrl     },
+ 630                          { &GPCRC6,      PortC6_Ctrl     },
+ 631                          { &GPCRC7,      PortC7_Ctrl     },
+ 632          
+ 633                          { &GPCRD0,      PortD0_Ctrl     },
+ 634                          { &GPCRD1,      PortD1_Ctrl     },
+ 635                          { &GPCRD2,      PortD2_Ctrl     },
+ 636                          { &GPCRD3,      PortD3_Ctrl     },
+ 637                          { &GPCRD4,      PortD4_Ctrl     },
+ 638                          { &GPCRD5,      PortD5_Ctrl     },
+ 639                          { &GPCRD6,      PortD6_Ctrl     },
+ 640                          { &GPCRD7,      PortD7_Ctrl     },
+ 641          
+ 642                          { &GPCRE0,      PortE0_Ctrl     },
+ 643                          { &GPCRE1,      PortE1_Ctrl     },
+ 644                          { &GPCRE2,      PortE2_Ctrl     },
+ 645                          { &GPCRE3,      PortE3_Ctrl     },
+ 646                          { &GPCRE4,      PortE4_Ctrl     },
+ 647                          { &GPCRE5,      PortE5_Ctrl     },
+ 648                          { &GPCRE6,      PortE6_Ctrl     },
+ 649                          { &GPCRE7,      PortE7_Ctrl     },
+ 650          
+ 651                          { &GPCRF0,      PortF0_Ctrl     },
+ 652                          { &GPCRF1,      PortF1_Ctrl     },
+ 653                          { &GPCRF2,      PortF2_Ctrl     },
+ 654                          { &GPCRF3,      PortF3_Ctrl     },
+ 655                          { &GPCRF4,      PortF4_Ctrl     },
+ 656                          { &GPCRF5,      PortF5_Ctrl     },
+ 657                          { &GPCRF6,      PortF6_Ctrl     },
+ 658                          { &GPCRF7,      PortF7_Ctrl     },
+ 659          
+ 660                          { &GPCRG0,      PortG0_Ctrl     },
+ 661                          { &GPCRG1,      PortG1_Ctrl     },
+ 662                          { &GPCRG2,      PortG2_Ctrl     },
+ 663                          { &GPCRG3,      PortG3_Ctrl     },
+ 664                          { &GPCRG4,      PortG4_Ctrl     },
+ 665                          { &GPCRG5,      PortG5_Ctrl     },
+ 666                          { &GPCRG6,      PortG6_Ctrl     },
+ 667                          { &GPCRG7,      PortG7_Ctrl     },
+ 668          
+ 669                          { &GPCRH0,      PortH0_Ctrl     },
+ 670                          { &GPCRH1,      PortH1_Ctrl     },
+ 671                          { &GPCRH2,      PortH2_Ctrl     },
+ 672                          { &GPCRH3,      PortH3_Ctrl     },
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 12  
+
+ 673                          { &GPCRH4,      PortH4_Ctrl     },
+ 674                          { &GPCRH5,      PortH5_Ctrl     },
+ 675                          { &GPCRH6,      PortH6_Ctrl     },
+ 676          
+ 677                          { &GPCRI0,      PortI0_Ctrl     },
+ 678                          { &GPCRI1,      PortI1_Ctrl     },
+ 679                          { &GPCRI2,      PortI2_Ctrl     },
+ 680                          { &GPCRI3,      PortI3_Ctrl     },
+ 681                          { &GPCRI4,      PortI4_Ctrl     },
+ 682                          { &GPCRI5,      PortI5_Ctrl     },
+ 683                          { &GPCRI6,      PortI6_Ctrl     },
+ 684                          { &GPCRI7,      PortI7_Ctrl     },
+ 685          
+ 686                          { &GPCRJ0,      PortJ0_Ctrl     },
+ 687                          { &GPCRJ1,      PortJ1_Ctrl     },
+ 688                          { &GPCRJ2,      PortJ2_Ctrl     },
+ 689                          { &GPCRJ3,      PortJ3_Ctrl     },
+ 690                          { &GPCRJ4,      PortJ4_Ctrl     },
+ 691                          { &GPCRJ5,      PortJ5_Ctrl     },
+ 692                          { &GPCRJ6,      PortJ6_Ctrl     },
+ 693                          { &GPCRJ7,      PortJ7_Ctrl     }
+ 694          };
+ 695          
+ 696          //----------------------------------------------------------------------------
+ 697          // FUNCTION: Boot block init. gpio function
+ 698          //----------------------------------------------------------------------------
+ 699          void BBK_InitGPIO(void)
+ 700          {
+ 701   1               BYTE iLoop;
+ 702   1      
+ 703   1          iLoop = 0x00;
+ 704   1      
+ 705   1          while(iLoop<(sizeof(uBootInitGPIOReg)/3))
+ 706   1          {
+ 707   2              *uBootInitGPIOReg[iLoop].reg=uBootInitGPIOReg[iLoop].value;
+ 708   2              iLoop++;
+ 709   2          }
+ 710   1      
+ 711   1      
+ 712   1      }
+ 713          
+ 714          //----------------------------------------------------------------------------
+ 715          // FUNCTION: Boot block init. SMBus function
+ 716          //----------------------------------------------------------------------------
+ 717          void BBK_InitSMBus(void)
+ 718          {
+ 719   1      
+ 720   1      }
+ 721          //-----------------------------------------------------------------------------
+ 722          // The boot block Send KB data to Host and wait received
+ 723          //-----------------------------------------------------------------------------
+ 724          void BB_KBDataToHostWaitRx(BYTE nDATA)
+ 725          {
+ 726   1          WORD  iLOOP;
+ 727   1      
+ 728   1          KBHIKDOR = nDATA;
+ 729   1      
+ 730   1          iLOOP = 0x800;
+ 731   1      
+ 732   1          while (iLOOP != 0 )
+ 733   1          {
+ 734   2              iLOOP--;
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 13  
+
+ 735   2              if ( IS_MASK_CLEAR(KBHISR,BIT0)  || IS_MASK_CLEAR(KBHISR,BIT0)  )
+ 736   2              {
+ 737   3                  iLOOP = 0;
+ 738   3              }
+ 739   2      
+ 740   2          }
+ 741   1      
+ 742   1      }
+ 743          //----------------------------------------------------------------------------
+ 744          
+ 745          
+ 746          
+ 747          /*
+ 748          //-----------------------------------------------------------------------------
+ 749          // The function of Scratch rom
+ 750          //-----------------------------------------------------------------------------
+ 751          void BB_RunCodeInRAM(BYTE useport)
+ 752          {
+ 753                  GPCRH0 = OUTPUT;
+ 754                  CLEAR_MASK(GPDRH,BIT(0));
+ 755                  RamCodePort = useport;
+ 756                  EA = 0;
+ 757                  _nop_();
+ 758                  _nop_();
+ 759                  _nop_();
+ 760                  _nop_();
+ 761                  Tmp_XPntr = 0x700;
+ 762                  FUNCT_PTR_V_V code BBKRamCode = 0xF800+0x700;
+ 763          
+ 764                  Tmp_code_pointer = (void *)BBKLPC_RamCode;
+ 765          
+ 766                  for(ITempB01=0;ITempB01<255;ITempB01++)
+ 767                  {
+ 768                          *Tmp_XPntr = *Tmp_code_pointer;
+ 769                  Tmp_XPntr++;
+ 770                          Tmp_code_pointer++;
+ 771                  }
+ 772                  SET_MASK(FBCFG,SSMC);           // enable scatch ROM
+ 773          
+ 774              _nop_();
+ 775              _nop_();
+ 776              _nop_();
+ 777              _nop_();
+ 778              _nop_();
+ 779              _nop_();
+ 780              _nop_();
+ 781              _nop_();
+ 782          
+ 783          
+ 784                  BBKRamCode();
+ 785          
+ 786                  CLEAR_MASK(FBCFG,BIT7); // disable scatch ROM
+ 787                  SET_MASK(KBHICR,BIT0);  //cwy crisis
+ 788          }
+ 789          */
+ 790          
+ 791          void BBK_Load_TimerOut_Timer(void)
+ 792          {
+ 793   1          TL1 = Timer_26ms;           // Reload timer
+ 794   1          TH1 = Timer_26ms>>8;        // 26ms
+ 795   1              TF1 = 0;                                // Clear overflow flag
+ 796   1              TR1 = 1;                                // Enable timer1
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 14  
+
+ 797   1      }
+ 798          
+ 799          void BBK_Data_To_Host(BYTE data_byte)
+ 800          {
+ 801   1              KBHISR &= 0x0F;
+ 802   1              SET_MASK(KBHISR,KEYL);
+ 803   1      
+ 804   1              KBHICR &= 0xFC;
+ 805   1              if ( Ccb42_INTR_KEY )
+ 806   1              {
+ 807   2                      SET_MASK(KBHICR,OBFKIE);
+ 808   2              }
+ 809   1              KBHIKDOR = data_byte;
+ 810   1      }
+ 811          
+ 812          
+ 813          void BBK_Data_To_Host_nWait(BYTE data_byte)
+ 814          {
+ 815   1          BBK_Data_To_Host(data_byte);
+ 816   1          TR1 = 0;                    // Disable timer1
+ 817   1          ET1 = 0;                    // Disable timer1 interrupt
+ 818   1          BBK_Load_TimerOut_Timer();
+ 819   1      
+ 820   1              while (!TF1)
+ 821   1              {
+ 822   2                  if(IS_MASK_CLEAR(KBHISR, OBF))
+ 823   2              {
+ 824   3                  break;
+ 825   3              }
+ 826   2              if(IS_MASK_SET(KBHISR, IBF))
+ 827   2              {
+ 828   3                  break;
+ 829   3              }
+ 830   2              }
+ 831   1      
+ 832   1          TR1 = 0;                    // disable timer1
+ 833   1              TF1 = 0;                        // clear overflow flag
+ 834   1              ET1 = 1;                        // Enable timer1 interrupt
+ 835   1      }
+ 836          
+ 837          void BBK_Data_To_PM1_nWait(BYTE data_byte)
+ 838          {
+ 839   1              PM1DO = data_byte;
+ 840   1      
+ 841   1          TR1 = 0;                    // Disable timer1
+ 842   1          ET1 = 0;                    // Disable timer1 interrupt
+ 843   1          BBK_Load_TimerOut_Timer();
+ 844   1      
+ 845   1              while (!TF1)
+ 846   1              {
+ 847   2                  if(IS_MASK_CLEAR(PM1STS, OBF))
+ 848   2              {
+ 849   3                  break;
+ 850   3              }
+ 851   2              }
+ 852   1          TR1 = 0;                    // disable timer1
+ 853   1              TF1 = 0;                        // clear overflow flag
+ 854   1              ET1 = 1;                        // Enable timer1 interrupt
+ 855   1      }
+ 856          
+ 857          
+ 858          
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 15  
+
+ 859          void BBK_Data2Port(BYTE nPort, BYTE rData)
+ 860          {
+ 861   1              switch(nPort) {
+ 862   2                      case 0x60:
+ 863   2                              BBK_Data_To_Host_nWait(rData);
+ 864   2                              break;
+ 865   2                      case 0x62:
+ 866   2                              BBK_Data_To_PM1_nWait(rData);
+ 867   2      //                      Delay1MS(5);
+ 868   2                              break;
+ 869   2              }
+ 870   1      }
+ 871          
+ 872          
+ 873          //----------------------------------------------------------------------------
+ 874          //
+ 875          //----------------------------------------------------------------------------
+ 876          void BBK_Process6064Command(void)
+ 877          {
+ 878   1        if ( IS_MASK_CLEAR(KBHISR,BIT1) ) return;
+ 879   1      
+ 880   1          if ( KBHISR & C_D )     // Bit3 - 1:Command 0:Data
+ 881   1          {
+ 882   2              //64 port command
+ 883   2              KBHICmd  = KBHIDIR;
+ 884   2              KBHIStep = 0;
+ 885   2      
+ 886   2      
+ 887   2              switch (KBHICmd)
+ 888   2              {
+ 889   3                  case 0x20:
+ 890   3                      KBHIKDOR = 0x03;        // Read bCCb42: Keyboard and Mouse status.
+ 891   3                      break;
+ 892   3      
+ 893   3                              case 0x52:
+ 894   3                                      KBHIStep = 1;           // Simulate USB keybaord to pass Host
+ 895   3                                      break;
+ 896   3      
+ 897   3                  case 0xAA:
+ 898   3                      KBHIKDOR = 0x55;        // EC self test
+ 899   3                      break;
+ 900   3                      case 0xB4:
+ 901   3                              BBK_CacheDma(3, BBKEflash_CmdRamCode);
+ 902   3                          BBKEflash_CmdRamCode();
+ 903   3                      break;
+ 904   3                      case 0x4E:
+ 905   3                                      BBK_Data2Port(0x62,0xFF);
+ 906   3                                      break;
+ 907   3                  case 0xD2:
+ 908   3                      KBHIStep = 1;           // Simulate USB keybaord to pass Host
+ 909   3                      break;
+ 910   3      
+ 911   3                  default:
+ 912   3                      break;
+ 913   3              }
+ 914   2          }
+ 915   1      
+ 916   1              //60 port Data
+ 917   1          else        //PMSTS.3=0
+ 918   1          {
+ 919   2              KBHIData  = KBHIDIR;
+ 920   2      
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 16  
+
+ 921   2              if ( KBHIStep )
+ 922   2              {
+ 923   3                  switch (KBHICmd)
+ 924   3                  {
+ 925   4                                      case 0x52:
+ 926   4                                              KBHIKDOR = 0x80;        // report Crisis.
+ 927   4                                              break;
+ 928   4      
+ 929   4                      case 0xD2:
+ 930   4                          KBHIKDOR = KBHIData;
+ 931   4                          break;
+ 932   4                      default:
+ 933   4                          break;
+ 934   4                  }
+ 935   3              }
+ 936   2              else
+ 937   2              {
+ 938   3                  KBHIKDOR = 0xFA;
+ 939   3              }
+ 940   2          }
+ 941   1      
+ 942   1      }
+ 943          
+ 944          
+ 945          void BB_OemCheckECCmd(void)
+ 946          {
+ 947   1              switch(PM1Cmd)
+ 948   1          {
+ 949   2      
+ 950   2              case 0xB4:
+ 951   2                      break;
+ 952   2      
+ 953   2              case 0x4E:
+ 954   2                              BBK_Data2Port(0x62,0xFF);
+ 955   2                              break;
+ 956   2      
+ 957   2                      default:
+ 958   2                      break;
+ 959   2          }
+ 960   1      }
+ 961          
+ 962          void BB_OemProcessECData(void)
+ 963          {
+ 964   1              switch(PM1Cmd)
+ 965   1          {
+ 966   2                      default:
+ 967   2                      break;
+ 968   2          }
+ 969   1      }
+ 970          
+ 971          //----------------------------------------------------------------------------
+ 972          //
+ 973          //----------------------------------------------------------------------------
+ 974          void BBK_ProcessACPICommand(void)
+ 975          {
+ 976   1          if ( IS_MASK_CLEAR(PM1STS,BIT1) ) return;
+ 977   1          if ( PM1STS & BIT3)      // Bit3 - 1:Command 0:Data
+ 978   1          {
+ 979   2              PM1Cmd  = PM1DI;
+ 980   2              PM1Step = 0;
+ 981   2              BB_OemCheckECCmd();
+ 982   2      
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 17  
+
+ 983   2          }
+ 984   1          else                                //PMSTS.3=0      Data
+ 985   1          {
+ 986   2              PM1Data = PM1DI;
+ 987   2      
+ 988   2              if (PM1Step)
+ 989   2              {
+ 990   3                  BB_OemProcessECData();
+ 991   3              }
+ 992   2          }
+ 993   1      }
+ 994          
+ 995          //----------------------------------------------------------------------------
+ 996          // Delay Xms function
+ 997          //----------------------------------------------------------------------------
+ 998          void BBK_DelayXms(BYTE bMS)
+ 999          {
+1000   1          TR1 = 0;
+1001   1              ET1 = 0;                        // Disable timer1 interrupt
+1002   1          _nop_();
+1003   1          _nop_();
+1004   1          _nop_();
+1005   1          _nop_();
+1006   1              for (;bMS!=0;bMS--)
+1007   1              {
+1008   2                      TH1=Timer_1ms>>8;
+1009   2              TL1=Timer_1ms;
+1010   2              TF1=0;
+1011   2                      TR1=1;
+1012   2                      while (!TF1);
+1013   2              TR1=0;
+1014   2                      TF1=0;
+1015   2              }
+1016   1              ET1 = 0;
+1017   1      }
+1018          
+1019          void BBK_Backlight_Control(void)
+1020          {
+1021   1              if ( (Read_ENBKL_IN())&& Read_LID_SW_IN())
+1022   1              {
+1023   2                      BKOFF_ON();
+1024   2              }
+1025   1              else
+1026   1              {
+1027   2                      BKOFF_OFF();
+1028   2              }
+1029   1      }
+1030          
+1031          void BBK_Check_Batteryin(void)
+1032          {
+1033   1              ADCCFG = 0x21;
+1034   1      
+1035   1              if(IS_MASK_SET(VCH3CTL, BIT7))
+1036   1          {
+1037   2              VCH3CTL |= 0x80;        // write clear data vaild flag
+1038   2                      DyData2 = ((WORD)VCH3DATM << 8) + VCH3DATL;
+1039   2                      //if((BATTEMP<0x390))
+1040   2                      if((BATTEMP<0x1000))
+1041   2                      {
+1042   3                              SET_MASK(BT1_STATUS1,bat_in);
+1043   3                      }
+1044   2                      else
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 18  
+
+1045   2                      {
+1046   3                              CLEAR_MASK(BT1_STATUS1,bat_in);
+1047   3                      }
+1048   2          }
+1049   1      
+1050   1              if(IS_MASK_CLEAR(SEL_STATE0,PRESENT_A))
+1051   1              {
+1052   2                      if(IS_MASK_SET(BT1_STATUS1,bat_in))
+1053   2                      {
+1054   3                              if(DEBOUNCE_CONT3 !=0)
+1055   3                                      {
+1056   4                                      DEBOUNCE_CONT3--;
+1057   4                                      if(DEBOUNCE_CONT3 ==0)
+1058   4                                              {                                               // battery in
+1059   5                                              SET_MASK(SEL_STATE0,PRESENT_A);
+1060   5                                              }
+1061   4                                      }
+1062   3                      }
+1063   2                      else
+1064   2                      {
+1065   3                              DEBOUNCE_CONT3=15;
+1066   3                      }
+1067   2              }
+1068   1              else
+1069   1              {
+1070   2                      if(IS_MASK_CLEAR(BT1_STATUS1,bat_in))
+1071   2                      {
+1072   3                              if(DEBOUNCE_CONT3 !=0)
+1073   3                                      {
+1074   4                                      DEBOUNCE_CONT3--;
+1075   4                                      if(DEBOUNCE_CONT3 ==0)
+1076   4                                              {                                               // battery out
+1077   5                                              CLEAR_MASK(SEL_STATE0,PRESENT_A);
+1078   5                                              }
+1079   4                                      }
+1080   3                      }
+1081   2                      else
+1082   2                      {
+1083   3                              DEBOUNCE_CONT3=15;
+1084   3                      }
+1085   2              }
+1086   1      }
+1087          
+1088          void BBK_Battery_LED(void)
+1089          {
+1090   1              GPCRA1 = ALT;
+1091   1              GPCRA2 = ALT;
+1092   1              if(IS_MASK_SET(SEL_STATE0,PRESENT_A))
+1093   1              {       // under 5%
+1094   2                      // 660mHz of Amber, 1000ms on/ 500ms off
+1095   2                      PCFSR = 0x05;// bit7=1: Disable CR256 channel 1 output. bit0-bit3: 0 => select 32.768 kHz, 1=> select EC
+             - clock frequency
+1096   2                      PCSSGL = 0x14;// Select channel 0-3 Group
+1097   2                      PCSSGH = 0xCA;// Select channel 4-7 Group
+1098   2                      C4CPRS = 0xC0;  // set frequence
+1099   2                      C4MCPRS = 0x00;
+1100   2                      DCR2 = 0x55;    // On Amber
+1101   2                      DCR1 = 0xFF;    // Off Green
+1102   2                      ZTIER = 0x02;
+1103   2              }
+1104   1              else
+1105   1              {
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 19  
+
+1106   2                      DCR1 = 0xFF;    // Off Amber
+1107   2                      DCR2 = 0xFF;    // Off Green
+1108   2                      //ZTIER = 0x00;
+1109   2              }
+1110   1      }
+1111          
+1112          
+1113          //----------------------------------------------------------------------------
+1114          // Boot block 5ms time base event
+1115          //----------------------------------------------------------------------------
+1116          void BBK_Hook_5msTimerEvent(void)
+1117          {
+1118   1              BBK_Backlight_Control();
+1119   1      }
+1120          
+1121          //----------------------------------------------------------------------------
+1122          // Boot block 10ms time base event
+1123          //----------------------------------------------------------------------------
+1124          void BBK_10msTimerEvent(void)
+1125          {
+1126   1              BBK_Check_Batteryin();
+1127   1              BBK_Battery_LED();
+1128   1      }
+1129          
+1130          //----------------------------------------------------------------------------
+1131          // Boot block 50ms time base event
+1132          //----------------------------------------------------------------------------
+1133          void BBK_50msTimerEvent(void)
+1134          {
+1135   1      
+1136   1      }
+1137          
+1138          //----------------------------------------------------------------------------
+1139          // Boot block 100ms time base event
+1140          //----------------------------------------------------------------------------
+1141          void BBK_100msTimerEvent(void)
+1142          {
+1143   1      
+1144   1      }
+1145          
+1146          //----------------------------------------------------------------------------
+1147          // Boot block 500ms time base event
+1148          //----------------------------------------------------------------------------
+1149          void BBK_500msTimerEvent(void)
+1150          {
+1151   1      
+1152   1      }
+1153          
+1154          //----------------------------------------------------------------------------
+1155          // Boot block 1sec time base event
+1156          //----------------------------------------------------------------------------
+1157          void BBK_1secTimerEvent(void)
+1158          {
+1159   1      
+1160   1      }
+1161          
+1162          //----------------------------------------------------------------------------
+1163          // Boot block 5ms time base event
+1164          //----------------------------------------------------------------------------
+1165          void BBK_5msTimerEvent(void)
+1166          {
+1167   1          BYTE index;
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 20  
+
+1168   1      
+1169   1          BBK_Timer5msCnt++;                  // 5 ms
+1170   1          BBK_Hook_5msTimerEvent();
+1171   1      
+1172   1          if(BBK_Timer5msCnt%2 ==0x00)        // 10 ms
+1173   1          {
+1174   2              BBK_10msTimerEvent();
+1175   2          }
+1176   1          if(BBK_Timer5msCnt%10 ==0x00)       // 50 ms
+1177   1          {
+1178   2              BBK_50msTimerEvent();
+1179   2          }
+1180   1          if(BBK_Timer5msCnt%20 ==0x00)       // 100 ms
+1181   1          {
+1182   2              BBK_100msTimerEvent();
+1183   2          }
+1184   1          if(BBK_Timer5msCnt%100 ==0x00)      // 500 ms
+1185   1          {
+1186   2              BBK_500msTimerEvent();
+1187   2          }
+1188   1          if(BBK_Timer5msCnt%200 ==0x00)      // 1 sec
+1189   1          {
+1190   2              BBK_1secTimerEvent();
+1191   2              BBK_Timer5msCnt = 0x00;
+1192   2          }
+1193   1      }
+1194          
+1195          //----------------------------------------------------------------------------
+1196          // FUNCTION: Boot block recover main function
+1197          //----------------------------------------------------------------------------
+1198          void BBK_Recovery(void)
+1199          {
+1200   1          BBK_InitGPIO();
+1201   1          BBK_InitSMBus();
+1202   1      //    uBoot_InitRegs();
+1203   1          BBK_InitFlash();
+1204   1          BBK_ACPI();
+1205   1          BBK_InitTimers();
+1206   1              BBKInit_UART();
+1207   1              while(1)
+1208   1          {
+1209   2              BB_Delay1MS(1);     // Delay 1ms
+1210   2                      BB_CHK_SUSACK();
+1211   2                      BB_CHK_DRAMRST_CNTRL();
+1212   2              BB_SysOnSequence();
+1213   2              if( PWSeqStep == 0xFF )
+1214   2              {
+1215   3                      break;
+1216   3              }
+1217   2          }
+1218   1      
+1219   1          SET_MASK(KBHISR,BIT4);
+1220   1          CLEAR_MASK(KBHISR,BIT5);
+1221   1      
+1222   1              VCH3CTL=ADCChannel_2;   //DyCh2;        BATT_TEMP
+1223   1              VCH3CTL |= 0x80;                // write clear data vaild flag
+1224   1              DEBOUNCE_CONT3=15;
+1225   1      
+1226   1          EA = 0;
+1227   1          while(1)
+1228   1          {
+1229   2              BBK_Process6064Command();
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 21  
+
+1230   2              BBK_ProcessACPICommand();
+1231   2              if(TF0)                     // 5ms time base
+1232   2              {
+1233   3                  TL0 = Timer_5ms;            // Reload timer
+1234   3                      TH0 = Timer_5ms>>8;         // 5ms
+1235   3                  TF0 = 0;                            // Clear overflow flag
+1236   3                  BBK_5msTimerEvent();
+1237   3              }
+1238   2          }
+1239   1      }
+1240          
+1241          //----------------------------------------------------------------------------
+1242          // Output : 1 boot block mode
+1243          //          0 Normal mode
+1244          //----------------------------------------------------------------------------
+1245          BYTE BBK_CheckEnterBootBlockMode(void)
+1246          {
+1247   1              uBoot_InitRegs();
+1248   1      // To add condition here
+1249   1              KSOL  = 0xFF;
+1250   1              KSOH1 = 0xBF;
+1251   1              KSOH2 = 0xFF;                   // Fn key (scan line b14)
+1252   1              WNCKR = 0x00;           // Delay 15.26 us
+1253   1              WNCKR = 0x00;           // Delay 15.26 us
+1254   1              if ((KSI&0x10) != 0)    // Fn key (data line b4)
+1255   1              {
+1256   2                      KSOH1 = 0xFF;
+1257   2                  return (0);
+1258   2              }
+1259   1      
+1260   1              KSOL  = 0xEF;
+1261   1              KSOH1 = 0xFF;
+1262   1              KSOH2 = 0xFF;                   // "R" key (scan line b4)
+1263   1              WNCKR = 0x00;           // Delay 15.26 us
+1264   1              WNCKR = 0x00;           // Delay 15.26 us
+1265   1              if ((KSI&0x04) != 0)            // "R" key (data line b2)
+1266   1              {
+1267   2                      KSOL  = 0xFF;
+1268   2                  return (0);
+1269   2              }
+1270   1              KSOL  = 0xFF;
+1271   1      
+1272   1          return  (1);
+1273   1      }
+1274          
+1275          //----------------------------------------------------------------------------
+1276          // FUNCTION: Jump to 0x2000
+1277          //----------------------------------------------------------------------------
+1278          void BBK_NormalMain(void)   // Always at 0x2000 of link file
+1279          {
+1280   1          // Null function
+1281   1      }
+1282          
+1283          //----------------------------------------------------------------------------
+1284          // Host send idle command to EC
+1285          //----------------------------------------------------------------------------
+1286          
+1287          void BBKEflash_CmdRamCode(void)
+1288          {
+1289   1              RamcodeCmd = 0x00;
+1290   1              SET_MASK(SMECCS,HOSTWA);        // Host write allow
+1291   1              KBHIKDOR = 0xFA;
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 22  
+
+1292   1              while(1)
+1293   1              {
+1294   2      //              BRAM31++;
+1295   2                      if( IS_MASK_CLEAR(KBHISR,IBF)) continue;
+1296   2                      if( IS_MASK_CLEAR(KBHISR,C_D)) continue;
+1297   2                      RamcodeCmd = KBHIDIR;
+1298   2              if (RamcodeCmd == 0x8F)// || (BRAM31==0x55))    // EC exit follow mode
+1299   2              {
+1300   3                              WinFlashMark = 0x33;
+1301   3                  WinFlashMark2 = 0x88;
+1302   3                              break;
+1303   3                      }
+1304   2                      else if (RamcodeCmd == 0x9F)
+1305   2                      {
+1306   3                              CKCON &= 0x3F;                  // set 26 bit counter // bit7-6 00=14ms,01=113ms, 10=911ms, 11(1/9.2MHz)*2'26=7.2S
+1307   3                              CKCON |= 0x10;                  // set 26 bit counter // bit7-6 00=14ms,01=113ms, 10=911ms, 11(1/9.2MHz)*2'26=7.2S
+1308   3                  WDTCON|=0x01;               /* WDTRST = 1 Reset watch dog timer.*/
+1309   3                  WDTCON|=0x02;               /* WDTEN  = 1 Enable watch dog.     */
+1310   3                  while(1);                   /* Wait for watch dog time-out      */
+1311   3                      }
+1312   2              }
+1313   1              CLEAR_MASK(SMECCS,HOSTWA);  // Host write not allow
+1314   1              _nop_();
+1315   1              main();
+1316   1      }
+1317          
+1318          
+1319          
+1320          //-----------------------------------------------------------------------------
+1321          const BYTE code BBKSEG7_Table[]=
+1322          {
+1323                  /*            a
+1324                         ---------
+1325                         |       |
+1326                     f   |   g   |  b
+1327                        ---------
+1328                         |       |
+1329                     e   |       |  c
+1330                         ---------
+1331                             d      . h
+1332               */
+1333                  // COMMON ANODE SEVEN SEGMENT DISPLAY TABLE
+1334              //  0         1     2     3     4     5     6     7
+1335                 0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x92, 0x82, 0xF8,
+1336              //  8     9     A     b     C     d     E     F
+1337                 0x80, 0x90, 0x88, 0x83, 0xC6, 0xA1, 0x86, 0x8E,
+1338          };
+1339          
+1340          //-----------------------------------------------------------------------------
+1341          // Out7SegLED
+1342          //-----------------------------------------------------------------------------
+1343          void BBKOut7SegLED(BYTE bData)
+1344          {
+1345   1              BYTE bIndex = 7;
+1346   1      
+1347   1              while(bIndex != -1)
+1348   1              {
+1349   2                      if (bData & BIT(bIndex))
+1350   2                              O_DEBUG_DAT_HI();
+1351   2                      else
+1352   2                              O_DEBUG_DAT_LO();
+1353   2                      O_DEBUG_CLK_LO();
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 23  
+
+1354   2                      O_DEBUG_CLK_HI();
+1355   2                      bIndex--;
+1356   2              }
+1357   1      }
+1358          
+1359          //-----------------------------------------------------------------------------
+1360          // Dark7SegLed
+1361          //-----------------------------------------------------------------------------
+1362          void BBKDark7SegLed(void)
+1363          {
+1364   1              BBKOut7SegLED(0xFF);                                                    // drak LED
+1365   1              BBKOut7SegLED(0xFF);                                                    // drak LED
+1366   1      }
+1367          
+1368          
+1369          //-----------------------------------------------------------------------------
+1370          // P80LedOut
+1371          //-----------------------------------------------------------------------------
+1372          void BBKP80LedOut(BYTE bData)
+1373          {
+1374   1              BYTE code * data_pntr;
+1375   1      
+1376   1      //      if(FgDebugCarIn)                                                        // if card dose not exist, return
+1377   1              {
+1378   2                      // out upper byte
+1379   2                      data_pntr = BBKSEG7_Table;                                      // get 7-seg table
+1380   2                      data_pntr +=((bData & 0xF0) >> 4);              // mask upper byte and shit 4 bytes     then get data of table
+1381   2      
+1382   2                      BRAM3A = *data_pntr;
+1383   2                      BBKOut7SegLED(*data_pntr);                                      // display upper value.
+1384   2      
+1385   2                      // out lower byte
+1386   2                      data_pntr = BBKSEG7_Table;                                      // get 7-seg table
+1387   2                      data_pntr += (bData & 0x0F);                    // mask lower byte then get data of table.
+1388   2      
+1389   2                      BRAM3B = *data_pntr;
+1390   2      
+1391   2                      BBKOut7SegLED(*data_pntr);                                      // dispaly lower value.
+1392   2      
+1393   2              }
+1394   1      }
+1395          
+1396          
+1397          //-----------------------------------------------------------------------------
+1398          // PollingBIOS80Port
+1399          //-----------------------------------------------------------------------------
+1400          void BBKPollingBIOS80Port(void)
+1401          {
+1402   1              BRAM3D++;
+1403   1              if(BRAM3F != BRAM3E)                            // if no data in , return.
+1404   1              {       // clear it.
+1405   2                      BRAM3E= BRAM3F;                                 // clear it.
+1406   2              }
+1407   1              else
+1408   1              {
+1409   2                      if(BRAM3F != BRAM3C)                    // if no data in , return.
+1410   2                      {
+1411   3                              BRAM3C= BRAM3F;                         // clear it.
+1412   3                  GCR15 &= 0x3F;
+1413   3                              GPCRB0 = OUTPUT;
+1414   3                              GPCRB1 = OUTPUT;
+1415   3                      BBKP80LedOut(BRAM3F);                   // to show it
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 24  
+
+1416   3                  GCR15 |= 0xC0;
+1417   3                      GPCRB0 = ALT;
+1418   3                              GPCRB1 = ALT;
+1419   3                      }
+1420   2              }
+1421   1      
+1422   1      
+1423   1      }
+1424          
+1425          
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 25  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION main (BEGIN)
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+                                           ; SOURCE LINE # 28
+0000 C2AF              CLR     EA
+                                           ; SOURCE LINE # 29
+0002 00                NOP     
+                                           ; SOURCE LINE # 30
+0003 00                NOP     
+                                           ; SOURCE LINE # 31
+0004 00                NOP     
+                                           ; SOURCE LINE # 32
+0005 00                NOP     
+                                           ; SOURCE LINE # 34
+0006 7581C0            MOV     SP,#0C0H
+                                           ; SOURCE LINE # 35
+0009 900000      E     MOV     DPTR,#DCache
+000C 7403              MOV     A,#03H
+000E F0                MOVX    @DPTR,A
+000F         ?C0001:
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 41
+                                           ; SOURCE LINE # 42
+000F 120000      R     LCALL   BBK_CheckEnterBootBlockMode
+0012 EF                MOV     A,R7
+0013 6401              XRL     A,#01H
+0015 702E              JNZ     ?C0002
+0017 900000      E     MOV     DPTR,#WinFlashMark
+001A E0                MOVX    A,@DPTR
+001B 6433              XRL     A,#033H
+001D 6026              JZ      ?C0002
+                                           ; SOURCE LINE # 43
+                                           ; SOURCE LINE # 44
+001F 900000      E     MOV     DPTR,#GPDRE
+0022 E0                MOVX    A,@DPTR
+0023 20E418            JB      ACC.4,?C0004
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 46
+0026 900000      E     MOV     DPTR,#SYS_MISC1
+0029 E0                MOVX    A,@DPTR
+002A 4440              ORL     A,#040H
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 47
+002D 120000      R     LCALL   BBK_InitClearInternalRam
+                                           ; SOURCE LINE # 48
+0030 120000      R     LCALL   BBK_InitClearExternalRam
+                                           ; SOURCE LINE # 49
+0033 900000      E     MOV     DPTR,#ECCodeStatus
+0036 74BB              MOV     A,#0BBH
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 50
+0039 120000      R     LCALL   BBK_Recovery
+                                           ; SOURCE LINE # 51
+003C 8007              SJMP    ?C0002
+                                           ; SOURCE LINE # 52
+003E         ?C0004:
+                                           ; SOURCE LINE # 53
+003E 7F05              MOV     R7,#05H
+0040 120000      R     LCALL   _BB_Delay1MS
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 26  
+
+                                           ; SOURCE LINE # 54
+0043 80CA              SJMP    ?C0001
+                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 57
+0045         ?C0002:
+                                           ; SOURCE LINE # 58
+0045 900000      E     MOV     DPTR,#SYS_MISC1
+0048 E0                MOVX    A,@DPTR
+0049 54BF              ANL     A,#0BFH
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 59
+004C 900000      E     MOV     DPTR,#ECCodeStatus
+004F 74EC              MOV     A,#0ECH
+0051 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 60
+0052 020000      R     LJMP    BBK_NormalMain
+             ; FUNCTION main (END)
+
+             ; FUNCTION uBoot_InitRegs (BEGIN)
+                                           ; SOURCE LINE # 139
+                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 142
+;---- Variable 'index' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002         ?C0007:
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 145
+                                           ; SOURCE LINE # 146
+0002 EF                MOV     A,R7
+0003 75F003            MOV     B,#03H
+0006 A4                MUL     AB
+0007 2400        R     ADD     A,#LOW BB_reg_init+02H
+0009 F582              MOV     DPL,A
+000B E4                CLR     A
+000C 3400        R     ADDC    A,#HIGH BB_reg_init+02H
+000E F583              MOV     DPH,A
+0010 E4                CLR     A
+0011 93                MOVC    A,@A+DPTR
+0012 FE                MOV     R6,A
+0013 EF                MOV     A,R7
+0014 75F003            MOV     B,#03H
+0017 A4                MUL     AB
+0018 2400        R     ADD     A,#LOW BB_reg_init
+001A F582              MOV     DPL,A
+001C E4                CLR     A
+001D 3400        R     ADDC    A,#HIGH BB_reg_init
+001F F583              MOV     DPH,A
+0021 E4                CLR     A
+0022 93                MOVC    A,@A+DPTR
+0023 FC                MOV     R4,A
+0024 7401              MOV     A,#01H
+0026 93                MOVC    A,@A+DPTR
+0027 F582              MOV     DPL,A
+0029 8C83              MOV     DPH,R4
+002B EE                MOV     A,R6
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 147
+002D 0F                INC     R7
+                                           ; SOURCE LINE # 148
+002E EF                MOV     A,R7
+002F B423D0            CJNE    A,#023H,?C0007
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 27  
+
+                                           ; SOURCE LINE # 150
+0032         ?C0009:
+0032 22                RET     
+             ; FUNCTION uBoot_InitRegs (END)
+
+             ; FUNCTION BB_Core_InitSio (BEGIN)
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+                                           ; SOURCE LINE # 207
+0000 900000      E     MOV     DPTR,#LSIOHA
+0003 E0                MOVX    A,@DPTR
+0004 4401              ORL     A,#01H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 208
+0007 900000      E     MOV     DPTR,#IBMAE
+000A E0                MOVX    A,@DPTR
+000B 4401              ORL     A,#01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 209
+000E 900000      E     MOV     DPTR,#IBCTL
+0011 E0                MOVX    A,@DPTR
+0012 4401              ORL     A,#01H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 211
+;---- Variable 'cnt' assigned to Register 'R7' ----
+0015 E4                CLR     A
+0016 FF                MOV     R7,A
+                                           ; SOURCE LINE # 212
+0017 7C00        R     MOV     R4,#HIGH BB_Core_initsio_table
+0019 7D00        R     MOV     R5,#LOW BB_Core_initsio_table
+;---- Variable 'data_pntr' assigned to Register 'R4/R5' ----
+001B         ?C0010:
+                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 214
+                                           ; SOURCE LINE # 215
+001B E4                CLR     A
+001C 900000      E     MOV     DPTR,#IHIOA
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 216
+0020 8D82              MOV     DPL,R5
+0022 8C83              MOV     DPH,R4
+0024 93                MOVC    A,@A+DPTR
+0025 900000      E     MOV     DPTR,#IHD
+0028 F0                MOVX    @DPTR,A
+0029         ?C0012:
+                                           ; SOURCE LINE # 217
+0029 900000      E     MOV     DPTR,#IBCTL
+002C E0                MOVX    A,@DPTR
+002D 20E2F9            JB      ACC.2,?C0012
+0030         ?C0013:
+                                           ; SOURCE LINE # 218
+0030 0D                INC     R5
+0031 BD0001            CJNE    R5,#00H,?C0220
+0034 0C                INC     R4
+0035         ?C0220:
+                                           ; SOURCE LINE # 220
+0035 900000      E     MOV     DPTR,#IHIOA
+0038 7401              MOV     A,#01H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 221
+003B 8D82              MOV     DPL,R5
+003D 8C83              MOV     DPH,R4
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 28  
+
+003F E4                CLR     A
+0040 93                MOVC    A,@A+DPTR
+0041 900000      E     MOV     DPTR,#IHD
+0044 F0                MOVX    @DPTR,A
+0045         ?C0014:
+                                           ; SOURCE LINE # 222
+0045 900000      E     MOV     DPTR,#IBCTL
+0048 E0                MOVX    A,@DPTR
+0049 20E2F9            JB      ACC.2,?C0014
+004C         ?C0015:
+                                           ; SOURCE LINE # 223
+004C 0D                INC     R5
+004D BD0001            CJNE    R5,#00H,?C0221
+0050 0C                INC     R4
+0051         ?C0221:
+                                           ; SOURCE LINE # 224
+0051 0F                INC     R7
+                                           ; SOURCE LINE # 225
+0052 EF                MOV     A,R7
+0053 B41FC5            CJNE    A,#01FH,?C0010
+0056         ?C0011:
+                                           ; SOURCE LINE # 227
+0056 900000      E     MOV     DPTR,#LSIOHA
+0059 E0                MOVX    A,@DPTR
+005A 54FE              ANL     A,#0FEH
+005C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 228
+005D 900000      E     MOV     DPTR,#IBMAE
+0060 E0                MOVX    A,@DPTR
+0061 54FE              ANL     A,#0FEH
+0063 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 229
+0064 900000      E     MOV     DPTR,#IBCTL
+0067 E0                MOVX    A,@DPTR
+0068 54FE              ANL     A,#0FEH
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 230
+006B 22                RET     
+             ; FUNCTION BB_Core_InitSio (END)
+
+             ; FUNCTION _BB_Delay1MS (BEGIN)
+                                           ; SOURCE LINE # 236
+;---- Variable 'bMS' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 238
+0000         ?C0017:
+0000 EF                MOV     A,R7
+0001 6014              JZ      ?C0022
+                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 240
+0003 758DFD            MOV     TH1,#0FDH
+                                           ; SOURCE LINE # 241
+0006 E4                CLR     A
+0007 F58B              MOV     TL1,A
+                                           ; SOURCE LINE # 242
+0009 D28E              SETB    TR1
+                                           ; SOURCE LINE # 243
+000B C28F              CLR     TF1
+000D         ?C0020:
+                                           ; SOURCE LINE # 244
+000D 308FFD            JNB     TF1,?C0020
+0010         ?C0021:
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 29  
+
+                                           ; SOURCE LINE # 245
+0010 C28F              CLR     TF1
+                                           ; SOURCE LINE # 246
+0012 C28E              CLR     TR1
+                                           ; SOURCE LINE # 247
+0014 1F                DEC     R7
+0015 80E9              SJMP    ?C0017
+                                           ; SOURCE LINE # 248
+0017         ?C0022:
+0017 22                RET     
+             ; FUNCTION _BB_Delay1MS (END)
+
+             ; FUNCTION BB_Oem_SysOnInit (BEGIN)
+                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 255
+                                           ; SOURCE LINE # 256
+0000 900000      E     MOV     DPTR,#SysPowState
+0003 7410              MOV     A,#010H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 257
+0006 E4                CLR     A
+0007 900000      E     MOV     DPTR,#SWCTL2
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+000B 900000      E     MOV     DPTR,#FMSSR
+000E 740F              MOV     A,#0FH
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 259
+0011 900000      E     MOV     DPTR,#FPCFG
+0014 E0                MOVX    A,@DPTR
+0015 4410              ORL     A,#010H
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 260
+0018 900000      E     MOV     DPTR,#KBHISR
+001B E0                MOVX    A,@DPTR
+001C 54FB              ANL     A,#0FBH
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 261
+001F 22                RET     
+             ; FUNCTION BB_Oem_SysOnInit (END)
+
+             ; FUNCTION BB_CHK_SUSACK (BEGIN)
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 266
+0000 900000      E     MOV     DPTR,#GPDRJ
+0003 E0                MOVX    A,@DPTR
+0004 30E203            JNB     ACC.2,?C0025
+0007 D3                SETB    C
+0008 8001              SJMP    ?C0026
+000A         ?C0025:
+000A C3                CLR     C
+000B         ?C0026:
+000B 4030              JC      ?C0024
+                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 268
+000D 900000      E     MOV     DPTR,#GPDRF
+0010 E0                MOVX    A,@DPTR
+0011 30E321            JNB     ACC.3,?C0027
+                                           ; SOURCE LINE # 269
+                                           ; SOURCE LINE # 270
+0014 D3                SETB    C
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 30  
+
+0015 900000      E     MOV     DPTR,#SUSACK_LOW_CNT+01H
+0018 E0                MOVX    A,@DPTR
+0019 9414              SUBB    A,#014H
+001B 900000      E     MOV     DPTR,#SUSACK_LOW_CNT
+001E E0                MOVX    A,@DPTR
+001F 9400              SUBB    A,#00H
+0021 4008              JC      ?C0028
+                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 272
+0023 900000      E     MOV     DPTR,#GPDRF
+0026 E0                MOVX    A,@DPTR
+0027 54F7              ANL     A,#0F7H
+0029 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 273
+002A 22                RET     
+002B         ?C0028:
+                                           ; SOURCE LINE # 275
+                                           ; SOURCE LINE # 276
+002B 900000      E     MOV     DPTR,#SUSACK_LOW_CNT
+002E E4                CLR     A
+002F 75F001            MOV     B,#01H
+0032 020000      E     LJMP    ?C?IILDX
+                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 278
+0035         ?C0027:
+                                           ; SOURCE LINE # 280
+0035 E4                CLR     A
+0036 900000      E     MOV     DPTR,#SUSACK_LOW_CNT
+0039 F0                MOVX    @DPTR,A
+003A A3                INC     DPTR
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 281
+003C 22                RET     
+003D         ?C0024:
+                                           ; SOURCE LINE # 283
+                                           ; SOURCE LINE # 284
+003D 900000      E     MOV     DPTR,#GPDRF
+0040 E0                MOVX    A,@DPTR
+0041 30E303            JNB     ACC.3,?C0033
+0044 D3                SETB    C
+0045 8001              SJMP    ?C0034
+0047         ?C0033:
+0047 C3                CLR     C
+0048         ?C0034:
+0048 4018              JC      ?C0032
+                                           ; SOURCE LINE # 285
+                                           ; SOURCE LINE # 286
+004A 900000      E     MOV     DPTR,#SUSACK_HI_CNT
+004D E0                MOVX    A,@DPTR
+004E D3                SETB    C
+004F 9414              SUBB    A,#014H
+0051 4008              JC      ?C0035
+                                           ; SOURCE LINE # 287
+                                           ; SOURCE LINE # 288
+0053 900000      E     MOV     DPTR,#GPDRF
+0056 E0                MOVX    A,@DPTR
+0057 4408              ORL     A,#08H
+0059 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 289
+005A 22                RET     
+005B         ?C0035:
+                                           ; SOURCE LINE # 291
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 31  
+
+                                           ; SOURCE LINE # 292
+005B 900000      E     MOV     DPTR,#SUSACK_HI_CNT
+005E E0                MOVX    A,@DPTR
+005F 04                INC     A
+0060 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 294
+0061 22                RET     
+0062         ?C0032:
+                                           ; SOURCE LINE # 296
+0062 E4                CLR     A
+0063 900000      E     MOV     DPTR,#SUSACK_HI_CNT
+0066 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 297
+                                           ; SOURCE LINE # 299
+0067         ?C0038:
+0067 22                RET     
+             ; FUNCTION BB_CHK_SUSACK (END)
+
+             ; FUNCTION BB_CHK_DRAMRST_CNTRL (BEGIN)
+                                           ; SOURCE LINE # 301
+                                           ; SOURCE LINE # 302
+                                           ; SOURCE LINE # 303
+0000 900000      E     MOV     DPTR,#GPDRE
+0003 E0                MOVX    A,@DPTR
+0004 30E427            JNB     ACC.4,?C0039
+                                           ; SOURCE LINE # 304
+                                           ; SOURCE LINE # 305
+0007 900000      E     MOV     DPTR,#GPDRG
+000A E0                MOVX    A,@DPTR
+000B 30E003            JNB     ACC.0,?C0041
+000E D3                SETB    C
+000F 8001              SJMP    ?C0042
+0011         ?C0041:
+0011 C3                CLR     C
+0012         ?C0042:
+0012 401F              JC      ?C0045
+                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 307
+0014 900000      E     MOV     DPTR,#DRAMRST_CNTRL_CNT
+0017 E0                MOVX    A,@DPTR
+0018 D3                SETB    C
+0019 94C8              SUBB    A,#0C8H
+001B 4009              JC      ?C0043
+                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 309
+001D 900000      E     MOV     DPTR,#GPDRG
+0020 E0                MOVX    A,@DPTR
+0021 4401              ORL     A,#01H
+0023 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 310
+0024 800D              SJMP    ?C0045
+0026         ?C0043:
+                                           ; SOURCE LINE # 312
+                                           ; SOURCE LINE # 313
+0026 900000      E     MOV     DPTR,#DRAMRST_CNTRL_CNT
+0029 E0                MOVX    A,@DPTR
+002A 04                INC     A
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+                                           ; SOURCE LINE # 316
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 32  
+
+002C 8005              SJMP    ?C0045
+002E         ?C0039:
+                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 319
+002E E4                CLR     A
+002F 900000      E     MOV     DPTR,#DRAMRST_CNTRL_CNT
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+0033         ?C0045:
+                                           ; SOURCE LINE # 322
+0033 900000      E     MOV     DPTR,#GPDRD
+0036 E0                MOVX    A,@DPTR
+0037 30E003            JNB     ACC.0,?C0047
+003A D3                SETB    C
+003B 8001              SJMP    ?C0048
+003D         ?C0047:
+003D C3                CLR     C
+003E         ?C0048:
+003E 4008              JC      ?C0046
+                                           ; SOURCE LINE # 323
+                                           ; SOURCE LINE # 324
+0040 900000      E     MOV     DPTR,#GPDRG
+0043 E0                MOVX    A,@DPTR
+0044 54FE              ANL     A,#0FEH
+0046 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 325
+0047 22                RET     
+0048         ?C0046:
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+0048 E4                CLR     A
+0049 900000      E     MOV     DPTR,#DRAMRST_CNTRL_LOW_CNT
+004C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+004D         ?C0050:
+004D 22                RET     
+             ; FUNCTION BB_CHK_DRAMRST_CNTRL (END)
+
+             ; FUNCTION BB_SetS0GPIO (BEGIN)
+                                           ; SOURCE LINE # 332
+                                           ; SOURCE LINE # 333
+                                           ; SOURCE LINE # 334
+0000 900000      E     MOV     DPTR,#GPDRD
+0003 E0                MOVX    A,@DPTR
+0004 4408              ORL     A,#08H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 335
+0007 E0                MOVX    A,@DPTR
+0008 4410              ORL     A,#010H
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 336
+000B 900000      E     MOV     DPTR,#GPDRB
+000E E0                MOVX    A,@DPTR
+000F 4420              ORL     A,#020H
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 337
+0012 E0                MOVX    A,@DPTR
+0013 4440              ORL     A,#040H
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 340
+0016 900000      E     MOV     DPTR,#GPDRF
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 33  
+
+0019 E0                MOVX    A,@DPTR
+001A 547F              ANL     A,#07FH
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 341
+001D 900000      E     MOV     DPTR,#GPDRG
+0020 E0                MOVX    A,@DPTR
+0021 547F              ANL     A,#07FH
+0023 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 342
+0024 900000      E     MOV     DPTR,#GPDRF
+0027 E0                MOVX    A,@DPTR
+0028 4408              ORL     A,#08H
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 343
+002B 900000      E     MOV     DPTR,#GPDRB
+002E E0                MOVX    A,@DPTR
+002F 4404              ORL     A,#04H
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 345
+0032 E4                CLR     A
+0033 900000      E     MOV     DPTR,#GPCRF4
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 346
+0037 900000      E     MOV     DPTR,#GPCRF5
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 347
+003B 900000      E     MOV     DPTR,#GPCRH1
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 348
+003F 900000      E     MOV     DPTR,#GPCRH2
+0042 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 350
+0043 900000      E     MOV     DPTR,#GPCRA5
+0046 7440              MOV     A,#040H
+0048 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 351
+0049 900000      E     MOV     DPTR,#GPDRA
+004C E0                MOVX    A,@DPTR
+004D 4420              ORL     A,#020H
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 353
+0050 E4                CLR     A
+0051 900000      E     MOV     DPTR,#GPCRD6
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 354
+0055 900000      E     MOV     DPTR,#GPCRA4
+0058 7480              MOV     A,#080H
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 355
+005B 900000      E     MOV     DPTR,#GPCRD7
+005E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 357
+005F 120000      R     LCALL   BB_Core_InitSio
+                                           ; SOURCE LINE # 359
+0062 E4                CLR     A
+0063 900000      E     MOV     DPTR,#KBHISR
+0066 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 360
+0067 900000      E     MOV     DPTR,#KBHIKDOR
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 361
+006B 900000      E     MOV     DPTR,#KBHISR
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 34  
+
+006E E0                MOVX    A,@DPTR
+006F 54FB              ANL     A,#0FBH
+0071 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 363
+0072 900000      E     MOV     DPTR,#SPCTRL1
+0075 7483              MOV     A,#083H
+0077 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 364
+0078 9022BE            MOV     DPTR,#022BEH
+007B E4                CLR     A
+007C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 365
+007D A3                INC     DPTR
+007E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 368
+007F 900000      E     MOV     DPTR,#GPCRA7
+0082 7440              MOV     A,#040H
+0084 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 369
+0085 900000      E     MOV     DPTR,#GPDRA
+0088 E0                MOVX    A,@DPTR
+0089 4480              ORL     A,#080H
+008B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 371
+008C 22                RET     
+             ; FUNCTION BB_SetS0GPIO (END)
+
+             ; FUNCTION BB_SysOnSequence (BEGIN)
+                                           ; SOURCE LINE # 378
+                                           ; SOURCE LINE # 379
+                                           ; SOURCE LINE # 380
+0000 900000      E     MOV     DPTR,#PowSeqDelay
+0003 E0                MOVX    A,@DPTR
+0004 7002              JNZ     ?C0222
+0006 A3                INC     DPTR
+0007 E0                MOVX    A,@DPTR
+0008         ?C0222:
+0008 600A              JZ      ?C0052
+000A 900000      E     MOV     DPTR,#PowSeqDelay
+000D 74FF              MOV     A,#0FFH
+000F F5F0              MOV     B,A
+0011 120000      E     LCALL   ?C?IILDX
+0014         ?C0052:
+                                           ; SOURCE LINE # 381
+0014 900000      E     MOV     DPTR,#PowSeqDelay
+0017 E0                MOVX    A,@DPTR
+0018 7002              JNZ     ?C0223
+001A A3                INC     DPTR
+001B E0                MOVX    A,@DPTR
+001C         ?C0223:
+001C 6003              JZ      $ + 5H
+001E 020000      R     LJMP    ?C0054
+0021         ?C0053:
+                                           ; SOURCE LINE # 383
+0021 900000      E     MOV     DPTR,#PWSeqStep
+0024 E0                MOVX    A,@DPTR
+0025 120000      E     LCALL   ?C?CCASE
+0028 0000        R     DW      ?C0056
+002A 00                DB      00H
+002B 0000        R     DW      ?C0057
+002D 01                DB      01H
+002E 0000        R     DW      ?C0058
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 35  
+
+0030 02                DB      02H
+0031 0000        R     DW      ?C0059
+0033 03                DB      03H
+0034 0000        R     DW      ?C0060
+0036 04                DB      04H
+0037 0000        R     DW      ?C0061
+0039 05                DB      05H
+003A 0000        R     DW      ?C0068
+003C 06                DB      06H
+003D 0000        R     DW      ?C0069
+003F 07                DB      07H
+0040 0000        R     DW      ?C0073
+0042 08                DB      08H
+0043 0000              DW      00H
+0045 0000        R     DW      ?C0074
+                                           ; SOURCE LINE # 384
+                                           ; SOURCE LINE # 385
+0047         ?C0056:
+                                           ; SOURCE LINE # 386
+0047 900000      E     MOV     DPTR,#GPDRA
+004A E0                MOVX    A,@DPTR
+004B 54FE              ANL     A,#0FEH
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 387
+004E 900000      E     MOV     DPTR,#GPDRB
+0051 E0                MOVX    A,@DPTR
+0052 4410              ORL     A,#010H
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 388
+0055 900000      E     MOV     DPTR,#GPDRE
+0058 E0                MOVX    A,@DPTR
+0059 4420              ORL     A,#020H
+005B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 389
+005C 900000      E     MOV     DPTR,#PowSeqDelay
+005F E4                CLR     A
+0060 F0                MOVX    @DPTR,A
+0061 A3                INC     DPTR
+0062 740A              MOV     A,#0AH
+0064 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 390
+0065 020000      R     LJMP    ?C0055
+                                           ; SOURCE LINE # 392
+0068         ?C0057:
+                                           ; SOURCE LINE # 393
+0068 900000      E     MOV     DPTR,#GPDRH
+006B E0                MOVX    A,@DPTR
+006C 4410              ORL     A,#010H
+006E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 394
+006F 900000      E     MOV     DPTR,#GPDRG
+0072 E0                MOVX    A,@DPTR
+0073 4401              ORL     A,#01H
+                                           ; SOURCE LINE # 395
+                                           ; SOURCE LINE # 396
+0075 020000      R     LJMP    ?C0230
+                                           ; SOURCE LINE # 398
+0078         ?C0058:
+                                           ; SOURCE LINE # 399
+0078 900000      E     MOV     DPTR,#GPDRF
+007B E0                MOVX    A,@DPTR
+007C 4402              ORL     A,#02H
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 36  
+
+007E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 400
+007F 900000      E     MOV     DPTR,#GPDRH
+0082 E0                MOVX    A,@DPTR
+0083 4401              ORL     A,#01H
+0085 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 401
+0086 900000      E     MOV     DPTR,#GPDRJ
+0089 E0                MOVX    A,@DPTR
+008A 4440              ORL     A,#040H
+008C         ?C0229:
+                                           ; SOURCE LINE # 402
+                                           ; SOURCE LINE # 403
+008C 020000      R     LJMP    ?C0230
+                                           ; SOURCE LINE # 405
+008F         ?C0059:
+                                           ; SOURCE LINE # 406
+008F 900000      E     MOV     DPTR,#GPDRF
+0092 E0                MOVX    A,@DPTR
+0093 54FD              ANL     A,#0FDH
+0095 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 407
+0096 900000      E     MOV     DPTR,#GPDRJ
+0099 E0                MOVX    A,@DPTR
+009A 4440              ORL     A,#040H
+                                           ; SOURCE LINE # 408
+                                           ; SOURCE LINE # 409
+009C 803E              SJMP    ?C0231
+                                           ; SOURCE LINE # 411
+009E         ?C0060:
+                                           ; SOURCE LINE # 412
+009E 900000      E     MOV     DPTR,#GPDRF
+00A1 E0                MOVX    A,@DPTR
+00A2 4402              ORL     A,#02H
+00A4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 413
+00A5 020000      R     LJMP    ?C0055
+                                           ; SOURCE LINE # 415
+00A8         ?C0061:
+                                           ; SOURCE LINE # 416
+00A8 900000      E     MOV     DPTR,#GPDRD
+00AB E0                MOVX    A,@DPTR
+00AC 30E004            JNB     ACC.0,?C0063
+00AF 7F01              MOV     R7,#01H
+00B1 8002              SJMP    ?C0064
+00B3         ?C0063:
+00B3 7F00              MOV     R7,#00H
+00B5         ?C0064:
+00B5 EF                MOV     A,R7
+00B6 6401              XRL     A,#01H
+00B8 6003              JZ      $ + 5H
+00BA 020000      R     LJMP    ?C0054
+00BD         ?C0062:
+                                           ; SOURCE LINE # 417
+00BD 900000      E     MOV     DPTR,#GPDRD
+00C0 E0                MOVX    A,@DPTR
+00C1 30E104            JNB     ACC.1,?C0066
+00C4 7F01              MOV     R7,#01H
+00C6 8002              SJMP    ?C0067
+00C8         ?C0066:
+00C8 7F00              MOV     R7,#00H
+00CA         ?C0067:
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 37  
+
+00CA EF                MOV     A,R7
+00CB 6401              XRL     A,#01H
+00CD 7075              JNZ     ?C0054
+00CF         ?C0065:
+                                           ; SOURCE LINE # 418
+00CF 900000      E     MOV     DPTR,#GPDRG
+00D2 E0                MOVX    A,@DPTR
+00D3 4402              ORL     A,#02H
+00D5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 419
+00D6 900000      E     MOV     DPTR,#GPDRF
+00D9 E0                MOVX    A,@DPTR
+00DA 547F              ANL     A,#07FH
+00DC         ?C0231:
+00DC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 420
+00DD 900000      E     MOV     DPTR,#PowSeqDelay
+00E0 E4                CLR     A
+00E1 F0                MOVX    @DPTR,A
+00E2 A3                INC     DPTR
+00E3 741E              MOV     A,#01EH
+00E5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 421
+00E6 8056              SJMP    ?C0055
+                                           ; SOURCE LINE # 423
+00E8         ?C0068:
+                                           ; SOURCE LINE # 424
+00E8 900000      E     MOV     DPTR,#GPDRC
+00EB E0                MOVX    A,@DPTR
+00EC 4440              ORL     A,#040H
+00EE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 425
+00EF 120000      R     LCALL   BB_SetS0GPIO
+                                           ; SOURCE LINE # 426
+00F2 804A              SJMP    ?C0055
+                                           ; SOURCE LINE # 428
+00F4         ?C0069:
+                                           ; SOURCE LINE # 429
+00F4 900000      E     MOV     DPTR,#GPDRI
+00F7 E0                MOVX    A,@DPTR
+00F8 30E704            JNB     ACC.7,?C0071
+00FB 7F01              MOV     R7,#01H
+00FD 8002              SJMP    ?C0072
+00FF         ?C0071:
+00FF 7F00              MOV     R7,#00H
+0101         ?C0072:
+0101 EF                MOV     A,R7
+0102 6401              XRL     A,#01H
+0104 703E              JNZ     ?C0054
+0106         ?C0070:
+                                           ; SOURCE LINE # 430
+0106 900000      E     MOV     DPTR,#GPCRD5
+0109 7440              MOV     A,#040H
+010B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 431
+010C 900000      E     MOV     DPTR,#GPDRD
+010F E0                MOVX    A,@DPTR
+0110 54DF              ANL     A,#0DFH
+0112 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 432
+0113 900000      E     MOV     DPTR,#PowSeqDelay
+0116 E4                CLR     A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 38  
+
+0117 F0                MOVX    @DPTR,A
+0118 A3                INC     DPTR
+0119 7405              MOV     A,#05H
+011B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 433
+011C 8020              SJMP    ?C0055
+                                           ; SOURCE LINE # 435
+011E         ?C0073:
+                                           ; SOURCE LINE # 436
+011E 900000      E     MOV     DPTR,#GPDRE
+0121 E0                MOVX    A,@DPTR
+0122 4410              ORL     A,#010H
+0124 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 437
+0125 900000      E     MOV     DPTR,#GPDRH
+0128 E0                MOVX    A,@DPTR
+0129 4440              ORL     A,#040H
+012B         ?C0230:
+012B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 438
+012C 900000      E     MOV     DPTR,#PowSeqDelay
+012F E4                CLR     A
+0130 F0                MOVX    @DPTR,A
+0131 A3                INC     DPTR
+0132 7432              MOV     A,#032H
+0134 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 439
+0135 8007              SJMP    ?C0055
+                                           ; SOURCE LINE # 441
+0137         ?C0074:
+                                           ; SOURCE LINE # 442
+0137 900000      E     MOV     DPTR,#PWSeqStep
+013A 74FF              MOV     A,#0FFH
+013C F0                MOVX    @DPTR,A
+013D 22                RET     
+                                           ; SOURCE LINE # 444
+013E         ?C0055:
+                                           ; SOURCE LINE # 445
+013E 900000      E     MOV     DPTR,#PWSeqStep
+0141 E0                MOVX    A,@DPTR
+0142 04                INC     A
+0143 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 446
+0144         ?C0054:
+0144 22                RET     
+             ; FUNCTION BB_SysOnSequence (END)
+
+             ; FUNCTION BBK_InitClearInternalRam (BEGIN)
+                                           ; SOURCE LINE # 456
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 460
+;---- Variable 'iibRamIndex' assigned to Register 'R0' ----
+0000 7820              MOV     R0,#020H
+0002         ?C0075:
+                                           ; SOURCE LINE # 461
+0002 E8                MOV     A,R0
+0003 C3                CLR     C
+0004 94C0              SUBB    A,#0C0H
+0006 5005              JNC     ?C0077
+                                           ; SOURCE LINE # 462
+                                           ; SOURCE LINE # 463
+0008 E4                CLR     A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 39  
+
+0009 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 464
+000A 08                INC     R0
+                                           ; SOURCE LINE # 465
+000B 80F5              SJMP    ?C0075
+                                           ; SOURCE LINE # 466
+000D         ?C0077:
+000D 22                RET     
+             ; FUNCTION BBK_InitClearInternalRam (END)
+
+             ; FUNCTION BBK_InitClearExternalRam (BEGIN)
+                                           ; SOURCE LINE # 472
+                                           ; SOURCE LINE # 473
+                                           ; SOURCE LINE # 478
+;---- Variable 'byte_register_pntr' assigned to Register 'R6/R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 FE                MOV     R6,A
+                                           ; SOURCE LINE # 479
+0003 900000      E     MOV     DPTR,#WinFlashMark
+0006 E0                MOVX    A,@DPTR
+0007 FD                MOV     R5,A
+;---- Variable 'Temp0' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 480
+0008 900000      E     MOV     DPTR,#WinFlashMark2
+000B E0                MOVX    A,@DPTR
+000C FC                MOV     R4,A
+;---- Variable 'Temp1' assigned to Register 'R4' ----
+000D         ?C0078:
+                                           ; SOURCE LINE # 481
+000D C3                CLR     C
+000E EE                MOV     A,R6
+000F 9407              SUBB    A,#07H
+0011 500D              JNC     ?C0079
+                                           ; SOURCE LINE # 482
+                                           ; SOURCE LINE # 483
+0013 8F82              MOV     DPL,R7
+0015 8E83              MOV     DPH,R6
+0017 E4                CLR     A
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 484
+0019 0F                INC     R7
+001A BF0001            CJNE    R7,#00H,?C0224
+001D 0E                INC     R6
+001E         ?C0224:
+                                           ; SOURCE LINE # 485
+001E 80ED              SJMP    ?C0078
+0020         ?C0079:
+                                           ; SOURCE LINE # 486
+0020 CF                XCH     A,R7
+0021 ED                MOV     A,R5
+0022 CF                XCH     A,R7
+0023 900000      E     MOV     DPTR,#WinFlashMark
+0026 ED                MOV     A,R5
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 487
+0028 CF                XCH     A,R7
+0029 EC                MOV     A,R4
+002A CF                XCH     A,R7
+002B 900000      E     MOV     DPTR,#WinFlashMark2
+002E EC                MOV     A,R4
+002F F0                MOVX    @DPTR,A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 40  
+
+                                           ; SOURCE LINE # 488
+0030 7E08              MOV     R6,#08H
+0032 7F00              MOV     R7,#00H
+0034         ?C0080:
+                                           ; SOURCE LINE # 489
+0034 C3                CLR     C
+0035 EE                MOV     A,R6
+0036 9410              SUBB    A,#010H
+0038 500D              JNC     ?C0082
+                                           ; SOURCE LINE # 490
+                                           ; SOURCE LINE # 491
+003A 8F82              MOV     DPL,R7
+003C 8E83              MOV     DPH,R6
+003E E4                CLR     A
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 492
+0040 0F                INC     R7
+0041 BF0001            CJNE    R7,#00H,?C0225
+0044 0E                INC     R6
+0045         ?C0225:
+                                           ; SOURCE LINE # 493
+0045 80ED              SJMP    ?C0080
+                                           ; SOURCE LINE # 494
+0047         ?C0082:
+0047 22                RET     
+             ; FUNCTION BBK_InitClearExternalRam (END)
+
+             ; FUNCTION BBK_InitTimers (BEGIN)
+                                           ; SOURCE LINE # 499
+                                           ; SOURCE LINE # 500
+                                           ; SOURCE LINE # 501
+0000 C2A9              CLR     ET0
+                                           ; SOURCE LINE # 502
+0002 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 503
+0004 758911            MOV     TMOD,#011H
+                                           ; SOURCE LINE # 504
+0007 C28C              CLR     TR0
+0009 C28D              CLR     TF0
+                                           ; SOURCE LINE # 505
+000B C28E              CLR     TR1
+000D C28F              CLR     TF1
+                                           ; SOURCE LINE # 507
+000F 758A06            MOV     TL0,#06H
+                                           ; SOURCE LINE # 508
+0012 758CF1            MOV     TH0,#0F1H
+                                           ; SOURCE LINE # 509
+0015 D28C              SETB    TR0
+                                           ; SOURCE LINE # 511
+0017 E4                CLR     A
+0018 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 512
+001C 22                RET     
+             ; FUNCTION BBK_InitTimers (END)
+
+             ; FUNCTION BBKInit_UART (BEGIN)
+                                           ; SOURCE LINE # 514
+                                           ; SOURCE LINE # 515
+                                           ; SOURCE LINE # 517
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#GPCRB1
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 41  
+
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 518
+0005 759840            MOV     SCON,#040H
+                                           ; SOURCE LINE # 519
+0008 53C8F0            ANL     T2CON,#0F0H
+                                           ; SOURCE LINE # 520
+000B 43C830            ORL     T2CON,#030H
+                                           ; SOURCE LINE # 521
+000E F5C9              MOV     T2MOD,A
+                                           ; SOURCE LINE # 522
+0010 75CBFF            MOV     RCAP2H,#0FFH
+                                           ; SOURCE LINE # 523
+0013 75CAFB            MOV     RCAP2L,#0FBH
+                                           ; SOURCE LINE # 524
+0016 D2CA              SETB    TR2
+                                           ; SOURCE LINE # 525
+0018 D299              SETB    TI
+                                           ; SOURCE LINE # 526
+001A 22                RET     
+             ; FUNCTION BBKInit_UART (END)
+
+             ; FUNCTION _BBK_CacheDma (BEGIN)
+                                           ; SOURCE LINE # 532
+0000 900000      R     MOV     DPTR,#addr
+0003 EC                MOV     A,R4
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 ED                MOV     A,R5
+0007 F0                MOVX    @DPTR,A
+;---- Variable 'num' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 534
+0008 EF                MOV     A,R7
+0009 14                DEC     A
+000A 6028              JZ      ?C0087
+000C 14                DEC     A
+000D 6043              JZ      ?C0088
+000F 14                DEC     A
+0010 605E              JZ      ?C0089
+0012 2403              ADD     A,#03H
+0014 7077              JNZ     ?C0091
+                                           ; SOURCE LINE # 535
+                                           ; SOURCE LINE # 536
+0016         ?C0086:
+                                           ; SOURCE LINE # 537
+0016 900000      E     MOV     DPTR,#SCRA1H
+0019 7480              MOV     A,#080H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 538
+001C 900000      R     MOV     DPTR,#addr
+001F E0                MOVX    A,@DPTR
+0020 A3                INC     DPTR
+0021 E0                MOVX    A,@DPTR
+0022 900000      E     MOV     DPTR,#SCRA1L
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 539
+0026 900000      R     MOV     DPTR,#addr
+0029 E0                MOVX    A,@DPTR
+002A 900000      E     MOV     DPTR,#SCRA1M
+002D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 540
+002E E4                CLR     A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 42  
+
+002F 900000      E     MOV     DPTR,#SCRA1H
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 541
+0033 22                RET     
+                                           ; SOURCE LINE # 543
+0034         ?C0087:
+                                           ; SOURCE LINE # 544
+0034 900000      E     MOV     DPTR,#SCRA2H
+0037 7480              MOV     A,#080H
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 545
+003A 900000      R     MOV     DPTR,#addr
+003D E0                MOVX    A,@DPTR
+003E A3                INC     DPTR
+003F E0                MOVX    A,@DPTR
+0040 900000      E     MOV     DPTR,#SCRA2L
+0043 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 546
+0044 900000      R     MOV     DPTR,#addr
+0047 E0                MOVX    A,@DPTR
+0048 900000      E     MOV     DPTR,#SCRA2M
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 547
+004C E4                CLR     A
+004D 900000      E     MOV     DPTR,#SCRA2H
+0050 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 548
+0051 22                RET     
+                                           ; SOURCE LINE # 550
+0052         ?C0088:
+                                           ; SOURCE LINE # 551
+0052 900000      E     MOV     DPTR,#SCRA3H
+0055 7480              MOV     A,#080H
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 552
+0058 900000      R     MOV     DPTR,#addr
+005B E0                MOVX    A,@DPTR
+005C A3                INC     DPTR
+005D E0                MOVX    A,@DPTR
+005E 900000      E     MOV     DPTR,#SCRA3L
+0061 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 553
+0062 900000      R     MOV     DPTR,#addr
+0065 E0                MOVX    A,@DPTR
+0066 900000      E     MOV     DPTR,#SCRA3M
+0069 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 554
+006A E4                CLR     A
+006B 900000      E     MOV     DPTR,#SCRA3H
+006E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 555
+006F 22                RET     
+                                           ; SOURCE LINE # 557
+0070         ?C0089:
+                                           ; SOURCE LINE # 558
+0070 900000      E     MOV     DPTR,#SCRA4H
+0073 7480              MOV     A,#080H
+0075 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 559
+0076 900000      R     MOV     DPTR,#addr
+0079 E0                MOVX    A,@DPTR
+007A A3                INC     DPTR
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 43  
+
+007B E0                MOVX    A,@DPTR
+007C 900000      E     MOV     DPTR,#SCRA4L
+007F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 560
+0080 900000      R     MOV     DPTR,#addr
+0083 E0                MOVX    A,@DPTR
+0084 900000      E     MOV     DPTR,#SCRA4M
+0087 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 561
+0088 E4                CLR     A
+0089 900000      E     MOV     DPTR,#SCRA4H
+008C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 562
+                                           ; SOURCE LINE # 564
+                                           ; SOURCE LINE # 565
+                                           ; SOURCE LINE # 566
+                                           ; SOURCE LINE # 567
+008D         ?C0091:
+008D 22                RET     
+             ; FUNCTION _BBK_CacheDma (END)
+
+             ; FUNCTION BBK_ACPI (BEGIN)
+                                           ; SOURCE LINE # 572
+                                           ; SOURCE LINE # 573
+                                           ; SOURCE LINE # 575
+0000 22                RET     
+             ; FUNCTION BBK_ACPI (END)
+
+             ; FUNCTION BBK_InitFlash (BEGIN)
+                                           ; SOURCE LINE # 580
+                                           ; SOURCE LINE # 581
+                                           ; SOURCE LINE # 583
+0000 22                RET     
+             ; FUNCTION BBK_InitFlash (END)
+
+             ; FUNCTION BBK_InitGPIO (BEGIN)
+                                           ; SOURCE LINE # 699
+                                           ; SOURCE LINE # 700
+                                           ; SOURCE LINE # 703
+;---- Variable 'iLoop' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002         ?C0094:
+                                           ; SOURCE LINE # 705
+                                           ; SOURCE LINE # 706
+                                           ; SOURCE LINE # 707
+0002 75F003            MOV     B,#03H
+0005 EF                MOV     A,R7
+0006 900000      R     MOV     DPTR,#uBootInitGPIOReg+02H
+0009 120000      E     LCALL   ?C?OFFXADD
+000C E4                CLR     A
+000D 93                MOVC    A,@A+DPTR
+000E FE                MOV     R6,A
+000F 75F003            MOV     B,#03H
+0012 EF                MOV     A,R7
+0013 900000      R     MOV     DPTR,#uBootInitGPIOReg
+0016 120000      E     LCALL   ?C?OFFXADD
+0019 E4                CLR     A
+001A 93                MOVC    A,@A+DPTR
+001B FC                MOV     R4,A
+001C 7401              MOV     A,#01H
+001E 93                MOVC    A,@A+DPTR
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 44  
+
+001F F582              MOV     DPL,A
+0021 8C83              MOV     DPH,R4
+0023 EE                MOV     A,R6
+0024 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 708
+0025 0F                INC     R7
+                                           ; SOURCE LINE # 709
+0026 EF                MOV     A,R7
+0027 B45CD8            CJNE    A,#05CH,?C0094
+                                           ; SOURCE LINE # 712
+002A         ?C0096:
+002A 22                RET     
+             ; FUNCTION BBK_InitGPIO (END)
+
+             ; FUNCTION BBK_InitSMBus (BEGIN)
+                                           ; SOURCE LINE # 717
+                                           ; SOURCE LINE # 718
+                                           ; SOURCE LINE # 720
+0000 22                RET     
+             ; FUNCTION BBK_InitSMBus (END)
+
+             ; FUNCTION _BB_KBDataToHostWaitRx (BEGIN)
+                                           ; SOURCE LINE # 724
+;---- Variable 'nDATA' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 725
+                                           ; SOURCE LINE # 728
+0000 900000      E     MOV     DPTR,#KBHIKDOR
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 730
+0005 900000      R     MOV     DPTR,#iLOOP
+0008 7408              MOV     A,#08H
+000A F0                MOVX    @DPTR,A
+000B A3                INC     DPTR
+000C E4                CLR     A
+000D F0                MOVX    @DPTR,A
+000E         ?C0098:
+                                           ; SOURCE LINE # 732
+000E 900000      R     MOV     DPTR,#iLOOP
+0011 E0                MOVX    A,@DPTR
+0012 7002              JNZ     ?C0226
+0014 A3                INC     DPTR
+0015 E0                MOVX    A,@DPTR
+0016         ?C0226:
+0016 601E              JZ      ?C0102
+                                           ; SOURCE LINE # 733
+                                           ; SOURCE LINE # 734
+0018 900000      R     MOV     DPTR,#iLOOP
+001B 74FF              MOV     A,#0FFH
+001D F5F0              MOV     B,A
+001F 120000      E     LCALL   ?C?IILDX
+                                           ; SOURCE LINE # 735
+0022 900000      E     MOV     DPTR,#KBHISR
+0025 E0                MOVX    A,@DPTR
+0026 30E004            JNB     ACC.0,?C0101
+0029 E0                MOVX    A,@DPTR
+002A 20E0E1            JB      ACC.0,?C0098
+002D         ?C0101:
+                                           ; SOURCE LINE # 736
+                                           ; SOURCE LINE # 737
+002D E4                CLR     A
+002E 900000      R     MOV     DPTR,#iLOOP
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 45  
+
+0031 F0                MOVX    @DPTR,A
+0032 A3                INC     DPTR
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 738
+                                           ; SOURCE LINE # 740
+0034 80D8              SJMP    ?C0098
+                                           ; SOURCE LINE # 742
+0036         ?C0102:
+0036 22                RET     
+             ; FUNCTION _BB_KBDataToHostWaitRx (END)
+
+             ; FUNCTION BBK_Load_TimerOut_Timer (BEGIN)
+                                           ; SOURCE LINE # 791
+                                           ; SOURCE LINE # 792
+                                           ; SOURCE LINE # 793
+0000 758B19            MOV     TL1,#019H
+                                           ; SOURCE LINE # 794
+0003 758DB2            MOV     TH1,#0B2H
+                                           ; SOURCE LINE # 795
+0006 C28F              CLR     TF1
+                                           ; SOURCE LINE # 796
+0008 D28E              SETB    TR1
+                                           ; SOURCE LINE # 797
+000A 22                RET     
+             ; FUNCTION BBK_Load_TimerOut_Timer (END)
+
+             ; FUNCTION _BBK_Data_To_Host (BEGIN)
+                                           ; SOURCE LINE # 799
+;---- Variable 'data_byte' assigned to Register 'R5' ----
+0000 CD                XCH     A,R5
+0001 EF                MOV     A,R7
+0002 CD                XCH     A,R5
+                                           ; SOURCE LINE # 800
+                                           ; SOURCE LINE # 801
+0003 900000      E     MOV     DPTR,#KBHISR
+0006 E0                MOVX    A,@DPTR
+0007 540F              ANL     A,#0FH
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 802
+000A E0                MOVX    A,@DPTR
+000B 4410              ORL     A,#010H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 804
+000E 900000      E     MOV     DPTR,#KBHICR
+0011 E0                MOVX    A,@DPTR
+0012 54FC              ANL     A,#0FCH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 805
+0015 300004      E     JNB     Ccb42_INTR_KEY,?C0104
+                                           ; SOURCE LINE # 806
+                                           ; SOURCE LINE # 807
+0018 E0                MOVX    A,@DPTR
+0019 4401              ORL     A,#01H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 808
+001C         ?C0104:
+                                           ; SOURCE LINE # 809
+001C 900000      E     MOV     DPTR,#KBHIKDOR
+001F ED                MOV     A,R5
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 810
+0021 22                RET     
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 46  
+
+             ; FUNCTION _BBK_Data_To_Host (END)
+
+             ; FUNCTION _BBK_Data_To_Host_nWait (BEGIN)
+                                           ; SOURCE LINE # 813
+;---- Variable 'data_byte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 814
+                                           ; SOURCE LINE # 815
+0000 120000      R     LCALL   _BBK_Data_To_Host
+                                           ; SOURCE LINE # 816
+0003 C28E              CLR     TR1
+                                           ; SOURCE LINE # 817
+0005 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 818
+0007 120000      R     LCALL   BBK_Load_TimerOut_Timer
+000A         ?C0106:
+                                           ; SOURCE LINE # 820
+000A 208F0E            JB      TF1,?C0107
+                                           ; SOURCE LINE # 821
+                                           ; SOURCE LINE # 822
+000D 900000      E     MOV     DPTR,#KBHISR
+0010 E0                MOVX    A,@DPTR
+0011 30E007            JNB     ACC.0,?C0107
+                                           ; SOURCE LINE # 823
+                                           ; SOURCE LINE # 824
+                                           ; SOURCE LINE # 825
+0014         ?C0108:
+                                           ; SOURCE LINE # 826
+0014 900000      E     MOV     DPTR,#KBHISR
+0017 E0                MOVX    A,@DPTR
+0018 30E1EF            JNB     ACC.1,?C0106
+                                           ; SOURCE LINE # 827
+                                           ; SOURCE LINE # 828
+                                           ; SOURCE LINE # 829
+001B         ?C0107:
+                                           ; SOURCE LINE # 832
+001B C28E              CLR     TR1
+                                           ; SOURCE LINE # 833
+001D C28F              CLR     TF1
+                                           ; SOURCE LINE # 834
+001F D2AB              SETB    ET1
+                                           ; SOURCE LINE # 835
+0021 22                RET     
+             ; FUNCTION _BBK_Data_To_Host_nWait (END)
+
+             ; FUNCTION _BBK_Data_To_PM1_nWait (BEGIN)
+                                           ; SOURCE LINE # 837
+;---- Variable 'data_byte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 838
+                                           ; SOURCE LINE # 839
+0000 900000      E     MOV     DPTR,#PM1DO
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 841
+0005 C28E              CLR     TR1
+                                           ; SOURCE LINE # 842
+0007 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 843
+0009 120000      R     LCALL   BBK_Load_TimerOut_Timer
+000C         ?C0111:
+                                           ; SOURCE LINE # 845
+000C 208F07            JB      TF1,?C0112
+                                           ; SOURCE LINE # 846
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 47  
+
+                                           ; SOURCE LINE # 847
+000F 900000      E     MOV     DPTR,#PM1STS
+0012 E0                MOVX    A,@DPTR
+0013 20E0F6            JB      ACC.0,?C0111
+                                           ; SOURCE LINE # 848
+                                           ; SOURCE LINE # 849
+                                           ; SOURCE LINE # 850
+0016         ?C0112:
+                                           ; SOURCE LINE # 852
+0016 C28E              CLR     TR1
+                                           ; SOURCE LINE # 853
+0018 C28F              CLR     TF1
+                                           ; SOURCE LINE # 854
+001A D2AB              SETB    ET1
+                                           ; SOURCE LINE # 855
+001C 22                RET     
+             ; FUNCTION _BBK_Data_To_PM1_nWait (END)
+
+             ; FUNCTION _BBK_Data2Port (BEGIN)
+                                           ; SOURCE LINE # 859
+;---- Variable 'rData' assigned to Register 'R5' ----
+;---- Variable 'nPort' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 860
+                                           ; SOURCE LINE # 861
+0000 EF                MOV     A,R7
+0001 249E              ADD     A,#09EH
+0003 600A              JZ      ?C0117
+0005 2402              ADD     A,#02H
+0007 700C              JNZ     ?C0118
+                                           ; SOURCE LINE # 862
+0009         ?C0116:
+                                           ; SOURCE LINE # 863
+0009 CF                XCH     A,R7
+000A ED                MOV     A,R5
+000B CF                XCH     A,R7
+000C 020000      R     LJMP    _BBK_Data_To_Host_nWait
+                                           ; SOURCE LINE # 864
+                                           ; SOURCE LINE # 865
+000F         ?C0117:
+                                           ; SOURCE LINE # 866
+000F CF                XCH     A,R7
+0010 ED                MOV     A,R5
+0011 CF                XCH     A,R7
+0012 120000      R     LCALL   _BBK_Data_To_PM1_nWait
+                                           ; SOURCE LINE # 868
+                                           ; SOURCE LINE # 869
+                                           ; SOURCE LINE # 870
+0015         ?C0118:
+0015 22                RET     
+             ; FUNCTION _BBK_Data2Port (END)
+
+             ; FUNCTION BBK_Process6064Command (BEGIN)
+                                           ; SOURCE LINE # 876
+                                           ; SOURCE LINE # 877
+                                           ; SOURCE LINE # 878
+0000 900000      E     MOV     DPTR,#KBHISR
+0003 E0                MOVX    A,@DPTR
+0004 30E179            JNB     ACC.1,?C0120
+0007         ?C0119:
+                                           ; SOURCE LINE # 880
+0007 900000      E     MOV     DPTR,#KBHISR
+000A E0                MOVX    A,@DPTR
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 48  
+
+000B 30E34A            JNB     ACC.3,?C0121
+                                           ; SOURCE LINE # 881
+                                           ; SOURCE LINE # 883
+000E 900000      E     MOV     DPTR,#KBHIDIR
+0011 E0                MOVX    A,@DPTR
+0012 F500        E     MOV     KBHICmd,A
+                                           ; SOURCE LINE # 884
+0014 E4                CLR     A
+0015 F500        E     MOV     KBHIStep,A
+                                           ; SOURCE LINE # 887
+0017 E500        E     MOV     A,KBHICmd
+0019 24B2              ADD     A,#0B2H
+001B 6030              JZ      ?C0127
+001D 24FC              ADD     A,#0FCH
+001F 6017              JZ      ?C0124
+0021 24A8              ADD     A,#0A8H
+0023 6015              JZ      ?C0125
+0025 24F6              ADD     A,#0F6H
+0027 6018              JZ      ?C0126
+0029 24E2              ADD     A,#0E2H
+002B 6027              JZ      ?C0128
+002D 24B2              ADD     A,#0B2H
+002F 704F              JNZ     ?C0120
+                                           ; SOURCE LINE # 888
+                                           ; SOURCE LINE # 889
+0031         ?C0123:
+                                           ; SOURCE LINE # 890
+0031 900000      E     MOV     DPTR,#KBHIKDOR
+0034 7403              MOV     A,#03H
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 891
+0037 22                RET     
+                                           ; SOURCE LINE # 893
+0038         ?C0124:
+                                           ; SOURCE LINE # 894
+                                           ; SOURCE LINE # 895
+0038 801A              SJMP    ?C0232
+                                           ; SOURCE LINE # 897
+003A         ?C0125:
+                                           ; SOURCE LINE # 898
+003A 900000      E     MOV     DPTR,#KBHIKDOR
+003D 7455              MOV     A,#055H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 899
+0040 22                RET     
+                                           ; SOURCE LINE # 900
+0041         ?C0126:
+                                           ; SOURCE LINE # 901
+0041 7C00        R     MOV     R4,#HIGH BBKEflash_CmdRamCode
+0043 7D00        R     MOV     R5,#LOW BBKEflash_CmdRamCode
+0045 7F03              MOV     R7,#03H
+0047 120000      R     LCALL   _BBK_CacheDma
+                                           ; SOURCE LINE # 902
+004A 020000      R     LJMP    BBKEflash_CmdRamCode
+                                           ; SOURCE LINE # 903
+                                           ; SOURCE LINE # 904
+004D         ?C0127:
+                                           ; SOURCE LINE # 905
+004D 7DFF              MOV     R5,#0FFH
+004F 7F62              MOV     R7,#062H
+0051 020000      R     LJMP    _BBK_Data2Port
+                                           ; SOURCE LINE # 906
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 49  
+
+                                           ; SOURCE LINE # 907
+0054         ?C0128:
+                                           ; SOURCE LINE # 908
+0054         ?C0232:
+0054 750001      E     MOV     KBHIStep,#01H
+                                           ; SOURCE LINE # 909
+0057 22                RET     
+                                           ; SOURCE LINE # 911
+                                           ; SOURCE LINE # 912
+                                           ; SOURCE LINE # 913
+                                           ; SOURCE LINE # 914
+0058         ?C0121:
+                                           ; SOURCE LINE # 918
+                                           ; SOURCE LINE # 919
+0058 900000      E     MOV     DPTR,#KBHIDIR
+005B E0                MOVX    A,@DPTR
+005C F500        E     MOV     KBHIData,A
+                                           ; SOURCE LINE # 921
+005E E500        E     MOV     A,KBHIStep
+0060 6018              JZ      ?C0131
+                                           ; SOURCE LINE # 922
+                                           ; SOURCE LINE # 923
+0062 E500        E     MOV     A,KBHICmd
+0064 242E              ADD     A,#02EH
+0066 600B              JZ      ?C0134
+0068 2480              ADD     A,#080H
+006A 7014              JNZ     ?C0120
+                                           ; SOURCE LINE # 924
+                                           ; SOURCE LINE # 925
+006C         ?C0133:
+                                           ; SOURCE LINE # 926
+006C 900000      E     MOV     DPTR,#KBHIKDOR
+006F 7480              MOV     A,#080H
+0071 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 927
+0072 22                RET     
+                                           ; SOURCE LINE # 929
+0073         ?C0134:
+                                           ; SOURCE LINE # 930
+0073 900000      E     MOV     DPTR,#KBHIKDOR
+0076 E500        E     MOV     A,KBHIData
+0078 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 931
+0079 22                RET     
+                                           ; SOURCE LINE # 932
+                                           ; SOURCE LINE # 933
+                                           ; SOURCE LINE # 934
+                                           ; SOURCE LINE # 935
+007A         ?C0131:
+                                           ; SOURCE LINE # 937
+                                           ; SOURCE LINE # 938
+007A 900000      E     MOV     DPTR,#KBHIKDOR
+007D 74FA              MOV     A,#0FAH
+007F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 939
+                                           ; SOURCE LINE # 940
+                                           ; SOURCE LINE # 942
+0080         ?C0120:
+0080 22                RET     
+             ; FUNCTION BBK_Process6064Command (END)
+
+             ; FUNCTION BB_OemCheckECCmd (BEGIN)
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 50  
+
+                                           ; SOURCE LINE # 945
+                                           ; SOURCE LINE # 946
+                                           ; SOURCE LINE # 947
+0000 E500        E     MOV     A,PM1Cmd
+0002 24B2              ADD     A,#0B2H
+0004 7007              JNZ     ?C0141
+                                           ; SOURCE LINE # 948
+                                           ; SOURCE LINE # 950
+                                           ; SOURCE LINE # 951
+                                           ; SOURCE LINE # 953
+0006         ?C0139:
+                                           ; SOURCE LINE # 954
+0006 7DFF              MOV     R5,#0FFH
+0008 7F62              MOV     R7,#062H
+000A 120000      R     LCALL   _BBK_Data2Port
+                                           ; SOURCE LINE # 955
+                                           ; SOURCE LINE # 957
+                                           ; SOURCE LINE # 958
+                                           ; SOURCE LINE # 959
+                                           ; SOURCE LINE # 960
+000D         ?C0141:
+000D 22                RET     
+             ; FUNCTION BB_OemCheckECCmd (END)
+
+             ; FUNCTION BB_OemProcessECData (BEGIN)
+                                           ; SOURCE LINE # 962
+                                           ; SOURCE LINE # 963
+                                           ; SOURCE LINE # 964
+                                           ; SOURCE LINE # 965
+                                           ; SOURCE LINE # 966
+                                           ; SOURCE LINE # 967
+                                           ; SOURCE LINE # 968
+                                           ; SOURCE LINE # 969
+0000         ?C0144:
+0000 22                RET     
+             ; FUNCTION BB_OemProcessECData (END)
+
+             ; FUNCTION BBK_ProcessACPICommand (BEGIN)
+                                           ; SOURCE LINE # 974
+                                           ; SOURCE LINE # 975
+                                           ; SOURCE LINE # 976
+0000 900000      E     MOV     DPTR,#PM1STS
+0003 E0                MOVX    A,@DPTR
+0004 30E120            JNB     ACC.1,?C0146
+0007         ?C0145:
+                                           ; SOURCE LINE # 977
+0007 900000      E     MOV     DPTR,#PM1STS
+000A E0                MOVX    A,@DPTR
+000B 30E30C            JNB     ACC.3,?C0147
+                                           ; SOURCE LINE # 978
+                                           ; SOURCE LINE # 979
+000E 900000      E     MOV     DPTR,#PM1DI
+0011 E0                MOVX    A,@DPTR
+0012 F500        E     MOV     PM1Cmd,A
+                                           ; SOURCE LINE # 980
+0014 E4                CLR     A
+0015 F500        E     MOV     PM1Step,A
+                                           ; SOURCE LINE # 981
+0017 020000      R     LJMP    BB_OemCheckECCmd
+                                           ; SOURCE LINE # 983
+001A         ?C0147:
+                                           ; SOURCE LINE # 985
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 51  
+
+                                           ; SOURCE LINE # 986
+001A 900000      E     MOV     DPTR,#PM1DI
+001D E0                MOVX    A,@DPTR
+001E F500        E     MOV     PM1Data,A
+                                           ; SOURCE LINE # 988
+0020 E500        E     MOV     A,PM1Step
+0022 6003              JZ      ?C0146
+                                           ; SOURCE LINE # 989
+                                           ; SOURCE LINE # 990
+0024 120000      R     LCALL   BB_OemProcessECData
+                                           ; SOURCE LINE # 991
+                                           ; SOURCE LINE # 992
+                                           ; SOURCE LINE # 993
+0027         ?C0146:
+0027 22                RET     
+             ; FUNCTION BBK_ProcessACPICommand (END)
+
+             ; FUNCTION _BBK_DelayXms (BEGIN)
+                                           ; SOURCE LINE # 998
+;---- Variable 'bMS' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 999
+                                           ; SOURCE LINE # 1000
+0000 C28E              CLR     TR1
+                                           ; SOURCE LINE # 1001
+0002 C2AB              CLR     ET1
+                                           ; SOURCE LINE # 1002
+0004 00                NOP     
+                                           ; SOURCE LINE # 1003
+0005 00                NOP     
+                                           ; SOURCE LINE # 1004
+0006 00                NOP     
+                                           ; SOURCE LINE # 1005
+0007 00                NOP     
+                                           ; SOURCE LINE # 1006
+0008         ?C0150:
+0008 EF                MOV     A,R7
+0009 6014              JZ      ?C0151
+                                           ; SOURCE LINE # 1007
+                                           ; SOURCE LINE # 1008
+000B 758DFD            MOV     TH1,#0FDH
+                                           ; SOURCE LINE # 1009
+000E E4                CLR     A
+000F F58B              MOV     TL1,A
+                                           ; SOURCE LINE # 1010
+0011 C28F              CLR     TF1
+                                           ; SOURCE LINE # 1011
+0013 D28E              SETB    TR1
+0015         ?C0153:
+                                           ; SOURCE LINE # 1012
+0015 308FFD            JNB     TF1,?C0153
+0018         ?C0154:
+                                           ; SOURCE LINE # 1013
+0018 C28E              CLR     TR1
+                                           ; SOURCE LINE # 1014
+001A C28F              CLR     TF1
+                                           ; SOURCE LINE # 1015
+001C 1F                DEC     R7
+001D 80E9              SJMP    ?C0150
+001F         ?C0151:
+                                           ; SOURCE LINE # 1016
+001F C2AB              CLR     ET1
+                                           ; SOURCE LINE # 1017
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 52  
+
+0021 22                RET     
+             ; FUNCTION _BBK_DelayXms (END)
+
+             ; FUNCTION BBK_Backlight_Control (BEGIN)
+                                           ; SOURCE LINE # 1019
+                                           ; SOURCE LINE # 1020
+                                           ; SOURCE LINE # 1021
+0000 900000      E     MOV     DPTR,#GPDRJ
+0003 E0                MOVX    A,@DPTR
+0004 30E50F            JNB     ACC.5,?C0156
+0007 900000      E     MOV     DPTR,#GPDRB
+000A E0                MOVX    A,@DPTR
+000B 30E108            JNB     ACC.1,?C0156
+                                           ; SOURCE LINE # 1022
+                                           ; SOURCE LINE # 1023
+000E 900000      E     MOV     DPTR,#GPDRC
+0011 E0                MOVX    A,@DPTR
+0012 4401              ORL     A,#01H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1024
+0015 22                RET     
+0016         ?C0156:
+                                           ; SOURCE LINE # 1026
+                                           ; SOURCE LINE # 1027
+0016 900000      E     MOV     DPTR,#GPDRC
+0019 E0                MOVX    A,@DPTR
+001A 54FE              ANL     A,#0FEH
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1028
+                                           ; SOURCE LINE # 1029
+001D         ?C0158:
+001D 22                RET     
+             ; FUNCTION BBK_Backlight_Control (END)
+
+             ; FUNCTION BBK_Check_Batteryin (BEGIN)
+                                           ; SOURCE LINE # 1031
+                                           ; SOURCE LINE # 1032
+                                           ; SOURCE LINE # 1033
+0000 900000      E     MOV     DPTR,#ADCCFG
+0003 7421              MOV     A,#021H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1035
+0006 900000      E     MOV     DPTR,#VCH3CTL
+0009 E0                MOVX    A,@DPTR
+000A 30E730            JNB     ACC.7,?C0159
+                                           ; SOURCE LINE # 1036
+                                           ; SOURCE LINE # 1037
+000D E0                MOVX    A,@DPTR
+000E 4480              ORL     A,#080H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1038
+0011 900000      E     MOV     DPTR,#VCH3DATM
+0014 E0                MOVX    A,@DPTR
+0015 FE                MOV     R6,A
+0016 900000      E     MOV     DPTR,#VCH3DATL
+0019 E0                MOVX    A,@DPTR
+001A 7C00              MOV     R4,#00H
+001C 2400              ADD     A,#00H
+001E FF                MOV     R7,A
+001F EC                MOV     A,R4
+0020 3E                ADDC    A,R6
+0021 900000      E     MOV     DPTR,#BATTEMP
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 53  
+
+0024 F0                MOVX    @DPTR,A
+0025 A3                INC     DPTR
+0026 EF                MOV     A,R7
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1040
+0028 C3                CLR     C
+0029 900000      E     MOV     DPTR,#BATTEMP
+002C E0                MOVX    A,@DPTR
+002D 9410              SUBB    A,#010H
+002F 900000      E     MOV     DPTR,#BT1_STATUS1
+0032 E0                MOVX    A,@DPTR
+0033 5005              JNC     ?C0160
+                                           ; SOURCE LINE # 1041
+                                           ; SOURCE LINE # 1042
+0035 4401              ORL     A,#01H
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1043
+0038 8003              SJMP    ?C0159
+003A         ?C0160:
+                                           ; SOURCE LINE # 1045
+                                           ; SOURCE LINE # 1046
+003A 54FE              ANL     A,#0FEH
+003C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1047
+                                           ; SOURCE LINE # 1048
+003D         ?C0159:
+                                           ; SOURCE LINE # 1050
+003D 900000      E     MOV     DPTR,#SEL_STATE0
+0040 E0                MOVX    A,@DPTR
+0041 20E01B            JB      ACC.0,?C0162
+                                           ; SOURCE LINE # 1051
+                                           ; SOURCE LINE # 1052
+0044 900000      E     MOV     DPTR,#BT1_STATUS1
+0047 E0                MOVX    A,@DPTR
+0048 30E02F            JNB     ACC.0,?C0233
+                                           ; SOURCE LINE # 1053
+                                           ; SOURCE LINE # 1054
+004B 900000      E     MOV     DPTR,#DEBOUNCE_CONT3
+004E E0                MOVX    A,@DPTR
+004F 602F              JZ      ?C0172
+                                           ; SOURCE LINE # 1055
+                                           ; SOURCE LINE # 1056
+0051 E0                MOVX    A,@DPTR
+0052 14                DEC     A
+0053 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1057
+0054 E0                MOVX    A,@DPTR
+0055 7029              JNZ     ?C0172
+                                           ; SOURCE LINE # 1058
+                                           ; SOURCE LINE # 1059
+0057 900000      E     MOV     DPTR,#SEL_STATE0
+005A E0                MOVX    A,@DPTR
+005B 4401              ORL     A,#01H
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1060
+                                           ; SOURCE LINE # 1061
+                                           ; SOURCE LINE # 1062
+005E 22                RET     
+005F         ?C0162:
+                                           ; SOURCE LINE # 1069
+                                           ; SOURCE LINE # 1070
+005F 900000      E     MOV     DPTR,#BT1_STATUS1
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 54  
+
+0062 E0                MOVX    A,@DPTR
+0063 20E014            JB      ACC.0,?C0168
+                                           ; SOURCE LINE # 1071
+                                           ; SOURCE LINE # 1072
+0066 900000      E     MOV     DPTR,#DEBOUNCE_CONT3
+0069 E0                MOVX    A,@DPTR
+006A 6014              JZ      ?C0172
+                                           ; SOURCE LINE # 1073
+                                           ; SOURCE LINE # 1074
+006C E0                MOVX    A,@DPTR
+006D 14                DEC     A
+006E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1075
+006F E0                MOVX    A,@DPTR
+0070 700E              JNZ     ?C0172
+                                           ; SOURCE LINE # 1076
+                                           ; SOURCE LINE # 1077
+0072 900000      E     MOV     DPTR,#SEL_STATE0
+0075 E0                MOVX    A,@DPTR
+0076 54FE              ANL     A,#0FEH
+0078 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1078
+                                           ; SOURCE LINE # 1079
+                                           ; SOURCE LINE # 1080
+0079 22                RET     
+007A         ?C0168:
+                                           ; SOURCE LINE # 1082
+                                           ; SOURCE LINE # 1083
+007A         ?C0233:
+007A 900000      E     MOV     DPTR,#DEBOUNCE_CONT3
+007D 740F              MOV     A,#0FH
+007F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1084
+                                           ; SOURCE LINE # 1085
+                                           ; SOURCE LINE # 1086
+0080         ?C0172:
+0080 22                RET     
+             ; FUNCTION BBK_Check_Batteryin (END)
+
+             ; FUNCTION BBK_Battery_LED (BEGIN)
+                                           ; SOURCE LINE # 1088
+                                           ; SOURCE LINE # 1089
+                                           ; SOURCE LINE # 1090
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#GPCRA1
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1091
+0005 900000      E     MOV     DPTR,#GPCRA2
+0008 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1092
+0009 900000      E     MOV     DPTR,#SEL_STATE0
+000C E0                MOVX    A,@DPTR
+000D 30E030            JNB     ACC.0,?C0173
+                                           ; SOURCE LINE # 1093
+                                           ; SOURCE LINE # 1095
+0010 900000      E     MOV     DPTR,#PCFSR
+0013 7405              MOV     A,#05H
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1096
+0016 900000      E     MOV     DPTR,#PCSSGL
+0019 7414              MOV     A,#014H
+001B F0                MOVX    @DPTR,A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 55  
+
+                                           ; SOURCE LINE # 1097
+001C 900000      E     MOV     DPTR,#PCSSGH
+001F 74CA              MOV     A,#0CAH
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1098
+0022 900000      E     MOV     DPTR,#C4CPRS
+0025 74C0              MOV     A,#0C0H
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1099
+0028 E4                CLR     A
+0029 900000      E     MOV     DPTR,#C4MCPRS
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1100
+002D 900000      E     MOV     DPTR,#DCR2
+0030 7455              MOV     A,#055H
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1101
+0033 900000      E     MOV     DPTR,#DCR1
+0036 74FF              MOV     A,#0FFH
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1102
+0039 900000      E     MOV     DPTR,#ZTIER
+003C 7402              MOV     A,#02H
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1103
+003F 22                RET     
+0040         ?C0173:
+                                           ; SOURCE LINE # 1105
+                                           ; SOURCE LINE # 1106
+0040 900000      E     MOV     DPTR,#DCR1
+0043 74FF              MOV     A,#0FFH
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1107
+0046 900000      E     MOV     DPTR,#DCR2
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1109
+                                           ; SOURCE LINE # 1110
+004A         ?C0175:
+004A 22                RET     
+             ; FUNCTION BBK_Battery_LED (END)
+
+             ; FUNCTION BBK_Hook_5msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1116
+                                           ; SOURCE LINE # 1117
+                                           ; SOURCE LINE # 1118
+0000 020000      R     LJMP    BBK_Backlight_Control
+             ; FUNCTION BBK_Hook_5msTimerEvent (END)
+
+             ; FUNCTION BBK_10msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1124
+                                           ; SOURCE LINE # 1125
+                                           ; SOURCE LINE # 1126
+0000 120000      R     LCALL   BBK_Check_Batteryin
+                                           ; SOURCE LINE # 1127
+0003 020000      R     LJMP    BBK_Battery_LED
+             ; FUNCTION BBK_10msTimerEvent (END)
+
+             ; FUNCTION BBK_50msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1133
+                                           ; SOURCE LINE # 1134
+                                           ; SOURCE LINE # 1136
+0000 22                RET     
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 56  
+
+             ; FUNCTION BBK_50msTimerEvent (END)
+
+             ; FUNCTION BBK_100msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1141
+                                           ; SOURCE LINE # 1142
+                                           ; SOURCE LINE # 1144
+0000 22                RET     
+             ; FUNCTION BBK_100msTimerEvent (END)
+
+             ; FUNCTION BBK_500msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1149
+                                           ; SOURCE LINE # 1150
+                                           ; SOURCE LINE # 1152
+0000 22                RET     
+             ; FUNCTION BBK_500msTimerEvent (END)
+
+             ; FUNCTION BBK_1secTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1157
+                                           ; SOURCE LINE # 1158
+                                           ; SOURCE LINE # 1160
+0000 22                RET     
+             ; FUNCTION BBK_1secTimerEvent (END)
+
+             ; FUNCTION BBK_5msTimerEvent (BEGIN)
+                                           ; SOURCE LINE # 1165
+                                           ; SOURCE LINE # 1166
+                                           ; SOURCE LINE # 1169
+0000 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+0003 E0                MOVX    A,@DPTR
+0004 04                INC     A
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1170
+0006 120000      R     LCALL   BBK_Hook_5msTimerEvent
+                                           ; SOURCE LINE # 1172
+0009 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+000C E0                MOVX    A,@DPTR
+000D 20E003            JB      ACC.0,?C0182
+                                           ; SOURCE LINE # 1173
+                                           ; SOURCE LINE # 1174
+0010 120000      R     LCALL   BBK_10msTimerEvent
+                                           ; SOURCE LINE # 1175
+0013         ?C0182:
+                                           ; SOURCE LINE # 1176
+0013 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+0016 E0                MOVX    A,@DPTR
+0017 75F00A            MOV     B,#0AH
+001A 84                DIV     AB
+001B E5F0              MOV     A,B
+001D 7003              JNZ     ?C0183
+                                           ; SOURCE LINE # 1177
+                                           ; SOURCE LINE # 1178
+001F 120000      R     LCALL   BBK_50msTimerEvent
+                                           ; SOURCE LINE # 1179
+0022         ?C0183:
+                                           ; SOURCE LINE # 1180
+0022 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+0025 E0                MOVX    A,@DPTR
+0026 75F014            MOV     B,#014H
+0029 84                DIV     AB
+002A E5F0              MOV     A,B
+002C 7003              JNZ     ?C0184
+                                           ; SOURCE LINE # 1181
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 57  
+
+                                           ; SOURCE LINE # 1182
+002E 120000      R     LCALL   BBK_100msTimerEvent
+                                           ; SOURCE LINE # 1183
+0031         ?C0184:
+                                           ; SOURCE LINE # 1184
+0031 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+0034 E0                MOVX    A,@DPTR
+0035 75F064            MOV     B,#064H
+0038 84                DIV     AB
+0039 E5F0              MOV     A,B
+003B 7003              JNZ     ?C0185
+                                           ; SOURCE LINE # 1185
+                                           ; SOURCE LINE # 1186
+003D 120000      R     LCALL   BBK_500msTimerEvent
+                                           ; SOURCE LINE # 1187
+0040         ?C0185:
+                                           ; SOURCE LINE # 1188
+0040 900000      E     MOV     DPTR,#BBK_Timer5msCnt
+0043 E0                MOVX    A,@DPTR
+0044 75F0C8            MOV     B,#0C8H
+0047 84                DIV     AB
+0048 E5F0              MOV     A,B
+004A 7004              JNZ     ?C0187
+                                           ; SOURCE LINE # 1189
+                                           ; SOURCE LINE # 1190
+004C 120000      R     LCALL   BBK_1secTimerEvent
+                                           ; SOURCE LINE # 1191
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1192
+                                           ; SOURCE LINE # 1193
+0050         ?C0187:
+0050 22                RET     
+             ; FUNCTION BBK_5msTimerEvent (END)
+
+             ; FUNCTION BBK_Recovery (BEGIN)
+                                           ; SOURCE LINE # 1198
+                                           ; SOURCE LINE # 1199
+                                           ; SOURCE LINE # 1200
+0000 120000      R     LCALL   BBK_InitGPIO
+                                           ; SOURCE LINE # 1201
+0003 120000      R     LCALL   BBK_InitSMBus
+                                           ; SOURCE LINE # 1203
+0006 120000      R     LCALL   BBK_InitFlash
+                                           ; SOURCE LINE # 1204
+0009 120000      R     LCALL   BBK_ACPI
+                                           ; SOURCE LINE # 1205
+000C 120000      R     LCALL   BBK_InitTimers
+                                           ; SOURCE LINE # 1206
+000F 120000      R     LCALL   BBKInit_UART
+0012         ?C0188:
+                                           ; SOURCE LINE # 1207
+                                           ; SOURCE LINE # 1208
+                                           ; SOURCE LINE # 1209
+0012 7F01              MOV     R7,#01H
+0014 120000      R     LCALL   _BB_Delay1MS
+                                           ; SOURCE LINE # 1210
+0017 120000      R     LCALL   BB_CHK_SUSACK
+                                           ; SOURCE LINE # 1211
+001A 120000      R     LCALL   BB_CHK_DRAMRST_CNTRL
+                                           ; SOURCE LINE # 1212
+001D 120000      R     LCALL   BB_SysOnSequence
+                                           ; SOURCE LINE # 1213
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 58  
+
+0020 900000      E     MOV     DPTR,#PWSeqStep
+0023 E0                MOVX    A,@DPTR
+0024 B4FFEB            CJNE    A,#0FFH,?C0188
+                                           ; SOURCE LINE # 1214
+                                           ; SOURCE LINE # 1215
+                                           ; SOURCE LINE # 1216
+0027         ?C0189:
+                                           ; SOURCE LINE # 1219
+0027 900000      E     MOV     DPTR,#KBHISR
+002A E0                MOVX    A,@DPTR
+002B 4410              ORL     A,#010H
+002D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1220
+002E E0                MOVX    A,@DPTR
+002F 54DF              ANL     A,#0DFH
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1222
+0032 900000      E     MOV     DPTR,#VCH3CTL
+0035 7482              MOV     A,#082H
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1223
+0038 E0                MOVX    A,@DPTR
+0039 4480              ORL     A,#080H
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1224
+003C 900000      E     MOV     DPTR,#DEBOUNCE_CONT3
+003F 740F              MOV     A,#0FH
+0041 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1226
+0042 C2AF              CLR     EA
+0044         ?C0191:
+                                           ; SOURCE LINE # 1227
+                                           ; SOURCE LINE # 1228
+                                           ; SOURCE LINE # 1229
+0044 120000      R     LCALL   BBK_Process6064Command
+                                           ; SOURCE LINE # 1230
+0047 120000      R     LCALL   BBK_ProcessACPICommand
+                                           ; SOURCE LINE # 1231
+004A 308DF7            JNB     TF0,?C0191
+                                           ; SOURCE LINE # 1232
+                                           ; SOURCE LINE # 1233
+004D 758A06            MOV     TL0,#06H
+                                           ; SOURCE LINE # 1234
+0050 758CF1            MOV     TH0,#0F1H
+                                           ; SOURCE LINE # 1235
+0053 C28D              CLR     TF0
+                                           ; SOURCE LINE # 1236
+0055 120000      R     LCALL   BBK_5msTimerEvent
+                                           ; SOURCE LINE # 1237
+                                           ; SOURCE LINE # 1238
+0058 80EA              SJMP    ?C0191
+             ; FUNCTION BBK_Recovery (END)
+
+             ; FUNCTION BBK_CheckEnterBootBlockMode (BEGIN)
+                                           ; SOURCE LINE # 1245
+                                           ; SOURCE LINE # 1246
+                                           ; SOURCE LINE # 1247
+0000 120000      R     LCALL   uBoot_InitRegs
+                                           ; SOURCE LINE # 1249
+0003 900000      E     MOV     DPTR,#KSOL
+0006 74FF              MOV     A,#0FFH
+0008 F0                MOVX    @DPTR,A
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 59  
+
+                                           ; SOURCE LINE # 1250
+0009 900000      E     MOV     DPTR,#KSOH1
+000C 74BF              MOV     A,#0BFH
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1251
+000F 900000      E     MOV     DPTR,#KSOH2
+0012 74FF              MOV     A,#0FFH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1252
+0015 E4                CLR     A
+0016 900000      E     MOV     DPTR,#WNCKR
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1253
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1254
+001B 900000      E     MOV     DPTR,#KSI
+001E E0                MOVX    A,@DPTR
+001F 30E405            JNB     ACC.4,?C0195
+                                           ; SOURCE LINE # 1255
+                                           ; SOURCE LINE # 1256
+0022 900000      E     MOV     DPTR,#KSOH1
+                                           ; SOURCE LINE # 1257
+0025 8020              SJMP    ?C0234
+                                           ; SOURCE LINE # 1258
+0027         ?C0195:
+                                           ; SOURCE LINE # 1260
+0027 900000      E     MOV     DPTR,#KSOL
+002A 74EF              MOV     A,#0EFH
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1261
+002D 900000      E     MOV     DPTR,#KSOH1
+0030 74FF              MOV     A,#0FFH
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1262
+0033 900000      E     MOV     DPTR,#KSOH2
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1263
+0037 E4                CLR     A
+0038 900000      E     MOV     DPTR,#WNCKR
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1264
+003C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1265
+003D 900000      E     MOV     DPTR,#KSI
+0040 E0                MOVX    A,@DPTR
+0041 900000      E     MOV     DPTR,#KSOL
+0044 30E206            JNB     ACC.2,?C0197
+                                           ; SOURCE LINE # 1266
+                                           ; SOURCE LINE # 1267
+0047         ?C0234:
+0047 74FF              MOV     A,#0FFH
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1268
+004A 7F00              MOV     R7,#00H
+004C 22                RET     
+                                           ; SOURCE LINE # 1269
+004D         ?C0197:
+                                           ; SOURCE LINE # 1270
+004D 74FF              MOV     A,#0FFH
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1272
+0050 7F01              MOV     R7,#01H
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 60  
+
+                                           ; SOURCE LINE # 1273
+0052         ?C0196:
+0052 22                RET     
+             ; FUNCTION BBK_CheckEnterBootBlockMode (END)
+
+             ; FUNCTION BBK_NormalMain (BEGIN)
+                                           ; SOURCE LINE # 1278
+                                           ; SOURCE LINE # 1279
+                                           ; SOURCE LINE # 1281
+0000 22                RET     
+             ; FUNCTION BBK_NormalMain (END)
+
+             ; FUNCTION BBKEflash_CmdRamCode (BEGIN)
+                                           ; SOURCE LINE # 1287
+                                           ; SOURCE LINE # 1288
+                                           ; SOURCE LINE # 1289
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#RamcodeCmd
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1290
+0005 900000      E     MOV     DPTR,#SMECCS
+0008 E0                MOVX    A,@DPTR
+0009 4420              ORL     A,#020H
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1291
+000C 900000      E     MOV     DPTR,#KBHIKDOR
+000F 74FA              MOV     A,#0FAH
+0011 F0                MOVX    @DPTR,A
+0012         ?C0199:
+                                           ; SOURCE LINE # 1292
+                                           ; SOURCE LINE # 1293
+                                           ; SOURCE LINE # 1295
+0012 900000      E     MOV     DPTR,#KBHISR
+0015 E0                MOVX    A,@DPTR
+0016 30E1F9            JNB     ACC.1,?C0199
+0019         ?C0201:
+                                           ; SOURCE LINE # 1296
+0019 900000      E     MOV     DPTR,#KBHISR
+001C E0                MOVX    A,@DPTR
+001D 30E3F2            JNB     ACC.3,?C0199
+0020         ?C0202:
+                                           ; SOURCE LINE # 1297
+0020 900000      E     MOV     DPTR,#KBHIDIR
+0023 E0                MOVX    A,@DPTR
+0024 900000      E     MOV     DPTR,#RamcodeCmd
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1298
+0028 E0                MOVX    A,@DPTR
+0029 B48F0E            CJNE    A,#08FH,?C0203
+                                           ; SOURCE LINE # 1299
+                                           ; SOURCE LINE # 1300
+002C 900000      E     MOV     DPTR,#WinFlashMark
+002F 7433              MOV     A,#033H
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1301
+0032 900000      E     MOV     DPTR,#WinFlashMark2
+0035 7488              MOV     A,#088H
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1302
+0038 8015              SJMP    ?C0200
+                                           ; SOURCE LINE # 1303
+003A         ?C0203:
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 61  
+
+                                           ; SOURCE LINE # 1304
+003A 900000      E     MOV     DPTR,#RamcodeCmd
+003D E0                MOVX    A,@DPTR
+003E B49FD1            CJNE    A,#09FH,?C0199
+                                           ; SOURCE LINE # 1305
+                                           ; SOURCE LINE # 1306
+0041 538E3F            ANL     CKCON,#03FH
+                                           ; SOURCE LINE # 1307
+0044 438E10            ORL     CKCON,#010H
+                                           ; SOURCE LINE # 1308
+0047 43D801            ORL     WDTCON,#01H
+                                           ; SOURCE LINE # 1309
+004A 43D802            ORL     WDTCON,#02H
+004D         ?C0206:
+                                           ; SOURCE LINE # 1310
+004D 80FE              SJMP    ?C0206
+                                           ; SOURCE LINE # 1311
+                                           ; SOURCE LINE # 1312
+004F         ?C0200:
+                                           ; SOURCE LINE # 1313
+004F 900000      E     MOV     DPTR,#SMECCS
+0052 E0                MOVX    A,@DPTR
+0053 54DF              ANL     A,#0DFH
+0055 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1314
+0056 00                NOP     
+                                           ; SOURCE LINE # 1315
+0057 020000      R     LJMP    main
+             ; FUNCTION BBKEflash_CmdRamCode (END)
+
+             ; FUNCTION _BBKOut7SegLED (BEGIN)
+                                           ; SOURCE LINE # 1343
+;---- Variable 'bData' assigned to Register 'R5' ----
+0000 CD                XCH     A,R5
+0001 EF                MOV     A,R7
+0002 CD                XCH     A,R5
+                                           ; SOURCE LINE # 1344
+                                           ; SOURCE LINE # 1345
+;---- Variable 'bIndex' assigned to Register 'R4' ----
+0003 7C07              MOV     R4,#07H
+0005         ?C0209:
+                                           ; SOURCE LINE # 1347
+0005 EC                MOV     A,R4
+0006 F4                CPL     A
+0007 6033              JZ      ?C0213
+                                           ; SOURCE LINE # 1348
+                                           ; SOURCE LINE # 1349
+0009 7401              MOV     A,#01H
+000B 7E00              MOV     R6,#00H
+000D C8                XCH     A,R0
+000E EC                MOV     A,R4
+000F C8                XCH     A,R0
+0010 08                INC     R0
+0011 8005              SJMP    ?C0228
+0013         ?C0227:
+0013 C3                CLR     C
+0014 33                RLC     A
+0015 CE                XCH     A,R6
+0016 33                RLC     A
+0017 CE                XCH     A,R6
+0018         ?C0228:
+0018 D8F9              DJNZ    R0,?C0227
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 62  
+
+001A FF                MOV     R7,A
+001B ED                MOV     A,R5
+001C FB                MOV     R3,A
+001D EF                MOV     A,R7
+001E 5B                ANL     A,R3
+001F 900000      E     MOV     DPTR,#GPDRE
+0022 6006              JZ      ?C0211
+                                           ; SOURCE LINE # 1350
+0024 E0                MOVX    A,@DPTR
+0025 4440              ORL     A,#040H
+0027 F0                MOVX    @DPTR,A
+0028 8004              SJMP    ?C0212
+002A         ?C0211:
+                                           ; SOURCE LINE # 1352
+002A E0                MOVX    A,@DPTR
+002B 54BF              ANL     A,#0BFH
+002D F0                MOVX    @DPTR,A
+002E         ?C0212:
+                                           ; SOURCE LINE # 1353
+002E 900000      E     MOV     DPTR,#GPDRC
+0031 E0                MOVX    A,@DPTR
+0032 547F              ANL     A,#07FH
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1354
+0035 E0                MOVX    A,@DPTR
+0036 4480              ORL     A,#080H
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1355
+0039 1C                DEC     R4
+                                           ; SOURCE LINE # 1356
+003A 80C9              SJMP    ?C0209
+                                           ; SOURCE LINE # 1357
+003C         ?C0213:
+003C 22                RET     
+             ; FUNCTION _BBKOut7SegLED (END)
+
+             ; FUNCTION BBKDark7SegLed (BEGIN)
+                                           ; SOURCE LINE # 1362
+                                           ; SOURCE LINE # 1363
+                                           ; SOURCE LINE # 1364
+0000 7FFF              MOV     R7,#0FFH
+0002 120000      R     LCALL   _BBKOut7SegLED
+                                           ; SOURCE LINE # 1365
+0005 7FFF              MOV     R7,#0FFH
+0007 020000      R     LJMP    _BBKOut7SegLED
+             ; FUNCTION BBKDark7SegLed (END)
+
+             ; FUNCTION _BBKP80LedOut (BEGIN)
+                                           ; SOURCE LINE # 1372
+;---- Variable 'bData' assigned to Register 'R2' ----
+0000 CA                XCH     A,R2
+0001 EF                MOV     A,R7
+0002 CA                XCH     A,R2
+                                           ; SOURCE LINE # 1373
+                                           ; SOURCE LINE # 1374
+                                           ; SOURCE LINE # 1379
+;---- Variable 'data_pntr' assigned to Register 'R4/R5' ----
+0003 7D00        R     MOV     R5,#LOW BBKSEG7_Table
+0005 7C00        R     MOV     R4,#HIGH BBKSEG7_Table
+                                           ; SOURCE LINE # 1380
+0007 EA                MOV     A,R2
+0008 54F0              ANL     A,#0F0H
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 63  
+
+000A C4                SWAP    A
+000B 540F              ANL     A,#0FH
+000D 2D                ADD     A,R5
+000E FD                MOV     R5,A
+000F E4                CLR     A
+0010 3C                ADDC    A,R4
+0011 FC                MOV     R4,A
+                                           ; SOURCE LINE # 1382
+0012 8D82              MOV     DPL,R5
+0014 F583              MOV     DPH,A
+0016 E4                CLR     A
+0017 93                MOVC    A,@A+DPTR
+0018 FF                MOV     R7,A
+0019 9022BA            MOV     DPTR,#022BAH
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1383
+001D 120000      R     LCALL   _BBKOut7SegLED
+                                           ; SOURCE LINE # 1386
+0020 7C00        R     MOV     R4,#HIGH BBKSEG7_Table
+0022 7D00        R     MOV     R5,#LOW BBKSEG7_Table
+                                           ; SOURCE LINE # 1387
+0024 EA                MOV     A,R2
+0025 540F              ANL     A,#0FH
+0027 2D                ADD     A,R5
+0028 FD                MOV     R5,A
+0029 E4                CLR     A
+002A 3C                ADDC    A,R4
+002B FC                MOV     R4,A
+                                           ; SOURCE LINE # 1389
+002C 8D82              MOV     DPL,R5
+002E F583              MOV     DPH,A
+0030 E4                CLR     A
+0031 93                MOVC    A,@A+DPTR
+0032 FF                MOV     R7,A
+0033 9022BB            MOV     DPTR,#022BBH
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1391
+0037 020000      R     LJMP    _BBKOut7SegLED
+             ; FUNCTION _BBKP80LedOut (END)
+
+             ; FUNCTION BBKPollingBIOS80Port (BEGIN)
+                                           ; SOURCE LINE # 1400
+                                           ; SOURCE LINE # 1401
+                                           ; SOURCE LINE # 1402
+0000 9022BD            MOV     DPTR,#022BDH
+0003 E0                MOVX    A,@DPTR
+0004 04                INC     A
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1403
+0006 A3                INC     DPTR
+0007 E0                MOVX    A,@DPTR
+0008 FF                MOV     R7,A
+0009 A3                INC     DPTR
+000A E0                MOVX    A,@DPTR
+000B 6F                XRL     A,R7
+000C 6006              JZ      ?C0216
+                                           ; SOURCE LINE # 1404
+                                           ; SOURCE LINE # 1405
+000E E0                MOVX    A,@DPTR
+000F 9022BE            MOV     DPTR,#022BEH
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1406
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 64  
+
+0013 22                RET     
+0014         ?C0216:
+                                           ; SOURCE LINE # 1408
+                                           ; SOURCE LINE # 1409
+0014 9022BC            MOV     DPTR,#022BCH
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 9022BF            MOV     DPTR,#022BFH
+001C E0                MOVX    A,@DPTR
+001D 6F                XRL     A,R7
+001E 602E              JZ      ?C0219
+                                           ; SOURCE LINE # 1410
+                                           ; SOURCE LINE # 1411
+0020 E0                MOVX    A,@DPTR
+0021 9022BC            MOV     DPTR,#022BCH
+0024 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1412
+0025 900000      E     MOV     DPTR,#GCR15
+0028 E0                MOVX    A,@DPTR
+0029 543F              ANL     A,#03FH
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1413
+002C 900000      E     MOV     DPTR,#GPCRB0
+002F 7440              MOV     A,#040H
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1414
+0032 900000      E     MOV     DPTR,#GPCRB1
+0035 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1415
+0036 9022BF            MOV     DPTR,#022BFH
+0039 E0                MOVX    A,@DPTR
+003A FF                MOV     R7,A
+003B 120000      R     LCALL   _BBKP80LedOut
+                                           ; SOURCE LINE # 1416
+003E 900000      E     MOV     DPTR,#GCR15
+0041 E0                MOVX    A,@DPTR
+0042 44C0              ORL     A,#0C0H
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1417
+0045 E4                CLR     A
+0046 900000      E     MOV     DPTR,#GPCRB0
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1418
+004A 900000      E     MOV     DPTR,#GPCRB1
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1419
+                                           ; SOURCE LINE # 1420
+                                           ; SOURCE LINE # 1423
+004E         ?C0219:
+004E 22                RET     
+             ; FUNCTION BBKPollingBIOS80Port (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2481    ----
+   CONSTANT SIZE    =    459    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.03   BBK_MAIN                                                              09/27/2012 10:30:37 PAGE 65  
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

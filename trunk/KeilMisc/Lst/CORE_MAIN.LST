@@ -1,0 +1,2989 @@
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE CORE_MAIN
+OBJECT MODULE PLACED IN Code\CORE\CORE_MAIN.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\CORE\CORE_MAIN.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\
+                    -INCLUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: CORE_MAIN.C - Main Program for KBC firmware.
+   3           *
+   4           * Main processing loop (interrupt driven) for the keyboard controller/scanner.
+   5           *
+   6           * Copyright (c) 1983-2007, Insyde Software Corporation. All Rights Reserved.
+   7           *
+   8           * You may not reproduce, distribute, publish, display, perform, modify, adapt,
+   9           * transmit, broadcast, present, recite, release, license or otherwise exploit
+  10           * any part of this publication in any form, by any means, without the prior
+  11           * written permission of Insyde Software Corporation.
+  12           *---------------------------------------------------------------------------*/
+  13          
+  14          #include <CORE_INCLUDE.H>
+  15          #include <OEM_INCLUDE.H>
+  16          
+  17          /* ----------------------------------------------------------------------------
+  18           *  FUNCTION: main - Main service loop.
+  19           *
+  20           *  Wait in idle state until an IRQ causes an exit from idle.  If the IRQ
+  21           *  handler posted a service request (via bSERVICE) then dispatch control to
+  22           *  the appropriate service handler.  Otherwise, go back to idle state.  After
+  23           *  all service requests have been handled, return to idle state.
+  24           * ------------------------------------------------------------------------- */
+  25          void main(void)
+  26          {
+  27   1              DisableAllInterrupt();
+  28   1              SP = 0xC0;                                      // Setting stack pointer
+  29   1              _nop_();
+  30   1          _nop_();
+  31   1          _nop_();
+  32   1          _nop_();
+  33   1          DCache = 0x03;
+  34   1             
+  35   1              CLEAR_MASK(RAM_16FF,BIT0);      // for AX
+  36   1      
+  37   1              if(Hook_ECRetunrMainFuncKeepCondition()==0x33)  // Exit from follow mode or EC scatch ROM
+  38   1              {
+  39   2                      CLEAR_MASK(FBCFG,SSMC); // disable scatch ROM
+  40   2                      _nop_();
+  41   2                  MPRECF = 0x01;
+  42   2                  _nop_();
+  43   2                  MPRECF = 0x01;
+  44   2                  _nop_();
+  45   2                  MPRECF = 0x01;
+  46   2                  _nop_();
+  47   2                  MPRECF = 0x01;
+  48   2                  _nop_();
+  49   2                  _nop_();
+  50   2              WinFlashMark = 0xFC;
+  51   2                      WinFlashMark1=0x55;             //G21: Add WinFlashMark1 check
+  52   2              WinFlashMark2 = 0x00;
+  53   2              ResetBANKDATA();        // init bank mechanism to code bank 0
+  54   2              Hook_ECExitFollowMode();
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 2   
+
+  55   2              Init_Timers();
+  56   2                  EnableModuleInterrupt();
+  57   2                  CheckECCHIPVer();
+  58   2              }
+  59   1              else
+  60   1              {
+  61   2                      ECSleepCount = 3;
+  62   2                      //ProcessSID(COLDBOOT_ID);
+  63   2                      //pLastSID  = COLDBOOT_ID; //ANGELAS089: remove
+  64   2              //uMBID = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07) ,0xE0);
+  65   2      
+  66   2                      EEPROM_PwrSts = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07),0xDF);
+  67   2                      if( (EEPROM_PwrSts & 0x10) != 0 )
+  68   2                      {
+  69   3                              Core_Init_Regs();
+  70   3                              if( CheckCrisisMode() )
+  71   3                              { 
+  72   4                                  SET_MASK(SYS_MISC1,Crisis_On);
+  73   4                                      SET_MASK(SYS_MISC1,BATCRISIS_FLAG);
+  74   4                              }
+  75   3                              else
+  76   3                              { 
+  77   4                                  CLR_MASK(SYS_MISC1,Crisis_On); 
+  78   4                                      CLR_MASK(SYS_MISC1,BATCRISIS_FLAG); 
+  79   4                  }
+  80   3                      }
+  81   2      
+  82   2                      Core_Initialization();
+  83   2                      Oem_Initialization();
+  84   2              InitEnableInterrupt();
+  85   2                      
+  86   2              #ifdef UART_Debug
+  87   2              Init_UART();
+  88   2              printf("\n************************************");
+  89   2              printf("\nEC Init OK !!!");
+  90   2              printf("\n************************************");
+  91   2              #endif
+  92   2              }
+  93   1              
+  94   1              #if !EN_PwrSeqTest
+  95   1                      #if WDT_Support
+  96   1                      EnableInternalWDT();
+  97   1                      #endif
+  98   1              #endif
+  99   1              
+ 100   1          #if Support_Mirror_Code
+ 101   1          if(!((WinFlashMark == 0xFC)&&(WinFlashMark2 == 0x00)&&(WinFlashMark1==0x55))) //Add WinFlashMark1 chec
+             -k
+ 102   1          {
+ 103   2              RamDebug(0x88);
+ 104   2              Check_Mirror_Occurs(); 
+ 105   2              if(Read_Eflash_Byte(0x00, 0x00, 0x4D) != 00)
+ 106   2              {
+ 107   3                      Do_Eflash_Write_1Byte(0x00, 0x00, 0x00, 0x4D);            
+ 108   3                      RamDebug(0x66);
+ 109   3                      FLHCTRL3R |= 0x80;      
+ 110   3                      HINSTC1 |= 0x40;           
+ 111   3                  RamDebug(0x77);               
+ 112   3              }
+ 113   2          }    
+ 114   1          #endif
+ 115   1              ProcessSID(ShutDnCause); //ANGELAS089:add
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 3   
+
+ 116   1              //T11N + e
+ 117   1              while(1)
+ 118   1              {
+ 119   2              if(OEM_SkipMainServiceFunc()==Normal_MainService)
+ 120   2              {
+ 121   3                      main_service();
+ 122   3                      EnableModuleInterrupt();
+ 123   3                      _nop_();
+ 124   3                      _nop_();
+ 125   3                      _nop_();
+ 126   3                      _nop_();
+ 127   3          
+ 128   3          
+ 129   3              #if TouchPad_only  //Update PS2 code base.
+ 130   3          
+ 131   3              #else
+                              if(PS2CheckPendingISR()==0x00)
+                              {
+                              ScanAUXDeviceStep();
+                          }
+                      #endif
+ 137   3      
+ 138   3              #ifdef SMBusServiceCenterFunc
+                              if((Service==0x00)&&(Service1==0x00)&&(CheckSMBusNeedService()==SMBus_ClearService))
+                      #else
+ 141   3                  if((Service==0x00)&&(Service1==0x00))
+ 142   3              #endif
+ 143   3                  {
+ 144   4                      if (TH0< Timer_1ms>>8)
+ 145   4                          TH0 = Timer_1ms>>8;
+ 146   4                  }
+ 147   3              }
+ 148   2              }
+ 149   1      }
+ 150          
+ 151          /* ----------------------------------------------------------------------------
+ 152           * FUNCTION: main_service - Check for new/more service requests.
+ 153           *
+ 154           * Check for a request flag.  The check is done according to priority.  If a
+ 155           * request flag is set, handle the request and loop back to get the flags
+ 156           * again.  Do not follow through to check the next flag.  The flags are to be
+ 157           * checked in order.
+ 158           * ------------------------------------------------------------------------- */
+ 159          void main_service(void)
+ 160          {
+ 161   1          #ifdef SMBusServiceCenterFunc
+                  while((Service!=0x00)||(Service1!=0x00)||(CheckSMBusNeedService()==SMBus_NeedService))
+                  #else
+ 164   1          while((Service!=0x00)||(Service1!=0x00))
+ 165   1          #endif
+ 166   1          { 
+ 167   2                      /* //
+ 168   2                      if( IS_MASK_SET(BATTUPDATEFW, BIT0))
+ 169   2                      {
+ 170   2                              if(F_Service_PCI2)
+ 171   2                              {
+ 172   2                                      F_Service_PCI2=0;
+ 173   2                                      service_pci2();
+ 174   2                                      continue;
+ 175   2                              }
+ 176   2                      }
+ 177   2                      */     
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 4   
+
+ 178   2              //-----------------------------------
+ 179   2              // Host command/data service
+ 180   2              //-----------------------------------
+ 181   2              if(F_Service_PCI)
+ 182   2              {
+ 183   3                  F_Service_PCI=0;
+ 184   3                  service_pci1();
+ 185   3                  continue;
+ 186   3              }
+ 187   2      
+ 188   2              //-----------------------------------
+ 189   2              // Service unlock
+ 190   2              //-----------------------------------
+ 191   2              if(F_Service_UNLOCK)
+ 192   2              {
+ 193   3                  F_Service_UNLOCK=0;
+ 194   3                  service_unlock();
+ 195   3                  continue;
+ 196   3              }
+ 197   2      
+ 198   2              //-----------------------------------
+ 199   2              // Send byte from KBC
+ 200   2              //-----------------------------------
+ 201   2              if(F_Service_SEND)
+ 202   2              {
+ 203   3                  F_Service_SEND=0;
+ 204   3                  service_send();
+ 205   3                  continue;
+ 206   3              }
+ 207   2      
+ 208   2              //-----------------------------------
+ 209   2              // Send PS2 interface data
+ 210   2              //-----------------------------------
+ 211   2              if(F_Service_Send_PS2)
+ 212   2              {
+ 213   3                  F_Service_Send_PS2=0;
+ 214   3                  service_PS2_data();
+ 215   3                  continue;
+ 216   3              }
+ 217   2      
+ 218   2              //-----------------------------------
+ 219   2              // process PS2 interface data
+ 220   2              //-----------------------------------
+ 221   2              if(F_Service_PS2)
+ 222   2              {
+ 223   3                  F_Service_PS2=0;
+ 224   3                  service_ps2();
+ 225   3                  continue;
+ 226   3              }
+ 227   2      
+ 228   2              //-----------------------------------
+ 229   2              // process SMBus interface data
+ 230   2              //-----------------------------------
+ 231   2              #ifdef SMBusServiceCenterFunc
+                      ServiceSMBus();
+                      #endif
+ 234   2             if(F_Service_PCI2)
+ 235   2              {
+ 236   3                  F_Service_PCI2=0;
+ 237   3                  service_pci2();
+ 238   3                  continue;
+ 239   3              }
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 5   
+
+ 240   2              //-----------------------------------
+ 241   2              // 1 millisecond elapsed
+ 242   2              //-----------------------------------
+ 243   2              if(F_Service_MS_1)
+ 244   2              {
+ 245   3                  F_Service_MS_1=0;
+ 246   3                  service_1mS();
+ 247   3                  continue;
+ 248   3              }
+ 249   2      
+ 250   2              //-----------------------------------
+ 251   2              // Secondary Host command/data service
+ 252   2              //-----------------------------------
+ 253   2              if(F_Service_PCI2)
+ 254   2              {
+ 255   3                  F_Service_PCI2=0;
+ 256   3                  service_pci2();
+ 257   3                  continue;
+ 258   3              }
+ 259   2      
+ 260   2              //-----------------------------------
+ 261   2              // Keyboard scanner service
+ 262   2              //-----------------------------------
+ 263   2              if(F_Service_KEY)
+ 264   2              {
+ 265   3                  F_Service_KEY=0;
+ 266   3                  service_scan();
+ 267   3                  continue;
+ 268   3              }
+ 269   2      
+ 270   2              //-----------------------------------
+ 271   2              //
+ 272   2              //-----------------------------------
+ 273   2              Hook_main_service_H();
+ 274   2      
+ 275   2              //-----------------------------------
+ 276   2              // Low level event
+ 277   2              //-----------------------------------
+ 278   2              if(F_Service_Low_LV)
+ 279   2              {
+ 280   3                  F_Service_Low_LV=0;
+ 281   3                  service_Low_LVEvent();
+ 282   3                  continue;
+ 283   3              }
+ 284   2      
+ 285   2              //-----------------------------------
+ 286   2              // Third Host command/data service
+ 287   2              //-----------------------------------
+ 288   2              if(F_Service_PCI3)
+ 289   2              {
+ 290   3                  F_Service_PCI3=0;
+ 291   3                  service_pci3();
+ 292   3                  continue;
+ 293   3              }
+ 294   2      
+ 295   2              //-----------------------------------
+ 296   2              // CIR IRQ
+ 297   2              //-----------------------------------
+ 298   2              if(F_Service_CIR)
+ 299   2              {
+ 300   3                  F_Service_CIR=0;
+ 301   3                  service_cir();
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 6   
+
+ 302   3                  continue;
+ 303   3              }
+ 304   2      
+ 305   2              //-----------------------------------
+ 306   2              // fourth command/data service
+ 307   2              //-----------------------------------
+ 308   2              if(F_Service_PCI4)
+ 309   2              {
+ 310   3                  F_Service_PCI4=0;
+ 311   3                  service_pci4();
+ 312   3                  continue;
+ 313   3              }
+ 314   2      
+ 315   2              //------------------------------------
+ 316   2              // service_OEM_1
+ 317   2              //------------------------------------
+ 318   2              if(F_Service_OEM_1)
+ 319   2              {
+ 320   3                  F_Service_OEM_1=0;
+ 321   3                  service_OEM_1();
+ 322   3                  continue;
+ 323   3              }
+ 324   2      
+ 325   2              //------------------------------------
+ 326   2              // service_OEM_2
+ 327   2              //------------------------------------
+ 328   2              if(F_Service_OEM_2)
+ 329   2              {
+ 330   3                  F_Service_OEM_2=0;
+ 331   3                  service_OEM_2();
+ 332   3                  continue;
+ 333   3              }
+ 334   2      
+ 335   2              //------------------------------------
+ 336   2              // service_OEM_3
+ 337   2              //------------------------------------
+ 338   2              if(F_Service_OEM_3)
+ 339   2              {
+ 340   3                  F_Service_OEM_3=0;
+ 341   3                  service_OEM_3();
+ 342   3                  continue;
+ 343   3              }
+ 344   2      
+ 345   2              //------------------------------------
+ 346   2              // service_OEM_4
+ 347   2              //------------------------------------
+ 348   2              if(F_Service_OEM_4)
+ 349   2              {
+ 350   3                  F_Service_OEM_4=0;
+ 351   3                  service_OEM_4();
+ 352   3                  continue;
+ 353   3              }
+ 354   2      
+ 355   2              //-----------------------------------
+ 356   2              //
+ 357   2              //-----------------------------------
+ 358   2              Hook_main_service_L();
+ 359   2          }
+ 360   1      }
+ 361          
+ 362          static void service_Low_LVEvent(void)
+ 363          {
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 7   
+
+ 364   1          if((KBPendingTXCount != KBPendingRXCount )||(scan.kbf_head != scan.kbf_tail))
+ 365   1          {
+ 366   2                   SetServiceSendFlag();
+ 367   2               if(IS_MASK_SET(BATTUPDATEFW,PriBattInhib)) //ANGELAG008:add
+ 368   2                              F_Service_SEND = 1;                     //ANGELAG008:add
+ 369   2          }
+ 370   1      
+ 371   1          if(IS_MASK_SET(KBHISR,P_IBF))
+ 372   1          {
+ 373   2                  F_Service_PCI = 1;
+ 374   2          }
+ 375   1      
+ 376   1          if(IS_MASK_SET(PM1STS,P_IBF))
+ 377   1          {
+ 378   2                  F_Service_PCI2 = 1;
+ 379   2          }
+ 380   1      }
+ 381          
+ 382          //----------------------------------------------------------------------------
+ 383          // FUNCTION: service_unlock
+ 384          // Unlock aux devices and re-enable Host interface IRQ if it is ok to do so.
+ 385          //----------------------------------------------------------------------------
+ 386          static void service_unlock(void)
+ 387          {
+ 388   1              Unlock_Scan();
+ 389   1      }
+ 390          
+ 391          //------------------------------------------------------------
+ 392          // Polling events
+ 393          //------------------------------------------------------------
+ 394          void service_1mS(void)
+ 395          {
+ 396   1          Timer1msEvent();
+ 397   1          Timer1msCnt++;
+ 398   1          if(Timer1msCnt>=10)
+ 399   1          {
+ 400   2              Timer1msCnt = 0x00;
+ 401   2          }
+ 402   1      
+ 403   1          if(Hook_Only_Timer1msEvent()==Only_Timer1msEvent)
+ 404   1          {
+ 405   2              return;
+ 406   2          }
+ 407   1              //72JERRY076: S+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+ 408   1          if((Timer1msCnt%2)==0x00)
+ 409   1          {
+ 410   2            Timer2msEvent();
+ 411   2            Timer2msCnt++;
+ 412   2            if(Timer2msCnt & 1)
+ 413   2            {
+ 414   3                Timer4msEventA();
+ 415   3            }
+ 416   2            else
+ 417   2            {
+ 418   3              Timer4msEventB();
+ 419   3              switch(Timer2msCnt)
+ 420   3              {
+ 421   4                case 2:
+ 422   4                   Timer20msEventA();
+ 423   4                break;
+ 424   4      
+ 425   4                case 4:
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 8   
+
+ 426   4                    //Timer20msEventB();
+ 427   4                break;
+ 428   4      
+ 429   4                case 6:
+ 430   4                   //Timer20msEventA();
+ 431   4                break;
+ 432   4      
+ 433   4                case 8:
+ 434   4                    //Timer20msEventB();
+ 435   4                break;
+ 436   4                default:
+ 437   4                    Timer2msCnt=0;
+ 438   4                  break;
+ 439   4              }
+ 440   3            }
+ 441   2          }
+ 442   1              //72JERRY076: E+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+ 443   1          if((Timer1msCnt%5)==0x00)
+ 444   1          {
+ 445   2                  Timer5msEvent();
+ 446   2                  Timer5msCnt++;
+ 447   2                  if ( Timer5msCnt & 1 )      // 10ms events //1 5ms---3 5ms ---5 5ms
+ 448   2                  {
+ 449   3                  Timer10msEventA();
+ 450   3              
+ 451   3                  }
+ 452   2                  else
+ 453   2                  {
+ 454   3                          Timer10msEventB();
+ 455   3                  switch( Timer5msCnt )   // Share Loading Branch Control
+ 456   3                  {
+ 457   4                      case 2: 
+ 458   4                      Timer50msEventA();
+ 459   4                      break;
+ 460   4                      case 4: 
+ 461   4                      Timer50msEventB();
+ 462   4                      break;
+ 463   4                      case 6: 
+ 464   4                      Timer50msEventC();
+ 465   4                      break;
+ 466   4                      case 8: 
+ 467   4                      Timer100msCntB++;
+ 468   4                              if ( Timer100msCntB & 1 )
+ 469   4                      {
+ 470   5                              Timer100msEventA();
+ 471   5                      }
+ 472   4                      else
+ 473   4                      {
+ 474   5                              Timer100msEventB();
+ 475   5                      }
+ 476   4                      break;
+ 477   4      
+ 478   4                      default:
+ 479   4                                      Timer5msCnt=0;
+ 480   4                      break;
+ 481   4                      }
+ 482   3      
+ 483   3                  if ( Timer5msCnt == 0x00 )
+ 484   3                  {                           // 50msec
+ 485   4                          Timer100msCnt ++;
+ 486   4                          if ( Timer100msCnt & 1 )
+ 487   4                          {
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 9   
+
+ 488   5                          Timer100msEventC();
+ 489   5                          }
+ 490   4                          else
+ 491   4                          {                   
+ 492   5      
+ 493   5                                  switch( Timer100msCnt )
+ 494   5                          {
+ 495   6                              case 2: 
+ 496   6                              Timer500msEventA();
+ 497   6                                      break;
+ 498   6                              case 4: 
+ 499   6                              Timer500msEventB();
+ 500   6                              break;
+ 501   6                              case 6: 
+ 502   6                              Timer500msEventC();
+ 503   6                                      break;
+ 504   6                              case 8: 
+ 505   6                              Timer1SecEventA();
+ 506   6                              break;
+ 507   6                                          case 10:    
+ 508   6                              Timer1SecEventB();
+ 509   6                              break;
+ 510   6                              case 12:        
+ 511   6                              Timer500msEventA();
+ 512   6                              break;
+ 513   6                              case 14:        
+ 514   6                              Timer500msEventB();
+ 515   6                              break;
+ 516   6                              case 16:        
+ 517   6                              Timer500msEventC();
+ 518   6                              break;
+ 519   6                              case 18:        
+ 520   6                              Timer1SecEventC();
+ 521   6                                      break;
+ 522   6                              default:        // 1 Sec
+ 523   6                              Timer100msCnt = 0;
+ 524   6                                      Timer1SecCnt ++;
+ 525   6                              if ( Timer1SecCnt == 60 )
+ 526   6                              {
+ 527   7                                      Timer1MinEvent();
+ 528   7                                      Timer1SecCnt=0;
+ 529   7                              }
+ 530   6                              break;
+ 531   6                                  }
+ 532   5                      }
+ 533   4                      }
+ 534   3                      }
+ 535   2              }
+ 536   1      }
+ 537          
+ 538          //------------------------------------------------------------
+ 539          // 1ms events
+ 540          //------------------------------------------------------------
+ 541          void Timer1msEvent(void)
+ 542          {
+ 543   1          ReSendPS2PendingData();
+ 544   1          Hook_Timer1msEvent(Timer1msCnt);
+ 545   1      }
+ 546          //72JERRY076:S+ Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+ 547          //------------------------------------------------------------
+ 548          // 2ms events
+ 549          //------------------------------------------------------------
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 10  
+
+ 550          void Timer2msEvent(void)
+ 551          {
+ 552   1          Hook_Timer2msEvent();
+ 553   1      }
+ 554          //------------------------------------------------------------
+ 555          // 4ms events
+ 556          //------------------------------------------------------------
+ 557          void Timer4msEventA(void)
+ 558          {
+ 559   1          Hook_Timer4msEventA();
+ 560   1      }
+ 561          //------------------------------------------------------------
+ 562          // 4ms events
+ 563          //------------------------------------------------------------
+ 564          void Timer4msEventB(void)
+ 565          {
+ 566   1          Hook_Timer4msEventB();
+ 567   1      }
+ 568          //------------------------------------------------------------
+ 569          // 20ms events
+ 570          //------------------------------------------------------------
+ 571          void Timer20msEventA(void)
+ 572          {
+ 573   1          Hook_Timer20msEventA();
+ 574   1      }
+ 575          
+ 576          //72JERRY076: E+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+ 577          //------------------------------------------------------------
+ 578          // 5ms events
+ 579          //------------------------------------------------------------
+ 580          void Timer5msEvent(void)
+ 581          {
+ 582   1          F_Service_Low_LV = 1;
+ 583   1              if (Timer_A.fbit.TMR_SCAN)
+ 584   1              {
+ 585   2                      F_Service_KEY = 1;              // Request scanner service.
+ 586   2              }
+ 587   1             Hook_Timer5msEvent();
+ 588   1      }
+ 589          
+ 590          //------------------------------------------------------------
+ 591          // 10ms events
+ 592          //------------------------------------------------------------
+ 593          void Timer10msEventA(void)
+ 594          {
+ 595   1          SetStartScanAUXFlag();
+ 596   1              Hook_Timer10msEventA();
+ 597   1      }
+ 598          
+ 599          //------------------------------------------------------------
+ 600          // 10ms events
+ 601          //------------------------------------------------------------
+ 602          void Timer10msEventB(void)
+ 603          {
+ 604   1              Hook_Timer10msEventB();
+ 605   1      }
+ 606          
+ 607          //------------------------------------------------------------
+ 608          // 50ms events A
+ 609          //------------------------------------------------------------
+ 610          void Timer50msEventA(void)
+ 611          {
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 11  
+
+ 612   1              Hook_Timer50msEventA();
+ 613   1      }
+ 614          
+ 615          //------------------------------------------------------------
+ 616          // 50ms events B
+ 617          //------------------------------------------------------------
+ 618          void Timer50msEventB(void)
+ 619          {
+ 620   1              Hook_Timer50msEventB();
+ 621   1      }
+ 622          
+ 623          //------------------------------------------------------------
+ 624          // 50ms events C
+ 625          //------------------------------------------------------------
+ 626          void Timer50msEventC(void)
+ 627          {
+ 628   1              Hook_Timer50msEventC();
+ 629   1      }
+ 630          
+ 631          //------------------------------------------------------------
+ 632          // 100ms events A
+ 633          //------------------------------------------------------------
+ 634          void Timer100msEventA(void)
+ 635          {
+ 636   1              Hook_Timer100msEventA();
+ 637   1      }
+ 638          
+ 639          //------------------------------------------------------------
+ 640          // 100ms events B
+ 641          //------------------------------------------------------------
+ 642          void Timer100msEventB(void)
+ 643          {
+ 644   1              Hook_Timer100msEventB();
+ 645   1      }
+ 646          
+ 647          //------------------------------------------------------------
+ 648          // 100ms events C
+ 649          //------------------------------------------------------------
+ 650          void Timer100msEventC(void)
+ 651          {
+ 652   1              Hook_Timer100msEventC();
+ 653   1      }
+ 654          
+ 655          //------------------------------------------------------------
+ 656          // 500ms events A
+ 657          //------------------------------------------------------------
+ 658          void Timer500msEventA(void)
+ 659          {
+ 660   1              Hook_Timer500msEventA();
+ 661   1      }
+ 662          
+ 663          //------------------------------------------------------------
+ 664          // 500ms events B
+ 665          //------------------------------------------------------------
+ 666          void Timer500msEventB(void)
+ 667          {
+ 668   1              Hook_Timer500msEventB();
+ 669   1      }
+ 670          
+ 671          //------------------------------------------------------------
+ 672          // 500ms events C
+ 673          //------------------------------------------------------------
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 12  
+
+ 674          void Timer500msEventC(void)
+ 675          {
+ 676   1              Hook_Timer500msEventC();
+ 677   1      }
+ 678          
+ 679          //------------------------------------------------------------
+ 680          // 1sec events A
+ 681          //------------------------------------------------------------
+ 682          void Timer1SecEventA(void)
+ 683          {
+ 684   1              Hook_Timer1SecEventA();
+ 685   1      }
+ 686          
+ 687          //------------------------------------------------------------
+ 688          // 1sec events B
+ 689          //------------------------------------------------------------
+ 690          void Timer1SecEventB(void)
+ 691          {
+ 692   1              Hook_Timer1SecEventB();
+ 693   1      }
+ 694          
+ 695          //------------------------------------------------------------
+ 696          // 1sec events C
+ 697          //------------------------------------------------------------
+ 698          void Timer1SecEventC(void)
+ 699          {
+ 700   1              Hook_Timer1SecEventC();
+ 701   1      }
+ 702          
+ 703          //------------------------------------------------------------
+ 704          // 1min events
+ 705          //------------------------------------------------------------
+ 706          void Timer1MinEvent(void)
+ 707          {
+ 708   1          Hook_Timer1MinEvent();
+ 709   1      }
+ 710          
+ 711          bit CheckCanEnterDeepSleep()
+ 712          {
+ 713   1              //under S5&S3 battery mode  EC enter sleep mode start
+ 714   1              BYTE resault;
+ 715   1              resault = 0x00;
+ 716   1              //if(Read_AC_IN()) 
+ 717   1              //{
+ 718   1                      //resault = 0x01;
+ 719   1              //}//72JERRY020:- Modify enter EC sleep setting.
+ 720   1              if(SystemIsS0)                                                   // if system in S0
+ 721   1              {
+ 722   2                      resault = 0x01;
+ 723   2              }
+ 724   1              //MARTINH154:Add  start
+ 725   1              if(IS_MASK_SET(CMOS_TEST,b0_CMOS_FunctionKey))                                                    // if system in S0
+ 726   1              {
+ 727   2                      resault = 0x01;
+ 728   2              }
+ 729   1              //MARTINH154:Add end
+ 730   1              //ANGELAS044:add start
+ 731   1              if(Read_EC_PWRBTN())                                   
+ 732   1              {       
+ 733   2                      resault = 0x01;
+ 734   2              }
+ 735   1              if(LOWBATT_3TIMES!=0)
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 13  
+
+ 736   1              {
+ 737   2                      resault=0x01;
+ 738   2              }
+ 739   1              if(IS_MASK_SET(ACPI_HOTKEY, b6Cmd_NoShut)||IS_MASK_SET(ACPI_HOTKEY, b7BIOS_NoShut))//72JERRY020: Modify e
+             -nter EC sleep setting.
+ 740   1              {
+ 741   2                      resault = 0x01;
+ 742   2              }
+ 743   1              //ANGELAS067:add start
+ 744   1              //if((SystemIsS5||SystemIsDSX)&&(!Read_AC_IN())&&( IS_MASK_CLEAR(ACPI_HOTKEY, b7BIOS_NoShut))
+ 745   1                      //&&( IS_MASK_CLEAR(ACPI_HOTKEY, b6Cmd_NoShut)))
+ 746   1              //{
+ 747   1                      //resault = 0x00;//72JERRY016: Enable EC sleep mode
+ 748   1              //}//72JERRY020:- Modify enter EC sleep setting.
+ 749   1              //ANGELAS067:add end
+ 750   1              if(Read_AC_IN()&&(IS_MASK_CLEAR(nBattery0x16L,FullyChg))&&(IS_MASK_SET(BT1_STATUS1, bat_in)))
+ 751   1              {
+ 752   2                      resault=0x01;
+ 753   2              }
+ 754   1              if(LID_DEBOUNCE_CNT>0)//W127
+ 755   1              {
+ 756   2                      resault=0x01;
+ 757   2              }
+ 758   1          //ANGELAS044:add end
+ 759   1              //ANGELAS081:remove start
+ 760   1              //if(Read_LID_SW_IN()&& IS_MASK_SET(SysStatus,CloseLid))//G83:Fixed cannot resume from S3 by open lid 
+             -after enter S3 via close lid on DC mode.
+ 761   1          //{
+ 762   1          //  resault = 0x01;
+ 763   1          //}
+ 764   1          //ANGELAS081:remove end
+ 765   1              if(IS_MASK_SET(POWER_FLAG1, wait_PSW_off))      // power switch pressed
+ 766   1              {
+ 767   2                      resault = 0x01;
+ 768   2              }
+ 769   1               /*ANGELAS057:remove start
+ 770   1              if(SystemIsS3) //ANGELAS044:s5 to s3
+ 771   1              {
+ 772   1                      resault = 0x01;
+ 773   1              }
+ 774   1              *///ANGELAS057:remove end
+ 775   1              if((SysPowState==SYSTEM_S5_S0)||(SysPowState==SYSTEM_S4_S0)||(SysPowState==SYSTEM_S3_S0)||(SysPowState==S
+             -YSTEM_S0_S5)||(SysPowState==SYSTEM_S0_S4)||(SysPowState==SYSTEM_S0_S3)||(SysPowState == SYSTEM_S5_DSX)||(SysPowState == 
+             -SYSTEM_DSX_S5))//72JERRY020: Modify enter EC sleep setting.
+ 776   1              {
+ 777   2                      resault = 0x01;
+ 778   2              }
+ 779   1      
+ 780   1              if(resault == 0x00)
+ 781   1              {
+ 782   2                      if(DeepSleepCunt < 250)           // Delay 2500 ms for EC deep sleep mode////G83
+ 783   2                      {
+ 784   3                              DeepSleepCunt++;
+ 785   3                              resault = 0x02;
+ 786   3                      }
+ 787   2                      else
+ 788   2                      {
+ 789   3                              resault = 0x00;
+ 790   3                              DeepSleepCunt = 0x00;
+ 791   3                      }
+ 792   2              }
+ 793   1              else
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 14  
+
+ 794   1              {
+ 795   2                      DeepSleepCunt = 0x00;
+ 796   2              }
+ 797   1      
+ 798   1              switch(resault)
+ 799   1              {
+ 800   2                      case 0:
+ 801   2                              return(1);
+ 802   2                              break;
+ 803   2      
+ 804   2                      case 1:
+ 805   2                              DeepSleepCunt=0x00;
+ 806   2                              return(0);
+ 807   2                              break;
+ 808   2      
+ 809   2                      case 2:
+ 810   2                              return(0);
+ 811   2                              break;
+ 812   2              }
+ 813   1      
+ 814   1              return 0;       
+ 815   1      //under S5 battery mode  EC enter deep sleep mode end
+ 816   1      
+ 817   1      }
+ 818          
+ 819          //-----------------------------------------------------------------------------
+ 820          void InitEnterDeepSleep(void)
+ 821          {
+ 822   1          EC_DeepSleep_Temp0 = ADCSTS;
+ 823   1          EC_DeepSleep_Temp1 = ADCCFG;
+ 824   1          EC_DeepSleep_Temp2 = DACPWRDN;
+ 825   1          EC_DeepSleep_Temp3 = CGCTRL1R;
+ 826   1      
+ 827   1          EC_DeepSleep_TempPortA = GPDRA;
+ 828   1          EC_DeepSleep_TempPortB = GPDRB;
+ 829   1          EC_DeepSleep_TempPortC = GPDRC;
+ 830   1          EC_DeepSleep_TempPortD = GPDRD;
+ 831   1          EC_DeepSleep_TempPortE = GPDRE;
+ 832   1          EC_DeepSleep_TempPortF = GPDRF;
+ 833   1          EC_DeepSleep_TempPortG = GPDRG;
+ 834   1          EC_DeepSleep_TempPortH = GPDRH;
+ 835   1          EC_DeepSleep_TempPortI = GPDRI;
+ 836   1          EC_DeepSleep_TempPortJ = GPDRJ;
+ 837   1      
+ 838   1              EA = 0;
+ 839   1              KSOL    = 0x00;
+ 840   1              KSOH1   = 0x00;
+ 841   1              KSOH2   = 0x00;
+ 842   1              KSICTRL = 0x00;
+ 843   1      
+ 844   1              //MEILING030:S-remove change LED control mode.
+ 845   1              /*if(SystemIsS3)
+ 846   1              {
+ 847   1                      GPCRA0 = ALT; 
+ 848   1                      DCR0 = 0x7F; 
+ 849   1              }*/
+ 850   1              //MEILING030:S-remove change LED control mode.
+ 851   1              
+ 852   1              
+ 853   1              if(SystemIsDSX)
+ 854   1              {
+ 855   2              //      BAT_LOW_LED_ON();
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 15  
+
+ 856   2              //      BAT_CHG_LED_ON(); //HEGANGS009:Enable ec sleep and modify DC-S5 gpio setting
+ 857   2                      PWR_WHITELED_ON(); //HEGANGS042:Modify the led behavior follow new spec
+ 858   2                      PWR_AMBERLED_ON();
+ 859   2                      //NUMLED_ON();
+ 860   2                      CAPLED_ON();
+ 861   2                      //GPCRA0=INPUT;//72JERRY035: Modify EC sleep GPIO setting.
+ 862   2                      //GPCRA1=INPUT; //72JERRY035: Modify EC sleep GPIO setting.     
+ 863   2                      //GPCRA2=INPUT;//72JERRY035: Modify EC sleep GPIO setting.
+ 864   2              }
+ 865   1              
+ 866   1              FPCFG&=0xBF;
+ 867   1              ADCCFG &= 0xFE; 
+ 868   1              CGCTRL2R = 0x70;
+ 869   1              CGCTRL3R = 0x2F; 
+ 870   1              
+ 871   1              //if(!(SystemIsS5||SystemIsDSX)) //72JERRY020: Modify enter EC sleep setting.
+ 872   1              ECPowerDownEnableExternalTimer2(); 
+ 873   1                      //72JERRY020:s+ Modify enter EC sleep setting.
+ 874   1              if(IS_MASK_SET(BT1_STATUS1, bat_in))    // battery Present
+ 875   1              {
+ 876   2                      BatteryOutWakeEnable();
+ 877   2              }
+ 878   1              else
+ 879   1              {
+ 880   2                      BatteryINWakeEnable();
+ 881   2              }
+ 882   1              //72JERRY020:e+ Modify enter EC sleep setting.
+ 883   1              //SetACIN_Int();
+ 884   1              ACInOutIntEnable();
+ 885   1          Setlanwake_Int();//Modify sometimes will wake up from S3 when plug AC adaptor after sending magic-pack
+             -age under DC mode.
+ 886   1              SetPWRSW_Int();
+ 887   1          SetNovo_Int();
+ 888   1              SetWOV_Int();//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 889   1          MXLID_Wake_En();
+ 890   1          SlpS3_Wake_En();
+ 891   1              InterKBDWakeEnable();
+ 892   1      
+ 893   1              ADCSTS  = 0x00;
+ 894   1              ADCCFG  = 0x00;
+ 895   1              DACPWRDN = 0xFF;
+ 896   1          CGCTRL1R = 0x0F;
+ 897   1      
+ 898   1              if(SystemIsDSX||SystemIsS5)//72JERRY020: Modify enter EC sleep setting.
+ 899   1              { 
+ 900   2                      //LMLKBL0015:add start.
+ 901   2                      SMBUS_CK1_HIGH;
+ 902   2                      SMBUS_DA1_HIGH;
+ 903   2                      SMBUS_CK1_IN;
+ 904   2                      SMBUS_DA1_IN;
+ 905   2                      //LMLKBL0015:add end.
+ 906   2      
+ 907   2                      //PM_PWRBTN_LOW(); //72JERRY035: Modify EC sleep GPIO setting.
+ 908   2                      
+ 909   2                      GPCRA5=INPUT; 
+ 910   2                      //GPCRB6=INPUT;         //72JERRY035: Modify EC sleep GPIO setting.
+ 911   2                      //GPCRC0=INPUT;                 
+ 912   2                      GPCRC7=INPUT;           
+ 913   2                      //GPCRD3=INPUT;         
+ 914   2                      //GPCRE3=INPUT;         
+ 915   2                      //GPCRE7=INPUT; //LMLNANO013:remove.    
+ 916   2                      GPCRG6=INPUT;   
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 16  
+
+ 917   2                      //GPCRH3=INPUT; //LMLNANO013:remove.
+ 918   2                      //GPCRJ3=INPUT;
+ 919   2                      GPCRJ4=INPUT;
+ 920   2                      GPCRJ6=INPUT;
+ 921   2              } 
+ 922   1      
+ 923   1              WUESR1  = 0xFF;
+ 924   1              WUESR2  = 0xFF;
+ 925   1              WUESR3  = 0xFF;
+ 926   1              WUESR4  = 0xFF;
+ 927   1              WUESR7  = 0xFF;
+ 928   1              WUESR10 = 0xFF; // AC in
+ 929   1              WUESR11 = 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 930   1              WUESR14 = 0xFF; // Novo
+ 931   1              WUESR13 = 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+ 932   1      
+ 933   1              ISR1 = 0xFF;
+ 934   1              ISR2 = 0xFF;
+ 935   1              ISR3 = 0xFF;
+ 936   1              ISR4 = 0xFF;
+ 937   1              ISR13= 0xFF; // AC in
+ 938   1              ISR14= 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 939   1              ISR16= 0xFF; // Novo
+ 940   1              ISR15= 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+ 941   1              
+ 942   1      }
+ 943          
+ 944          //-----------------------------------------------------------------------------
+ 945          void InitWakeFromDeepSleep(void)
+ 946          {
+ 947   1              FPCFG|=0x40;
+ 948   1              ADCCFG |= 0x01;
+ 949   1          CGCTRL2R = 0x00;
+ 950   1          CGCTRL3R = 0x00;
+ 951   1              
+ 952   1              IER0    = 0x00;  // 7 ~ 0
+ 953   1              IER1    = 0x00;  // 15 ~ 8
+ 954   1              IER2    = 0x00;  // 23 ~ 16
+ 955   1              IER3    = 0x00;
+ 956   1              IER4    = 0x00;
+ 957   1          IER9    = 0x00;
+ 958   1              IER13   = 0x00; // AC in
+ 959   1              IER16   = 0x00; // Novo
+ 960   1              IER14   = 0x00;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 961   1              IER15   = 0x00; // battery//72JERRY020: Modify enter EC sleep setting.
+ 962   1      
+ 963   1      
+ 964   1      
+ 965   1              ISR0    = 0xFF;
+ 966   1              ISR1    = 0xFF;
+ 967   1              ISR2    = 0xFF;
+ 968   1              ISR3    = 0xFF;
+ 969   1              ISR4    = 0xFF;
+ 970   1          ISR9    = 0xFF;
+ 971   1          ISR13   = 0xFF; // AC in
+ 972   1          ISR14   = 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 973   1          ISR16   = 0xFF; // Novo
+ 974   1          ISR15= 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+ 975   1      
+ 976   1      
+ 977   1              WUESR1  = 0xFF;
+ 978   1              WUESR2  = 0xFF;
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 17  
+
+ 979   1              WUESR3  = 0xFF;
+ 980   1              WUESR4  = 0xFF;
+ 981   1              WUESR7  = 0xFF;
+ 982   1              WUESR10 = 0xFF; // AC in
+ 983   1              WUESR11 = 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+ 984   1              WUESR14 = 0xFF; // Novo
+ 985   1              WUESR13 = 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+ 986   1      
+ 987   1          ADCSTS = EC_DeepSleep_Temp0;
+ 988   1          ADCCFG = EC_DeepSleep_Temp1;
+ 989   1          DACPWRDN = EC_DeepSleep_Temp2;
+ 990   1          CGCTRL1R = EC_DeepSleep_Temp3;
+ 991   1      
+ 992   1              Init_Kbd();
+ 993   1              Core_Init_Regs();
+ 994   1              Init_Regs();
+ 995   1              Enable_Any_Key_Irq();   //msmart
+ 996   1      
+ 997   1              //MEILING030:S- remove change power led control.
+ 998   1              /*if(SystemIsS3)
+ 999   1              {
+1000   1                      GPCRA0 = OUTPUT; 
+1001   1              }*/
+1002   1              //MEILING030:E-
+1003   1              
+1004   1              if(SystemIsDSX||SystemIsS5)//72JERRY020: Modify enter EC sleep setting.
+1005   1              {
+1006   2                      //LMLKBL0015:add start.
+1007   2                      SMBUS_CK1_ALT;
+1008   2                      SMBUS_DA1_ALT;
+1009   2                      //LMLKBL0015:add end.
+1010   2                      
+1011   2                      GPCRA0=OUTPUT;
+1012   2                      GPCRA1=OUTPUT; //MEILING030:add.
+1013   2                      GPCRA2=OUTPUT;
+1014   2                      BAT_LOW_LED_OFF();
+1015   2                      PWR_WHITELED_OFF();//HEGANGS042:Modify the led behavior follow new spec
+1016   2                      PWR_AMBERLED_OFF();
+1017   2                      //NUMLED_OFF();
+1018   2                      CAPLED_OFF();
+1019   2                      BAT_CHG_LED_OFF();
+1020   2                      //PM_PWRBTN_HI(); //72JERRY020: Modify enter EC sleep setting.//72JERRY041:Modify PWRBT signal in DC mod
+             -e setting to low.
+1021   2              
+1022   2                      //GPCRA3=OUTPUT;                //72JERRY027: Modify KB backlight signal in deep sleep.
+1023   2                      GPCRA4=OUTPUT;  
+1024   2                      GPCRA5=OUTPUT;
+1025   2                      GPCRA7=OUTPUT;          
+1026   2                      GPCRB2=OUTPUT;          
+1027   2                      //GPCRB6=OUTPUT;        //72JERRY035: Modify EC sleep GPIO setting.     
+1028   2                      GPCRC0=OUTPUT;          
+1029   2                      GPCRC6=OUTPUT;          
+1030   2                      GPCRC7=OUTPUT;          
+1031   2                      GPCRD3=OUTPUT;          
+1032   2                      GPCRE3=OUTPUT;          
+1033   2                      GPCRE4=OUTPUT;
+1034   2                      VR_ON_OFF();
+1035   2                      //GPCRE7=OUTPUT;        //LMLNANO013:remove.    
+1036   2                      GPCRF1=OUTPUT;  
+1037   2                      //GPCRG0=OUTPUT;                 //ANGELAN007 remove
+1038   2                      //GPCRG6=OUTPUT;        
+1039   2                      //GPCRH3=OUTPUT;        //LMLNANO013:remove.
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 18  
+
+1040   2                      GPCRH6=OUTPUT;  
+1041   2                      GPCRJ3=OUTPUT;
+1042   2                      GPCRJ4=OUTPUT;
+1043   2                      GPCRJ6=OUTPUT;  
+1044   2              }        
+1045   1      }
+1046          
+1047          //----------------------------------------------------------------------------
+1048          // Output : 1 Crisis mode
+1049          //          0 Normal mode
+1050          //----------------------------------------------------------------------------
+1051          bit CheckCrisisMode(void)
+1052          {       // To add condition here
+1053   1              BYTE BKSOL,BKSOH1,BKSOH2;
+1054   1          BKSOL = KSOL;
+1055   1          BKSOH1 = KSOH1;
+1056   1          BKSOH2 = KSOH2;
+1057   1      
+1058   1              KSOL  = 0xFF;
+1059   1              KSOH1 = 0xBF;
+1060   1              KSOH2 = 0xFF;                   // Fn key (scan line b14)
+1061   1              WNCKR = 0x00;           // Delay 15.26 us
+1062   1              WNCKR = 0x00;           // Delay 15.26 us
+1063   1              if ((KSI&0x10) != 0)    // Fn key (data line b4)
+1064   1              {
+1065   2                      KSOH1 = 0xFF;
+1066   2              KSOL  = BKSOL;
+1067   2              KSOH1 = BKSOH1;
+1068   2              KSOH2 = BKSOH2;
+1069   2                  return FALSE;
+1070   2              }
+1071   1      
+1072   1              KSOL  = 0xEF;
+1073   1              KSOH1 = 0xFF;
+1074   1              KSOH2 = 0xFF;                   // "R" key (scan line b4)
+1075   1              WNCKR = 0x00;           // Delay 15.26 us
+1076   1              WNCKR = 0x00;           // Delay 15.26 us
+1077   1              if ((KSI&0x04) != 0)    // "R" key (data line b2)
+1078   1              {
+1079   2                      KSOL  = 0xFF;
+1080   2              KSOL  = BKSOL;
+1081   2              KSOH1 = BKSOH1;
+1082   2              KSOH2 = BKSOH2;
+1083   2                  return FALSE;
+1084   2              }
+1085   1              KSOL  = 0xFF;
+1086   1      
+1087   1          KSOL  = BKSOL;
+1088   1          KSOH1 = BKSOH1;
+1089   1          KSOH2 = BKSOH2;
+1090   1      
+1091   1              return TRUE;
+1092   1      }
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 19  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com008D (BEGIN)
+0000         L?0142:
+0000 F0                MOVX    @DPTR,A
+0001 900000      E     MOV     DPTR,#WUESR2
+0004 F0                MOVX    @DPTR,A
+0005 900000      E     MOV     DPTR,#WUESR3
+0008 F0                MOVX    @DPTR,A
+0009 900000      E     MOV     DPTR,#WUESR4
+000C F0                MOVX    @DPTR,A
+000D 900000      E     MOV     DPTR,#WUESR7
+0010 F0                MOVX    @DPTR,A
+0011 900000      E     MOV     DPTR,#WUESR10
+0014 F0                MOVX    @DPTR,A
+0015 900000      E     MOV     DPTR,#WUESR11
+0018 F0                MOVX    @DPTR,A
+0019 900000      E     MOV     DPTR,#WUESR14
+001C F0                MOVX    @DPTR,A
+001D 900000      E     MOV     DPTR,#WUESR13
+0020 F0                MOVX    @DPTR,A
+0021 22                RET     
+0022         L?0143:
+0022 F0                MOVX    @DPTR,A
+0023 900000      E     MOV     DPTR,#ISR13
+0026 F0                MOVX    @DPTR,A
+0027 900000      E     MOV     DPTR,#ISR14
+002A F0                MOVX    @DPTR,A
+002B 900000      E     MOV     DPTR,#ISR16
+002E F0                MOVX    @DPTR,A
+002F 900000      E     MOV     DPTR,#ISR15
+0032 F0                MOVX    @DPTR,A
+0033 22                RET     
+0034         L?0144:
+0034 900000      E     MOV     DPTR,#ISR1
+0037 F0                MOVX    @DPTR,A
+0038 900000      E     MOV     DPTR,#ISR2
+003B F0                MOVX    @DPTR,A
+003C 900000      E     MOV     DPTR,#ISR3
+003F F0                MOVX    @DPTR,A
+0040 900000      E     MOV     DPTR,#ISR4
+0043 22                RET     
+0044         L?0145:
+0044         L?0146:
+0044 900000      E     MOV     DPTR,#KSOH1
+0047 F0                MOVX    @DPTR,A
+0048 900000      E     MOV     DPTR,#KSOH2
+004B 22                RET     
+004C         L?0147:
+004C F0                MOVX    @DPTR,A
+004D E4                CLR     A
+004E 900000      E     MOV     DPTR,#WNCKR
+0051 F0                MOVX    @DPTR,A
+0052 F0                MOVX    @DPTR,A
+0053 900000      E     MOV     DPTR,#KSI
+0056 E0                MOVX    A,@DPTR
+0057 22                RET     
+0058         L?0148:
+0058 F0                MOVX    @DPTR,A
+0059 900000      E     MOV     DPTR,#GPCRJ4
+005C F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 20  
+
+005D 900000      E     MOV     DPTR,#GPCRJ6
+0060 F0                MOVX    @DPTR,A
+0061 22                RET     
+             ; FUNCTION Com008D (END)
+
+             ; FUNCTION main (BEGIN)
+                                           ; SOURCE LINE # 25
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+0000 120000      E     LCALL   DisableAllInterrupt
+                                           ; SOURCE LINE # 28
+0003 7581C0            MOV     SP,#0C0H
+                                           ; SOURCE LINE # 29
+0006 00                NOP     
+                                           ; SOURCE LINE # 30
+0007 00                NOP     
+                                           ; SOURCE LINE # 31
+0008 00                NOP     
+                                           ; SOURCE LINE # 32
+0009 00                NOP     
+                                           ; SOURCE LINE # 33
+000A 900000      E     MOV     DPTR,#DCache
+000D 7403              MOV     A,#03H
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 35
+0010 900000      E     MOV     DPTR,#RAM_16FF
+0013 E0                MOVX    A,@DPTR
+0014 54FE              ANL     A,#0FEH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 37
+0017 120000      E     LCALL   Hook_ECRetunrMainFuncKeepCondition
+001A EF                MOV     A,R7
+001B 6433              XRL     A,#033H
+001D 703B              JNZ     ?C0001
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+001F 900000      E     MOV     DPTR,#FBCFG
+0022 E0                MOVX    A,@DPTR
+0023 547F              ANL     A,#07FH
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 40
+0026 00                NOP     
+                                           ; SOURCE LINE # 41
+0027 75F701            MOV     MPRECF,#01H
+                                           ; SOURCE LINE # 42
+002A 00                NOP     
+                                           ; SOURCE LINE # 43
+002B 75F701            MOV     MPRECF,#01H
+                                           ; SOURCE LINE # 44
+002E 00                NOP     
+                                           ; SOURCE LINE # 45
+002F 75F701            MOV     MPRECF,#01H
+                                           ; SOURCE LINE # 46
+0032 00                NOP     
+                                           ; SOURCE LINE # 47
+0033 75F701            MOV     MPRECF,#01H
+                                           ; SOURCE LINE # 48
+0036 00                NOP     
+                                           ; SOURCE LINE # 49
+0037 00                NOP     
+                                           ; SOURCE LINE # 50
+0038 900000      E     MOV     DPTR,#WinFlashMark
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 21  
+
+003B 74FC              MOV     A,#0FCH
+003D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 51
+003E 900000      E     MOV     DPTR,#WinFlashMark1
+0041 7455              MOV     A,#055H
+0043 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 52
+0044 E4                CLR     A
+0045 900000      E     MOV     DPTR,#WinFlashMark2
+0048 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 53
+0049 120000      E     LCALL   ResetBANKDATA
+                                           ; SOURCE LINE # 54
+004C 120000      E     LCALL   Hook_ECExitFollowMode
+                                           ; SOURCE LINE # 55
+004F 120000      E     LCALL   Init_Timers
+                                           ; SOURCE LINE # 56
+0052 120000      E     LCALL   EnableModuleInterrupt
+                                           ; SOURCE LINE # 57
+0055 120000      E     LCALL   CheckECCHIPVer
+                                           ; SOURCE LINE # 58
+0058 804F              SJMP    ?C0002
+005A         ?C0001:
+                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 61
+005A 900000      E     MOV     DPTR,#ECSleepCount
+005D 7403              MOV     A,#03H
+005F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 66
+0060 7BDF              MOV     R3,#0DFH
+0062 7DB7              MOV     R5,#0B7H
+0064 7F01              MOV     R7,#01H
+0066 120000      E     LCALL   _Read_Eflash_Byte
+0069 900000      E     MOV     DPTR,#EEPROM_PwrSts
+006C EF                MOV     A,R7
+006D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 67
+006E E0                MOVX    A,@DPTR
+006F 30E41C            JNB     ACC.4,?C0003
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 69
+0072 120000      E     LCALL   Core_Init_Regs
+                                           ; SOURCE LINE # 70
+0075 120000      R     LCALL   CheckCrisisMode
+0078 900000      E     MOV     DPTR,#SYS_MISC1
+007B E0                MOVX    A,@DPTR
+007C 5009              JNC     ?C0004
+                                           ; SOURCE LINE # 71
+                                           ; SOURCE LINE # 72
+007E 4440              ORL     A,#040H
+0080 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+0081 E0                MOVX    A,@DPTR
+0082 4408              ORL     A,#08H
+0084 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 74
+0085 8007              SJMP    ?C0003
+0087         ?C0004:
+                                           ; SOURCE LINE # 76
+                                           ; SOURCE LINE # 77
+0087 54BF              ANL     A,#0BFH
+0089 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 22  
+
+                                           ; SOURCE LINE # 78
+008A E0                MOVX    A,@DPTR
+008B 54F7              ANL     A,#0F7H
+008D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+008E         ?C0003:
+                                           ; SOURCE LINE # 82
+008E 120000      E     LCALL   Core_Initialization
+                                           ; SOURCE LINE # 83
+0091 120000      E     LCALL   Oem_Initialization
+                                           ; SOURCE LINE # 84
+0094 120000      E     LCALL   InitEnableInterrupt
+                                           ; SOURCE LINE # 87
+0097 120000      E     LCALL   Init_UART
+                                           ; SOURCE LINE # 88
+009A 120000      R     LCALL   L?0149
+                                           ; SOURCE LINE # 89
+009D 7BFF              MOV     R3,#0FFH
+009F 7A00        R     MOV     R2,#HIGH ?SC_38
+00A1 7900        R     MOV     R1,#LOW ?SC_38
+00A3 120000      E     LCALL   _printf
+                                           ; SOURCE LINE # 90
+00A6 120000      R     LCALL   L?0149
+                                           ; SOURCE LINE # 92
+00A9         ?C0002:
+                                           ; SOURCE LINE # 96
+00A9 120000      E     LCALL   EnableInternalWDT
+                                           ; SOURCE LINE # 101
+00AC 900000      E     MOV     DPTR,#WinFlashMark
+00AF E0                MOVX    A,@DPTR
+00B0 B4FC0E            CJNE    A,#0FCH,?C0007
+00B3 900000      E     MOV     DPTR,#WinFlashMark2
+00B6 E0                MOVX    A,@DPTR
+00B7 7008              JNZ     ?C0007
+00B9 900000      E     MOV     DPTR,#WinFlashMark1
+00BC E0                MOVX    A,@DPTR
+00BD 6455              XRL     A,#055H
+00BF 6038              JZ      ?C0006
+00C1         ?C0007:
+                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 103
+00C1 7F88              MOV     R7,#088H
+00C3 120000      E     LCALL   _RamDebug
+                                           ; SOURCE LINE # 104
+00C6 120000      E     LCALL   Check_Mirror_Occurs
+                                           ; SOURCE LINE # 105
+00C9 7B4D              MOV     R3,#04DH
+00CB E4                CLR     A
+00CC FD                MOV     R5,A
+00CD FF                MOV     R7,A
+00CE 120000      E     LCALL   _Read_Eflash_Byte
+00D1 EF                MOV     A,R7
+00D2 6025              JZ      ?C0006
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+00D4 900000      E     MOV     DPTR,#?_Do_Eflash_Write_1Byte?BYTE+03H
+00D7 744D              MOV     A,#04DH
+00D9 F0                MOVX    @DPTR,A
+00DA E4                CLR     A
+00DB FB                MOV     R3,A
+00DC FD                MOV     R5,A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 23  
+
+00DD FF                MOV     R7,A
+00DE 120000      E     LCALL   _Do_Eflash_Write_1Byte
+                                           ; SOURCE LINE # 108
+00E1 7F66              MOV     R7,#066H
+00E3 120000      E     LCALL   _RamDebug
+                                           ; SOURCE LINE # 109
+00E6 900000      E     MOV     DPTR,#FLHCTRL3R
+00E9 E0                MOVX    A,@DPTR
+00EA 4480              ORL     A,#080H
+00EC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 110
+00ED 900000      E     MOV     DPTR,#HINSTC1
+00F0 E0                MOVX    A,@DPTR
+00F1 4440              ORL     A,#040H
+00F3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 111
+00F4 7F77              MOV     R7,#077H
+00F6 120000      E     LCALL   _RamDebug
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 113
+00F9         ?C0006:
+                                           ; SOURCE LINE # 115
+00F9 900000      E     MOV     DPTR,#ShutDnCause
+00FC E0                MOVX    A,@DPTR
+00FD FF                MOV     R7,A
+00FE 120000      E     LCALL   _ProcessSID
+0101         ?C0009:
+                                           ; SOURCE LINE # 117
+                                           ; SOURCE LINE # 118
+                                           ; SOURCE LINE # 119
+0101 120000      E     LCALL   OEM_SkipMainServiceFunc
+0104 BFFFFA            CJNE    R7,#0FFH,?C0009
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+0107 120000      R     LCALL   main_service
+                                           ; SOURCE LINE # 122
+010A 120000      E     LCALL   EnableModuleInterrupt
+                                           ; SOURCE LINE # 123
+010D 00                NOP     
+                                           ; SOURCE LINE # 124
+010E 00                NOP     
+                                           ; SOURCE LINE # 125
+010F 00                NOP     
+                                           ; SOURCE LINE # 126
+0110 00                NOP     
+                                           ; SOURCE LINE # 141
+0111 E500        E     MOV     A,Service
+0113 70EC              JNZ     ?C0009
+0115 E500        E     MOV     A,Service1
+0117 70E8              JNZ     ?C0009
+                                           ; SOURCE LINE # 143
+                                           ; SOURCE LINE # 144
+0119 E58C              MOV     A,TH0
+011B C3                CLR     C
+011C 94FD              SUBB    A,#0FDH
+011E 50E1              JNC     ?C0009
+                                           ; SOURCE LINE # 145
+0120 758CFD            MOV     TH0,#0FDH
+                                           ; SOURCE LINE # 146
+                                           ; SOURCE LINE # 147
+                                           ; SOURCE LINE # 148
+0123 80DC              SJMP    ?C0009
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 24  
+
+                                           ; SOURCE LINE # 149
+0125         L?0149:
+0125 7BFF              MOV     R3,#0FFH
+0127 7A00        R     MOV     R2,#HIGH ?SC_0
+0129 7900        R     MOV     R1,#LOW ?SC_0
+012B 120000      E     LCALL   _printf
+012E 22                RET     
+             ; FUNCTION main (END)
+
+             ; FUNCTION main_service (BEGIN)
+                                           ; SOURCE LINE # 159
+                                           ; SOURCE LINE # 160
+0000         ?C0015:
+                                           ; SOURCE LINE # 164
+0000 E500        E     MOV     A,Service
+0002 7007              JNZ     ?C0017
+0004 E500        E     MOV     A,Service1
+0006 7003              JNZ     $ + 5H
+0008 020000      R     LJMP    ?C0035
+000B         ?C0017:
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 181
+000B 300007      E     JNB     F_Service_PCI,?C0018
+                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 183
+000E C200        E     CLR     F_Service_PCI
+                                           ; SOURCE LINE # 184
+0010 120000      E     LCALL   service_pci1
+                                           ; SOURCE LINE # 185
+0013 80EB              SJMP    ?C0015
+                                           ; SOURCE LINE # 186
+0015         ?C0018:
+                                           ; SOURCE LINE # 191
+0015 300007      E     JNB     F_Service_UNLOCK,?C0019
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 193
+0018 C200        E     CLR     F_Service_UNLOCK
+                                           ; SOURCE LINE # 194
+001A 120000      R     LCALL   service_unlock
+                                           ; SOURCE LINE # 195
+001D 80E1              SJMP    ?C0015
+                                           ; SOURCE LINE # 196
+001F         ?C0019:
+                                           ; SOURCE LINE # 201
+001F 300007      E     JNB     F_Service_SEND,?C0020
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+0022 C200        E     CLR     F_Service_SEND
+                                           ; SOURCE LINE # 204
+0024 120000      E     LCALL   service_send
+                                           ; SOURCE LINE # 205
+0027 80D7              SJMP    ?C0015
+                                           ; SOURCE LINE # 206
+0029         ?C0020:
+                                           ; SOURCE LINE # 211
+0029 300007      E     JNB     F_Service_Send_PS2,?C0021
+                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 213
+002C C200        E     CLR     F_Service_Send_PS2
+                                           ; SOURCE LINE # 214
+002E 120000      E     LCALL   service_PS2_data
+                                           ; SOURCE LINE # 215
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 25  
+
+0031 80CD              SJMP    ?C0015
+                                           ; SOURCE LINE # 216
+0033         ?C0021:
+                                           ; SOURCE LINE # 221
+0033 300007      E     JNB     F_Service_PS2,?C0022
+                                           ; SOURCE LINE # 222
+                                           ; SOURCE LINE # 223
+0036 C200        E     CLR     F_Service_PS2
+                                           ; SOURCE LINE # 224
+0038 120000      E     LCALL   service_ps2
+                                           ; SOURCE LINE # 225
+003B 80C3              SJMP    ?C0015
+                                           ; SOURCE LINE # 226
+003D         ?C0022:
+                                           ; SOURCE LINE # 234
+003D 300002      E     JNB     F_Service_PCI2,?C0023
+                                           ; SOURCE LINE # 235
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 238
+0040 800D              SJMP    ?C0135
+                                           ; SOURCE LINE # 239
+0042         ?C0023:
+                                           ; SOURCE LINE # 243
+0042 300007      E     JNB     F_Service_MS_1,?C0024
+                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 245
+0045 C200        E     CLR     F_Service_MS_1
+                                           ; SOURCE LINE # 246
+0047 120000      R     LCALL   service_1mS
+                                           ; SOURCE LINE # 247
+004A 80B4              SJMP    ?C0015
+                                           ; SOURCE LINE # 248
+004C         ?C0024:
+                                           ; SOURCE LINE # 253
+004C 300007      E     JNB     F_Service_PCI2,?C0025
+                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 255
+004F         ?C0135:
+004F C200        E     CLR     F_Service_PCI2
+                                           ; SOURCE LINE # 256
+0051 120000      E     LCALL   service_pci2
+                                           ; SOURCE LINE # 257
+0054 80AA              SJMP    ?C0015
+                                           ; SOURCE LINE # 258
+0056         ?C0025:
+                                           ; SOURCE LINE # 263
+0056 300007      E     JNB     F_Service_KEY,?C0026
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 265
+0059 C200        E     CLR     F_Service_KEY
+                                           ; SOURCE LINE # 266
+005B 120000      E     LCALL   service_scan
+                                           ; SOURCE LINE # 267
+005E 80A0              SJMP    ?C0015
+                                           ; SOURCE LINE # 268
+0060         ?C0026:
+                                           ; SOURCE LINE # 273
+0060 120000      E     LCALL   Hook_main_service_H
+                                           ; SOURCE LINE # 278
+0063 300007      E     JNB     F_Service_Low_LV,?C0027
+                                           ; SOURCE LINE # 279
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 26  
+
+                                           ; SOURCE LINE # 280
+0066 C200        E     CLR     F_Service_Low_LV
+                                           ; SOURCE LINE # 281
+0068 120000      R     LCALL   service_Low_LVEvent
+                                           ; SOURCE LINE # 282
+006B 8093              SJMP    ?C0015
+                                           ; SOURCE LINE # 283
+006D         ?C0027:
+                                           ; SOURCE LINE # 288
+006D 300007      E     JNB     F_Service_PCI3,?C0028
+                                           ; SOURCE LINE # 289
+                                           ; SOURCE LINE # 290
+0070 C200        E     CLR     F_Service_PCI3
+                                           ; SOURCE LINE # 291
+0072 120000      E     LCALL   service_pci3
+                                           ; SOURCE LINE # 292
+0075 8089              SJMP    ?C0015
+                                           ; SOURCE LINE # 293
+0077         ?C0028:
+                                           ; SOURCE LINE # 298
+0077 300008      E     JNB     F_Service_CIR,?C0029
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+007A C200        E     CLR     F_Service_CIR
+                                           ; SOURCE LINE # 301
+007C 120000      E     LCALL   service_cir
+                                           ; SOURCE LINE # 302
+007F 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 303
+0082         ?C0029:
+                                           ; SOURCE LINE # 308
+0082 300008      E     JNB     F_Service_PCI4,?C0030
+                                           ; SOURCE LINE # 309
+                                           ; SOURCE LINE # 310
+0085 C200        E     CLR     F_Service_PCI4
+                                           ; SOURCE LINE # 311
+0087 120000      E     LCALL   service_pci4
+                                           ; SOURCE LINE # 312
+008A 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 313
+008D         ?C0030:
+                                           ; SOURCE LINE # 318
+008D 300008      E     JNB     F_Service_OEM_1,?C0031
+                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 320
+0090 C200        E     CLR     F_Service_OEM_1
+                                           ; SOURCE LINE # 321
+0092 120000      E     LCALL   service_OEM_1
+                                           ; SOURCE LINE # 322
+0095 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 323
+0098         ?C0031:
+                                           ; SOURCE LINE # 328
+0098 300008      E     JNB     F_Service_OEM_2,?C0032
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+009B C200        E     CLR     F_Service_OEM_2
+                                           ; SOURCE LINE # 331
+009D 120000      E     LCALL   service_OEM_2
+                                           ; SOURCE LINE # 332
+00A0 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 333
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 27  
+
+00A3         ?C0032:
+                                           ; SOURCE LINE # 338
+00A3 300008      E     JNB     F_Service_OEM_3,?C0033
+                                           ; SOURCE LINE # 339
+                                           ; SOURCE LINE # 340
+00A6 C200        E     CLR     F_Service_OEM_3
+                                           ; SOURCE LINE # 341
+00A8 120000      E     LCALL   service_OEM_3
+                                           ; SOURCE LINE # 342
+00AB 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 343
+00AE         ?C0033:
+                                           ; SOURCE LINE # 348
+00AE 300008      E     JNB     F_Service_OEM_4,?C0034
+                                           ; SOURCE LINE # 349
+                                           ; SOURCE LINE # 350
+00B1 C200        E     CLR     F_Service_OEM_4
+                                           ; SOURCE LINE # 351
+00B3 120000      E     LCALL   service_OEM_4
+                                           ; SOURCE LINE # 352
+00B6 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 353
+00B9         ?C0034:
+                                           ; SOURCE LINE # 358
+00B9 120000      E     LCALL   Hook_main_service_L
+                                           ; SOURCE LINE # 359
+00BC 020000      R     LJMP    ?C0015
+                                           ; SOURCE LINE # 360
+00BF         ?C0035:
+00BF 22                RET     
+             ; FUNCTION main_service (END)
+
+             ; FUNCTION service_Low_LVEvent (BEGIN)
+                                           ; SOURCE LINE # 362
+                                           ; SOURCE LINE # 363
+                                           ; SOURCE LINE # 364
+0000 900000      E     MOV     DPTR,#KBPendingRXCount
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900000      E     MOV     DPTR,#KBPendingTXCount
+0008 E0                MOVX    A,@DPTR
+0009 6F                XRL     A,R7
+000A 700E              JNZ     ?C0037
+000C AF00        E     MOV     R7,scan
+000E EF                MOV     A,R7
+000F C4                SWAP    A
+0010 540F              ANL     A,#0FH
+0012 FF                MOV     R7,A
+0013 E500        E     MOV     A,scan
+0015 540F              ANL     A,#0FH
+0017 6F                XRL     A,R7
+0018 600C              JZ      ?C0036
+001A         ?C0037:
+                                           ; SOURCE LINE # 365
+                                           ; SOURCE LINE # 366
+001A 120000      E     LCALL   SetServiceSendFlag
+                                           ; SOURCE LINE # 367
+001D 900000      E     MOV     DPTR,#BATTUPDATEFW
+0020 E0                MOVX    A,@DPTR
+0021 30E002            JNB     ACC.0,?C0036
+                                           ; SOURCE LINE # 368
+0024 D200        E     SETB    F_Service_SEND
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 28  
+
+                                           ; SOURCE LINE # 369
+0026         ?C0036:
+                                           ; SOURCE LINE # 371
+0026 900000      E     MOV     DPTR,#KBHISR
+0029 E0                MOVX    A,@DPTR
+002A 30E102            JNB     ACC.1,?C0039
+                                           ; SOURCE LINE # 372
+                                           ; SOURCE LINE # 373
+002D D200        E     SETB    F_Service_PCI
+                                           ; SOURCE LINE # 374
+002F         ?C0039:
+                                           ; SOURCE LINE # 376
+002F 900000      E     MOV     DPTR,#PM1STS
+0032 E0                MOVX    A,@DPTR
+0033 30E102            JNB     ACC.1,?C0041
+                                           ; SOURCE LINE # 377
+                                           ; SOURCE LINE # 378
+0036 D200        E     SETB    F_Service_PCI2
+                                           ; SOURCE LINE # 379
+                                           ; SOURCE LINE # 380
+0038         ?C0041:
+0038 22                RET     
+             ; FUNCTION service_Low_LVEvent (END)
+
+             ; FUNCTION service_unlock (BEGIN)
+                                           ; SOURCE LINE # 386
+                                           ; SOURCE LINE # 387
+                                           ; SOURCE LINE # 388
+0000 020000      E     LJMP    Unlock_Scan
+             ; FUNCTION service_unlock (END)
+
+             ; FUNCTION service_1mS (BEGIN)
+                                           ; SOURCE LINE # 394
+                                           ; SOURCE LINE # 395
+                                           ; SOURCE LINE # 396
+0000 120000      R     LCALL   Timer1msEvent
+                                           ; SOURCE LINE # 397
+0003 0500        E     INC     Timer1msCnt
+                                           ; SOURCE LINE # 398
+0005 E500        E     MOV     A,Timer1msCnt
+0007 C3                CLR     C
+0008 940A              SUBB    A,#0AH
+000A 4003              JC      ?C0043
+                                           ; SOURCE LINE # 399
+                                           ; SOURCE LINE # 400
+000C E4                CLR     A
+000D F500        E     MOV     Timer1msCnt,A
+                                           ; SOURCE LINE # 401
+000F         ?C0043:
+                                           ; SOURCE LINE # 403
+000F 120000      E     LCALL   Hook_Only_Timer1msEvent
+0012 EF                MOV     A,R7
+0013 6401              XRL     A,#01H
+0015 7003              JNZ     $ + 5H
+0017 020000      R     LJMP    ?C0045
+                                           ; SOURCE LINE # 404
+                                           ; SOURCE LINE # 406
+001A         ?C0044:
+                                           ; SOURCE LINE # 408
+001A E500        E     MOV     A,Timer1msCnt
+001C 20E02C            JB      ACC.0,?C0046
+                                           ; SOURCE LINE # 409
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 29  
+
+                                           ; SOURCE LINE # 410
+001F 120000      R     LCALL   Timer2msEvent
+                                           ; SOURCE LINE # 411
+0022 0500        E     INC     Timer2msCnt
+                                           ; SOURCE LINE # 412
+0024 E500        E     MOV     A,Timer2msCnt
+0026 30E005            JNB     ACC.0,?C0047
+                                           ; SOURCE LINE # 413
+                                           ; SOURCE LINE # 414
+0029 120000      R     LCALL   Timer4msEventA
+                                           ; SOURCE LINE # 415
+002C 801D              SJMP    ?C0046
+002E         ?C0047:
+                                           ; SOURCE LINE # 417
+                                           ; SOURCE LINE # 418
+002E 120000      R     LCALL   Timer4msEventB
+                                           ; SOURCE LINE # 419
+0031 E500        E     MOV     A,Timer2msCnt
+0033 24FC              ADD     A,#0FCH
+0035 6014              JZ      ?C0046
+0037 24FE              ADD     A,#0FEH
+0039 6010              JZ      ?C0046
+003B 24FE              ADD     A,#0FEH
+003D 600C              JZ      ?C0046
+003F 2406              ADD     A,#06H
+0041 7005              JNZ     ?C0054
+                                           ; SOURCE LINE # 420
+                                           ; SOURCE LINE # 421
+0043         ?C0050:
+                                           ; SOURCE LINE # 422
+0043 120000      R     LCALL   Timer20msEventA
+                                           ; SOURCE LINE # 423
+0046 8003              SJMP    ?C0046
+                                           ; SOURCE LINE # 425
+                                           ; SOURCE LINE # 427
+                                           ; SOURCE LINE # 429
+                                           ; SOURCE LINE # 431
+                                           ; SOURCE LINE # 433
+                                           ; SOURCE LINE # 435
+                                           ; SOURCE LINE # 436
+0048         ?C0054:
+                                           ; SOURCE LINE # 437
+0048 E4                CLR     A
+0049 F500        E     MOV     Timer2msCnt,A
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 439
+                                           ; SOURCE LINE # 440
+                                           ; SOURCE LINE # 441
+004B         ?C0046:
+                                           ; SOURCE LINE # 443
+004B E500        E     MOV     A,Timer1msCnt
+004D 75F005            MOV     B,#05H
+0050 84                DIV     AB
+0051 E5F0              MOV     A,B
+0053 6003              JZ      $ + 5H
+0055 020000      R     LJMP    ?C0045
+                                           ; SOURCE LINE # 444
+                                           ; SOURCE LINE # 445
+0058 120000      R     LCALL   Timer5msEvent
+                                           ; SOURCE LINE # 446
+005B 0500        E     INC     Timer5msCnt
+                                           ; SOURCE LINE # 447
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 30  
+
+005D E500        E     MOV     A,Timer5msCnt
+005F 30E003            JNB     ACC.0,?C0056
+                                           ; SOURCE LINE # 448
+                                           ; SOURCE LINE # 449
+0062 020000      R     LJMP    Timer10msEventA
+                                           ; SOURCE LINE # 451
+0065         ?C0056:
+                                           ; SOURCE LINE # 453
+                                           ; SOURCE LINE # 454
+0065 120000      R     LCALL   Timer10msEventB
+                                           ; SOURCE LINE # 455
+0068 E500        E     MOV     A,Timer5msCnt
+006A 24FC              ADD     A,#0FCH
+006C 6011              JZ      ?C0060
+006E 24FE              ADD     A,#0FEH
+0070 6012              JZ      ?C0061
+0072 24FE              ADD     A,#0FEH
+0074 6013              JZ      ?C0062
+0076 2406              ADD     A,#06H
+0078 7020              JNZ     ?C0065
+                                           ; SOURCE LINE # 456
+                                           ; SOURCE LINE # 457
+007A         ?C0059:
+                                           ; SOURCE LINE # 458
+007A 120000      R     LCALL   Timer50msEventA
+                                           ; SOURCE LINE # 459
+007D 801E              SJMP    ?C0058
+                                           ; SOURCE LINE # 460
+007F         ?C0060:
+                                           ; SOURCE LINE # 461
+007F 120000      R     LCALL   Timer50msEventB
+                                           ; SOURCE LINE # 462
+0082 8019              SJMP    ?C0058
+                                           ; SOURCE LINE # 463
+0084         ?C0061:
+                                           ; SOURCE LINE # 464
+0084 120000      R     LCALL   Timer50msEventC
+                                           ; SOURCE LINE # 465
+0087 8014              SJMP    ?C0058
+                                           ; SOURCE LINE # 466
+0089         ?C0062:
+                                           ; SOURCE LINE # 467
+0089 0500        E     INC     Timer100msCntB
+                                           ; SOURCE LINE # 468
+008B E500        E     MOV     A,Timer100msCntB
+008D 30E005            JNB     ACC.0,?C0063
+                                           ; SOURCE LINE # 469
+                                           ; SOURCE LINE # 470
+0090 120000      R     LCALL   Timer100msEventA
+                                           ; SOURCE LINE # 471
+0093 8008              SJMP    ?C0058
+0095         ?C0063:
+                                           ; SOURCE LINE # 473
+                                           ; SOURCE LINE # 474
+0095 120000      R     LCALL   Timer100msEventB
+                                           ; SOURCE LINE # 475
+                                           ; SOURCE LINE # 476
+0098 8003              SJMP    ?C0058
+                                           ; SOURCE LINE # 478
+009A         ?C0065:
+                                           ; SOURCE LINE # 479
+009A E4                CLR     A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 31  
+
+009B F500        E     MOV     Timer5msCnt,A
+                                           ; SOURCE LINE # 480
+                                           ; SOURCE LINE # 481
+009D         ?C0058:
+                                           ; SOURCE LINE # 483
+009D E500        E     MOV     A,Timer5msCnt
+009F 7056              JNZ     ?C0045
+                                           ; SOURCE LINE # 484
+                                           ; SOURCE LINE # 485
+00A1 0500        E     INC     Timer100msCnt
+                                           ; SOURCE LINE # 486
+00A3 E500        E     MOV     A,Timer100msCnt
+00A5 30E003            JNB     ACC.0,?C0067
+                                           ; SOURCE LINE # 487
+                                           ; SOURCE LINE # 488
+00A8 020000      R     LJMP    Timer100msEventC
+                                           ; SOURCE LINE # 489
+00AB         ?C0067:
+                                           ; SOURCE LINE # 491
+                                           ; SOURCE LINE # 493
+00AB E500        E     MOV     A,Timer100msCnt
+00AD 120000      E     LCALL   ?C?CCASE
+00B0 0000        R     DW      ?C0070
+00B2 02                DB      02H
+00B3 0000        R     DW      ?C0071
+00B5 04                DB      04H
+00B6 0000        R     DW      ?C0072
+00B8 06                DB      06H
+00B9 0000        R     DW      ?C0073
+00BB 08                DB      08H
+00BC 0000        R     DW      ?C0074
+00BE 0A                DB      0AH
+00BF 0000        R     DW      ?C0075
+00C1 0C                DB      0CH
+00C2 0000        R     DW      ?C0076
+00C4 0E                DB      0EH
+00C5 0000        R     DW      ?C0072
+00C7 10                DB      010H
+00C8 0000        R     DW      ?C0078
+00CA 12                DB      012H
+00CB 0000              DW      00H
+00CD 0000        R     DW      ?C0079
+                                           ; SOURCE LINE # 494
+                                           ; SOURCE LINE # 495
+00CF         ?C0070:
+                                           ; SOURCE LINE # 496
+                                           ; SOURCE LINE # 497
+00CF 800A              SJMP    ?C0136
+                                           ; SOURCE LINE # 498
+00D1         ?C0071:
+                                           ; SOURCE LINE # 499
+                                           ; SOURCE LINE # 500
+00D1 800B              SJMP    ?C0137
+                                           ; SOURCE LINE # 501
+00D3         ?C0072:
+                                           ; SOURCE LINE # 502
+                                           ; SOURCE LINE # 503
+00D3 800C              SJMP    ?C0138
+                                           ; SOURCE LINE # 504
+00D5         ?C0073:
+                                           ; SOURCE LINE # 505
+00D5 020000      R     LJMP    Timer1SecEventA
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 32  
+
+                                           ; SOURCE LINE # 506
+                                           ; SOURCE LINE # 507
+00D8         ?C0074:
+                                           ; SOURCE LINE # 508
+00D8 020000      R     LJMP    Timer1SecEventB
+                                           ; SOURCE LINE # 509
+                                           ; SOURCE LINE # 510
+00DB         ?C0075:
+                                           ; SOURCE LINE # 511
+00DB         ?C0136:
+00DB 020000      R     LJMP    Timer500msEventA
+                                           ; SOURCE LINE # 512
+                                           ; SOURCE LINE # 513
+00DE         ?C0076:
+                                           ; SOURCE LINE # 514
+00DE         ?C0137:
+00DE 020000      R     LJMP    Timer500msEventB
+                                           ; SOURCE LINE # 515
+                                           ; SOURCE LINE # 516
+00E1         ?C0138:
+00E1 020000      R     LJMP    Timer500msEventC
+                                           ; SOURCE LINE # 518
+                                           ; SOURCE LINE # 519
+00E4         ?C0078:
+                                           ; SOURCE LINE # 520
+00E4 020000      R     LJMP    Timer1SecEventC
+                                           ; SOURCE LINE # 521
+                                           ; SOURCE LINE # 522
+00E7         ?C0079:
+                                           ; SOURCE LINE # 523
+00E7 E4                CLR     A
+00E8 F500        E     MOV     Timer100msCnt,A
+                                           ; SOURCE LINE # 524
+00EA 0500        E     INC     Timer1SecCnt
+                                           ; SOURCE LINE # 525
+00EC E500        E     MOV     A,Timer1SecCnt
+00EE B43C06            CJNE    A,#03CH,?C0045
+                                           ; SOURCE LINE # 526
+                                           ; SOURCE LINE # 527
+00F1 120000      R     LCALL   Timer1MinEvent
+                                           ; SOURCE LINE # 528
+00F4 E4                CLR     A
+00F5 F500        E     MOV     Timer1SecCnt,A
+                                           ; SOURCE LINE # 529
+                                           ; SOURCE LINE # 530
+                                           ; SOURCE LINE # 531
+                                           ; SOURCE LINE # 532
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 534
+                                           ; SOURCE LINE # 535
+                                           ; SOURCE LINE # 536
+00F7         ?C0045:
+00F7 22                RET     
+             ; FUNCTION service_1mS (END)
+
+             ; FUNCTION Timer1msEvent (BEGIN)
+                                           ; SOURCE LINE # 541
+                                           ; SOURCE LINE # 542
+                                           ; SOURCE LINE # 543
+0000 120000      E     LCALL   ReSendPS2PendingData
+                                           ; SOURCE LINE # 544
+0003 AF00        E     MOV     R7,Timer1msCnt
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 33  
+
+0005 020000      E     LJMP    _Hook_Timer1msEvent
+             ; FUNCTION Timer1msEvent (END)
+
+             ; FUNCTION Timer2msEvent (BEGIN)
+                                           ; SOURCE LINE # 550
+                                           ; SOURCE LINE # 551
+                                           ; SOURCE LINE # 552
+0000 020000      E     LJMP    Hook_Timer2msEvent
+             ; FUNCTION Timer2msEvent (END)
+
+             ; FUNCTION Timer4msEventA (BEGIN)
+                                           ; SOURCE LINE # 557
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 559
+0000 020000      E     LJMP    Hook_Timer4msEventA
+             ; FUNCTION Timer4msEventA (END)
+
+             ; FUNCTION Timer4msEventB (BEGIN)
+                                           ; SOURCE LINE # 564
+                                           ; SOURCE LINE # 565
+                                           ; SOURCE LINE # 566
+0000 020000      E     LJMP    Hook_Timer4msEventB
+             ; FUNCTION Timer4msEventB (END)
+
+             ; FUNCTION Timer20msEventA (BEGIN)
+                                           ; SOURCE LINE # 571
+                                           ; SOURCE LINE # 572
+                                           ; SOURCE LINE # 573
+0000 020000      E     LJMP    Hook_Timer20msEventA
+             ; FUNCTION Timer20msEventA (END)
+
+             ; FUNCTION Timer5msEvent (BEGIN)
+                                           ; SOURCE LINE # 580
+                                           ; SOURCE LINE # 581
+                                           ; SOURCE LINE # 582
+0000 D200        E     SETB    F_Service_Low_LV
+                                           ; SOURCE LINE # 583
+0002 AF00        E     MOV     R7,Timer_A
+0004 EF                MOV     A,R7
+0005 C4                SWAP    A
+0006 540F              ANL     A,#0FH
+0008 30E002            JNB     ACC.0,?C0086
+                                           ; SOURCE LINE # 584
+                                           ; SOURCE LINE # 585
+000B D200        E     SETB    F_Service_KEY
+                                           ; SOURCE LINE # 586
+000D         ?C0086:
+                                           ; SOURCE LINE # 587
+000D 020000      E     LJMP    Hook_Timer5msEvent
+             ; FUNCTION Timer5msEvent (END)
+
+             ; FUNCTION Timer10msEventA (BEGIN)
+                                           ; SOURCE LINE # 593
+                                           ; SOURCE LINE # 594
+                                           ; SOURCE LINE # 595
+0000 120000      E     LCALL   SetStartScanAUXFlag
+                                           ; SOURCE LINE # 596
+0003 020000      E     LJMP    Hook_Timer10msEventA
+             ; FUNCTION Timer10msEventA (END)
+
+             ; FUNCTION Timer10msEventB (BEGIN)
+                                           ; SOURCE LINE # 602
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 34  
+
+                                           ; SOURCE LINE # 603
+                                           ; SOURCE LINE # 604
+0000 020000      E     LJMP    Hook_Timer10msEventB
+             ; FUNCTION Timer10msEventB (END)
+
+             ; FUNCTION Timer50msEventA (BEGIN)
+                                           ; SOURCE LINE # 610
+                                           ; SOURCE LINE # 611
+                                           ; SOURCE LINE # 612
+0000 020000      E     LJMP    Hook_Timer50msEventA
+             ; FUNCTION Timer50msEventA (END)
+
+             ; FUNCTION Timer50msEventB (BEGIN)
+                                           ; SOURCE LINE # 618
+                                           ; SOURCE LINE # 619
+                                           ; SOURCE LINE # 620
+0000 020000      E     LJMP    Hook_Timer50msEventB
+             ; FUNCTION Timer50msEventB (END)
+
+             ; FUNCTION Timer50msEventC (BEGIN)
+                                           ; SOURCE LINE # 626
+                                           ; SOURCE LINE # 627
+                                           ; SOURCE LINE # 628
+0000 020000      E     LJMP    Hook_Timer50msEventC
+             ; FUNCTION Timer50msEventC (END)
+
+             ; FUNCTION Timer100msEventA (BEGIN)
+                                           ; SOURCE LINE # 634
+                                           ; SOURCE LINE # 635
+                                           ; SOURCE LINE # 636
+0000 020000      E     LJMP    Hook_Timer100msEventA
+             ; FUNCTION Timer100msEventA (END)
+
+             ; FUNCTION Timer100msEventB (BEGIN)
+                                           ; SOURCE LINE # 642
+                                           ; SOURCE LINE # 643
+                                           ; SOURCE LINE # 644
+0000 020000      E     LJMP    Hook_Timer100msEventB
+             ; FUNCTION Timer100msEventB (END)
+
+             ; FUNCTION Timer100msEventC (BEGIN)
+                                           ; SOURCE LINE # 650
+                                           ; SOURCE LINE # 651
+                                           ; SOURCE LINE # 652
+0000 020000      E     LJMP    Hook_Timer100msEventC
+             ; FUNCTION Timer100msEventC (END)
+
+             ; FUNCTION Timer500msEventA (BEGIN)
+                                           ; SOURCE LINE # 658
+                                           ; SOURCE LINE # 659
+                                           ; SOURCE LINE # 660
+0000 020000      E     LJMP    Hook_Timer500msEventA
+             ; FUNCTION Timer500msEventA (END)
+
+             ; FUNCTION Timer500msEventB (BEGIN)
+                                           ; SOURCE LINE # 666
+                                           ; SOURCE LINE # 667
+                                           ; SOURCE LINE # 668
+0000 020000      E     LJMP    Hook_Timer500msEventB
+             ; FUNCTION Timer500msEventB (END)
+
+             ; FUNCTION Timer500msEventC (BEGIN)
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 35  
+
+                                           ; SOURCE LINE # 674
+                                           ; SOURCE LINE # 675
+                                           ; SOURCE LINE # 676
+0000 020000      E     LJMP    Hook_Timer500msEventC
+             ; FUNCTION Timer500msEventC (END)
+
+             ; FUNCTION Timer1SecEventA (BEGIN)
+                                           ; SOURCE LINE # 682
+                                           ; SOURCE LINE # 683
+                                           ; SOURCE LINE # 684
+0000 020000      E     LJMP    Hook_Timer1SecEventA
+             ; FUNCTION Timer1SecEventA (END)
+
+             ; FUNCTION Timer1SecEventB (BEGIN)
+                                           ; SOURCE LINE # 690
+                                           ; SOURCE LINE # 691
+                                           ; SOURCE LINE # 692
+0000 020000      E     LJMP    Hook_Timer1SecEventB
+             ; FUNCTION Timer1SecEventB (END)
+
+             ; FUNCTION Timer1SecEventC (BEGIN)
+                                           ; SOURCE LINE # 698
+                                           ; SOURCE LINE # 699
+                                           ; SOURCE LINE # 700
+0000 020000      E     LJMP    Hook_Timer1SecEventC
+             ; FUNCTION Timer1SecEventC (END)
+
+             ; FUNCTION Timer1MinEvent (BEGIN)
+                                           ; SOURCE LINE # 706
+                                           ; SOURCE LINE # 707
+                                           ; SOURCE LINE # 708
+0000 020000      E     LJMP    Hook_Timer1MinEvent
+             ; FUNCTION Timer1MinEvent (END)
+
+             ; FUNCTION CheckCanEnterDeepSleep (BEGIN)
+                                           ; SOURCE LINE # 711
+                                           ; SOURCE LINE # 712
+                                           ; SOURCE LINE # 715
+;---- Variable 'resault' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+                                           ; SOURCE LINE # 720
+0002 900000      E     MOV     DPTR,#SysPowState
+0005 E0                MOVX    A,@DPTR
+0006 B41001            CJNE    A,#010H,?C0103
+                                           ; SOURCE LINE # 721
+                                           ; SOURCE LINE # 722
+0009 0F                INC     R7
+                                           ; SOURCE LINE # 723
+000A         ?C0103:
+                                           ; SOURCE LINE # 725
+000A 900000      E     MOV     DPTR,#CMOS_TEST
+000D E0                MOVX    A,@DPTR
+000E 30E002            JNB     ACC.0,?C0104
+                                           ; SOURCE LINE # 726
+                                           ; SOURCE LINE # 727
+0011 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 728
+0013         ?C0104:
+                                           ; SOURCE LINE # 731
+0013 900000      E     MOV     DPTR,#GPDRB
+0016 E0                MOVX    A,@DPTR
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 36  
+
+0017 20E302            JB      ACC.3,?C0105
+                                           ; SOURCE LINE # 732
+                                           ; SOURCE LINE # 733
+001A 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 734
+001C         ?C0105:
+                                           ; SOURCE LINE # 735
+001C 900000      E     MOV     DPTR,#LOWBATT_3TIMES
+001F E0                MOVX    A,@DPTR
+0020 6002              JZ      ?C0106
+                                           ; SOURCE LINE # 736
+                                           ; SOURCE LINE # 737
+0022 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 738
+0024         ?C0106:
+                                           ; SOURCE LINE # 739
+0024 900000      E     MOV     DPTR,#ACPI_HOTKEY
+0027 E0                MOVX    A,@DPTR
+0028 20E604            JB      ACC.6,?C0108
+002B E0                MOVX    A,@DPTR
+002C 30E702            JNB     ACC.7,?C0107
+002F         ?C0108:
+                                           ; SOURCE LINE # 740
+                                           ; SOURCE LINE # 741
+002F 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 742
+0031         ?C0107:
+                                           ; SOURCE LINE # 750
+0031 900000      E     MOV     DPTR,#GPDRB
+0034 E0                MOVX    A,@DPTR
+0035 30E010            JNB     ACC.0,?C0109
+0038 900000      E     MOV     DPTR,#nBattery0x16L
+003B E0                MOVX    A,@DPTR
+003C 20E509            JB      ACC.5,?C0109
+003F 900000      E     MOV     DPTR,#BT1_STATUS1
+0042 E0                MOVX    A,@DPTR
+0043 30E002            JNB     ACC.0,?C0109
+                                           ; SOURCE LINE # 751
+                                           ; SOURCE LINE # 752
+0046 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 753
+0048         ?C0109:
+                                           ; SOURCE LINE # 754
+0048 900000      E     MOV     DPTR,#LID_DEBOUNCE_CNT
+004B E0                MOVX    A,@DPTR
+004C D3                SETB    C
+004D 9400              SUBB    A,#00H
+004F 4002              JC      ?C0110
+                                           ; SOURCE LINE # 755
+                                           ; SOURCE LINE # 756
+0051 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 757
+0053         ?C0110:
+                                           ; SOURCE LINE # 765
+0053 900000      E     MOV     DPTR,#POWER_FLAG1
+0056 E0                MOVX    A,@DPTR
+0057 30E102            JNB     ACC.1,?C0111
+                                           ; SOURCE LINE # 766
+                                           ; SOURCE LINE # 767
+005A 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 768
+005C         ?C0111:
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 37  
+
+                                           ; SOURCE LINE # 775
+005C 900000      E     MOV     DPTR,#SysPowState
+005F E0                MOVX    A,@DPTR
+0060 6450              XRL     A,#050H
+0062 6022              JZ      ?C0113
+0064 E0                MOVX    A,@DPTR
+0065 6440              XRL     A,#040H
+0067 601D              JZ      ?C0113
+0069 E0                MOVX    A,@DPTR
+006A 6430              XRL     A,#030H
+006C 6018              JZ      ?C0113
+006E E0                MOVX    A,@DPTR
+006F 6405              XRL     A,#05H
+0071 6013              JZ      ?C0113
+0073 E0                MOVX    A,@DPTR
+0074 6404              XRL     A,#04H
+0076 600E              JZ      ?C0113
+0078 E0                MOVX    A,@DPTR
+0079 6403              XRL     A,#03H
+007B 6009              JZ      ?C0113
+007D E0                MOVX    A,@DPTR
+007E 6406              XRL     A,#06H
+0080 6004              JZ      ?C0113
+0082 E0                MOVX    A,@DPTR
+0083 B46002            CJNE    A,#060H,?C0112
+0086         ?C0113:
+                                           ; SOURCE LINE # 776
+                                           ; SOURCE LINE # 777
+0086 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 778
+0088         ?C0112:
+                                           ; SOURCE LINE # 780
+0088 EF                MOV     A,R7
+0089 7014              JNZ     ?C0114
+                                           ; SOURCE LINE # 781
+                                           ; SOURCE LINE # 782
+008B 900000      E     MOV     DPTR,#DeepSleepCunt
+008E E0                MOVX    A,@DPTR
+008F C3                CLR     C
+0090 94FA              SUBB    A,#0FAH
+0092 5007              JNC     ?C0115
+                                           ; SOURCE LINE # 783
+                                           ; SOURCE LINE # 784
+0094 E0                MOVX    A,@DPTR
+0095 04                INC     A
+0096 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 785
+0097 7F02              MOV     R7,#02H
+                                           ; SOURCE LINE # 786
+0099 8009              SJMP    ?C0117
+009B         ?C0115:
+                                           ; SOURCE LINE # 788
+                                           ; SOURCE LINE # 789
+009B E4                CLR     A
+009C FF                MOV     R7,A
+                                           ; SOURCE LINE # 790
+                                           ; SOURCE LINE # 791
+                                           ; SOURCE LINE # 792
+009D 8001              SJMP    ?C0139
+009F         ?C0114:
+                                           ; SOURCE LINE # 794
+                                           ; SOURCE LINE # 795
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 38  
+
+009F E4                CLR     A
+00A0         ?C0139:
+00A0 900000      E     MOV     DPTR,#DeepSleepCunt
+00A3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 796
+00A4         ?C0117:
+                                           ; SOURCE LINE # 798
+00A4 EF                MOV     A,R7
+00A5 14                DEC     A
+00A6 6009              JZ      ?C0121
+00A8 14                DEC     A
+00A9 600D              JZ      ?C0118
+00AB 2402              ADD     A,#02H
+00AD 7009              JNZ     ?C0118
+                                           ; SOURCE LINE # 799
+                                           ; SOURCE LINE # 800
+00AF         ?C0119:
+                                           ; SOURCE LINE # 801
+00AF D3                SETB    C
+00B0 22                RET     
+                                           ; SOURCE LINE # 802
+                                           ; SOURCE LINE # 804
+00B1         ?C0121:
+                                           ; SOURCE LINE # 805
+00B1 E4                CLR     A
+00B2 900000      E     MOV     DPTR,#DeepSleepCunt
+00B5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 806
+00B6 C3                CLR     C
+00B7 22                RET     
+                                           ; SOURCE LINE # 807
+                                           ; SOURCE LINE # 809
+                                           ; SOURCE LINE # 811
+                                           ; SOURCE LINE # 812
+00B8         ?C0118:
+                                           ; SOURCE LINE # 814
+00B8 C3                CLR     C
+                                           ; SOURCE LINE # 817
+00B9         ?C0120:
+00B9 22                RET     
+             ; FUNCTION CheckCanEnterDeepSleep (END)
+
+             ; FUNCTION InitEnterDeepSleep (BEGIN)
+                                           ; SOURCE LINE # 820
+                                           ; SOURCE LINE # 821
+                                           ; SOURCE LINE # 822
+0000 900000      E     MOV     DPTR,#ADCSTS
+0003 E0                MOVX    A,@DPTR
+0004 900000      E     MOV     DPTR,#EC_DeepSleep_Temp0
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 823
+0008 900000      E     MOV     DPTR,#ADCCFG
+000B E0                MOVX    A,@DPTR
+000C 900000      E     MOV     DPTR,#EC_DeepSleep_Temp1
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 824
+0010 900000      E     MOV     DPTR,#DACPWRDN
+0013 E0                MOVX    A,@DPTR
+0014 900000      E     MOV     DPTR,#EC_DeepSleep_Temp2
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 825
+0018 900000      E     MOV     DPTR,#CGCTRL1R
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 39  
+
+001B E0                MOVX    A,@DPTR
+001C 900000      E     MOV     DPTR,#EC_DeepSleep_Temp3
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 827
+0020 900000      E     MOV     DPTR,#GPDRA
+0023 E0                MOVX    A,@DPTR
+0024 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortA
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 828
+0028 900000      E     MOV     DPTR,#GPDRB
+002B E0                MOVX    A,@DPTR
+002C 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortB
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 829
+0030 900000      E     MOV     DPTR,#GPDRC
+0033 E0                MOVX    A,@DPTR
+0034 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortC
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 830
+0038 900000      E     MOV     DPTR,#GPDRD
+003B E0                MOVX    A,@DPTR
+003C 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortD
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 831
+0040 900000      E     MOV     DPTR,#GPDRE
+0043 E0                MOVX    A,@DPTR
+0044 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortE
+0047 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 832
+0048 900000      E     MOV     DPTR,#GPDRF
+004B E0                MOVX    A,@DPTR
+004C 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortF
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 833
+0050 900000      E     MOV     DPTR,#GPDRG
+0053 E0                MOVX    A,@DPTR
+0054 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortG
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 834
+0058 900000      E     MOV     DPTR,#GPDRH
+005B E0                MOVX    A,@DPTR
+005C 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortH
+005F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 835
+0060 900000      E     MOV     DPTR,#GPDRI
+0063 E0                MOVX    A,@DPTR
+0064 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortI
+0067 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 836
+0068 900000      E     MOV     DPTR,#GPDRJ
+006B E0                MOVX    A,@DPTR
+006C 900000      E     MOV     DPTR,#EC_DeepSleep_TempPortJ
+006F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 838
+0070 C2AF              CLR     EA
+                                           ; SOURCE LINE # 839
+0072 E4                CLR     A
+0073 900000      E     MOV     DPTR,#KSOL
+0076 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 840
+                                           ; SOURCE LINE # 841
+0077 120000      R     LCALL   L?0146
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 40  
+
+007A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 842
+007B 900000      E     MOV     DPTR,#KSICTRL
+007E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 853
+007F 900000      E     MOV     DPTR,#SysPowState
+0082 E0                MOVX    A,@DPTR
+0083 B46612            CJNE    A,#066H,?C0123
+                                           ; SOURCE LINE # 854
+                                           ; SOURCE LINE # 857
+0086 900000      E     MOV     DPTR,#GPDRA
+0089 E0                MOVX    A,@DPTR
+008A 54FE              ANL     A,#0FEH
+008C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 858
+008D E0                MOVX    A,@DPTR
+008E 54FD              ANL     A,#0FDH
+0090 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 860
+0091 900000      E     MOV     DPTR,#GPDRH
+0094 E0                MOVX    A,@DPTR
+0095 54F7              ANL     A,#0F7H
+0097 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 864
+0098         ?C0123:
+                                           ; SOURCE LINE # 866
+0098 900000      E     MOV     DPTR,#FPCFG
+009B E0                MOVX    A,@DPTR
+009C 54BF              ANL     A,#0BFH
+009E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 867
+009F 900000      E     MOV     DPTR,#ADCCFG
+00A2 E0                MOVX    A,@DPTR
+00A3 54FE              ANL     A,#0FEH
+00A5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 868
+00A6 900000      E     MOV     DPTR,#CGCTRL2R
+00A9 7470              MOV     A,#070H
+00AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 869
+00AC 900000      E     MOV     DPTR,#CGCTRL3R
+00AF 742F              MOV     A,#02FH
+00B1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 872
+00B2 120000      E     LCALL   ECPowerDownEnableExternalTimer2
+                                           ; SOURCE LINE # 874
+00B5 900000      E     MOV     DPTR,#BT1_STATUS1
+00B8 E0                MOVX    A,@DPTR
+00B9 30E005            JNB     ACC.0,?C0124
+                                           ; SOURCE LINE # 875
+                                           ; SOURCE LINE # 876
+00BC 120000      E     LCALL   BatteryOutWakeEnable
+                                           ; SOURCE LINE # 877
+00BF 8003              SJMP    ?C0125
+00C1         ?C0124:
+                                           ; SOURCE LINE # 879
+                                           ; SOURCE LINE # 880
+00C1 120000      E     LCALL   BatteryINWakeEnable
+                                           ; SOURCE LINE # 881
+00C4         ?C0125:
+                                           ; SOURCE LINE # 884
+00C4 120000      E     LCALL   ACInOutIntEnable
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 41  
+
+                                           ; SOURCE LINE # 885
+00C7 120000      E     LCALL   Setlanwake_Int
+                                           ; SOURCE LINE # 886
+00CA 120000      E     LCALL   SetPWRSW_Int
+                                           ; SOURCE LINE # 887
+00CD 120000      E     LCALL   SetNovo_Int
+                                           ; SOURCE LINE # 888
+00D0 120000      E     LCALL   SetWOV_Int
+                                           ; SOURCE LINE # 889
+00D3 120000      E     LCALL   MXLID_Wake_En
+                                           ; SOURCE LINE # 890
+00D6 120000      E     LCALL   SlpS3_Wake_En
+                                           ; SOURCE LINE # 891
+00D9 120000      E     LCALL   InterKBDWakeEnable
+                                           ; SOURCE LINE # 893
+00DC E4                CLR     A
+00DD 900000      E     MOV     DPTR,#ADCSTS
+00E0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 894
+00E1 900000      E     MOV     DPTR,#ADCCFG
+00E4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 895
+00E5 900000      E     MOV     DPTR,#DACPWRDN
+00E8 74FF              MOV     A,#0FFH
+00EA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 896
+00EB 900000      E     MOV     DPTR,#CGCTRL1R
+00EE 740F              MOV     A,#0FH
+00F0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 898
+00F1 900000      E     MOV     DPTR,#SysPowState
+00F4 E0                MOVX    A,@DPTR
+00F5 6466              XRL     A,#066H
+00F7 6004              JZ      ?C0127
+00F9 E0                MOVX    A,@DPTR
+00FA B45523            CJNE    A,#055H,?C0126
+00FD         ?C0127:
+                                           ; SOURCE LINE # 899
+                                           ; SOURCE LINE # 901
+00FD 900000      E     MOV     DPTR,#GPDRC
+0100 E0                MOVX    A,@DPTR
+0101 4402              ORL     A,#02H
+0103 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 902
+0104 E0                MOVX    A,@DPTR
+0105 4404              ORL     A,#04H
+0107 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 903
+0108 900000      E     MOV     DPTR,#GPCRC1
+010B 7480              MOV     A,#080H
+010D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 904
+010E 900000      E     MOV     DPTR,#GPCRC2
+0111 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 909
+0112 900000      E     MOV     DPTR,#GPCRA5
+0115 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 912
+0116 900000      E     MOV     DPTR,#GPCRC7
+0119 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 916
+011A 900000      E     MOV     DPTR,#GPCRG6
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 42  
+
+                                           ; SOURCE LINE # 919
+                                           ; SOURCE LINE # 920
+011D 120000      R     LCALL   L?0148
+                                           ; SOURCE LINE # 921
+0120         ?C0126:
+                                           ; SOURCE LINE # 923
+0120 900000      E     MOV     DPTR,#WUESR1
+0123 74FF              MOV     A,#0FFH
+                                           ; SOURCE LINE # 924
+                                           ; SOURCE LINE # 925
+                                           ; SOURCE LINE # 926
+                                           ; SOURCE LINE # 927
+                                           ; SOURCE LINE # 928
+                                           ; SOURCE LINE # 929
+                                           ; SOURCE LINE # 930
+                                           ; SOURCE LINE # 931
+0125 120000      R     LCALL   L?0142
+                                           ; SOURCE LINE # 933
+                                           ; SOURCE LINE # 934
+                                           ; SOURCE LINE # 935
+                                           ; SOURCE LINE # 936
+0128 120000      R     LCALL   L?0144
+                                           ; SOURCE LINE # 937
+                                           ; SOURCE LINE # 938
+                                           ; SOURCE LINE # 939
+                                           ; SOURCE LINE # 940
+012B 120000      R     LCALL   L?0143
+                                           ; SOURCE LINE # 942
+012E 22                RET     
+             ; FUNCTION InitEnterDeepSleep (END)
+
+             ; FUNCTION InitWakeFromDeepSleep (BEGIN)
+                                           ; SOURCE LINE # 945
+                                           ; SOURCE LINE # 946
+                                           ; SOURCE LINE # 947
+0000 900000      E     MOV     DPTR,#FPCFG
+0003 E0                MOVX    A,@DPTR
+0004 4440              ORL     A,#040H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 948
+0007 900000      E     MOV     DPTR,#ADCCFG
+000A E0                MOVX    A,@DPTR
+000B 4401              ORL     A,#01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 949
+000E E4                CLR     A
+000F 900000      E     MOV     DPTR,#CGCTRL2R
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 950
+0013 900000      E     MOV     DPTR,#CGCTRL3R
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 952
+0017 900000      E     MOV     DPTR,#IER0
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 953
+001B 900000      E     MOV     DPTR,#IER1
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 954
+001F 900000      E     MOV     DPTR,#IER2
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 955
+0023 900000      E     MOV     DPTR,#IER3
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 43  
+
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 956
+0027 900000      E     MOV     DPTR,#IER4
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 957
+002B 900000      E     MOV     DPTR,#IER9
+002E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 958
+002F 900000      E     MOV     DPTR,#IER13
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 959
+0033 900000      E     MOV     DPTR,#IER16
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 960
+0037 900000      E     MOV     DPTR,#IER14
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 961
+003B 900000      E     MOV     DPTR,#IER15
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 965
+003F 900000      E     MOV     DPTR,#ISR0
+0042 74FF              MOV     A,#0FFH
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 966
+                                           ; SOURCE LINE # 967
+                                           ; SOURCE LINE # 968
+                                           ; SOURCE LINE # 969
+0045 120000      R     LCALL   L?0144
+0048 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 970
+0049 900000      E     MOV     DPTR,#ISR9
+                                           ; SOURCE LINE # 971
+                                           ; SOURCE LINE # 972
+                                           ; SOURCE LINE # 973
+                                           ; SOURCE LINE # 974
+004C 120000      R     LCALL   L?0143
+                                           ; SOURCE LINE # 977
+004F 900000      E     MOV     DPTR,#WUESR1
+                                           ; SOURCE LINE # 978
+                                           ; SOURCE LINE # 979
+                                           ; SOURCE LINE # 980
+                                           ; SOURCE LINE # 981
+                                           ; SOURCE LINE # 982
+                                           ; SOURCE LINE # 983
+                                           ; SOURCE LINE # 984
+                                           ; SOURCE LINE # 985
+0052 120000      R     LCALL   L?0142
+                                           ; SOURCE LINE # 987
+0055 900000      E     MOV     DPTR,#EC_DeepSleep_Temp0
+0058 E0                MOVX    A,@DPTR
+0059 900000      E     MOV     DPTR,#ADCSTS
+005C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 988
+005D 900000      E     MOV     DPTR,#EC_DeepSleep_Temp1
+0060 E0                MOVX    A,@DPTR
+0061 900000      E     MOV     DPTR,#ADCCFG
+0064 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 989
+0065 900000      E     MOV     DPTR,#EC_DeepSleep_Temp2
+0068 E0                MOVX    A,@DPTR
+0069 900000      E     MOV     DPTR,#DACPWRDN
+006C F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 44  
+
+                                           ; SOURCE LINE # 990
+006D 900000      E     MOV     DPTR,#EC_DeepSleep_Temp3
+0070 E0                MOVX    A,@DPTR
+0071 900000      E     MOV     DPTR,#CGCTRL1R
+0074 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 992
+0075 120000      E     LCALL   Init_Kbd
+                                           ; SOURCE LINE # 993
+0078 120000      E     LCALL   Core_Init_Regs
+                                           ; SOURCE LINE # 994
+007B 120000      E     LCALL   Init_Regs
+                                           ; SOURCE LINE # 995
+007E 120000      E     LCALL   Enable_Any_Key_Irq
+                                           ; SOURCE LINE # 1004
+0081 900000      E     MOV     DPTR,#SysPowState
+0084 E0                MOVX    A,@DPTR
+0085 6466              XRL     A,#066H
+0087 6005              JZ      ?C0130
+0089 E0                MOVX    A,@DPTR
+008A 6455              XRL     A,#055H
+008C 7075              JNZ     ?C0131
+008E         ?C0130:
+                                           ; SOURCE LINE # 1005
+                                           ; SOURCE LINE # 1007
+008E E4                CLR     A
+008F 900000      E     MOV     DPTR,#GPCRC1
+0092 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1008
+0093 900000      E     MOV     DPTR,#GPCRC2
+0096 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1011
+0097 900000      E     MOV     DPTR,#GPCRA0
+009A 7440              MOV     A,#040H
+009C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1012
+009D 900000      E     MOV     DPTR,#GPCRA1
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1013
+00A1 900000      E     MOV     DPTR,#GPCRA2
+00A4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1014
+00A5 900000      E     MOV     DPTR,#GPDRA
+00A8 E0                MOVX    A,@DPTR
+00A9 4404              ORL     A,#04H
+00AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1015
+00AC E0                MOVX    A,@DPTR
+00AD 4401              ORL     A,#01H
+00AF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1016
+00B0 E0                MOVX    A,@DPTR
+00B1 4402              ORL     A,#02H
+00B3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1018
+00B4 900000      E     MOV     DPTR,#GPDRH
+00B7 E0                MOVX    A,@DPTR
+00B8 4408              ORL     A,#08H
+00BA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1019
+00BB 900000      E     MOV     DPTR,#GPDRE
+00BE E0                MOVX    A,@DPTR
+00BF 4480              ORL     A,#080H
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 45  
+
+00C1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1023
+00C2 900000      E     MOV     DPTR,#GPCRA4
+00C5 7440              MOV     A,#040H
+00C7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1024
+00C8 900000      E     MOV     DPTR,#GPCRA5
+00CB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1025
+00CC 900000      E     MOV     DPTR,#GPCRA7
+00CF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1026
+00D0 900000      E     MOV     DPTR,#GPCRB2
+00D3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1028
+00D4 900000      E     MOV     DPTR,#GPCRC0
+00D7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1029
+00D8 900000      E     MOV     DPTR,#GPCRC6
+00DB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1030
+00DC 900000      E     MOV     DPTR,#GPCRC7
+00DF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1031
+00E0 900000      E     MOV     DPTR,#GPCRD3
+00E3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1032
+00E4 900000      E     MOV     DPTR,#GPCRE3
+00E7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1033
+00E8 900000      E     MOV     DPTR,#GPCRE4
+00EB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1034
+00EC 900000      E     MOV     DPTR,#GPDRE
+00EF E0                MOVX    A,@DPTR
+00F0 54EF              ANL     A,#0EFH
+00F2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1036
+00F3 900000      E     MOV     DPTR,#GPCRF1
+00F6 7440              MOV     A,#040H
+00F8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1040
+00F9 900000      E     MOV     DPTR,#GPCRH6
+00FC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1041
+00FD 900000      E     MOV     DPTR,#GPCRJ3
+                                           ; SOURCE LINE # 1042
+                                           ; SOURCE LINE # 1043
+0100 120000      R     LCALL   L?0148
+                                           ; SOURCE LINE # 1044
+                                           ; SOURCE LINE # 1045
+0103         ?C0131:
+0103 22                RET     
+             ; FUNCTION InitWakeFromDeepSleep (END)
+
+             ; FUNCTION CheckCrisisMode (BEGIN)
+                                           ; SOURCE LINE # 1051
+                                           ; SOURCE LINE # 1052
+                                           ; SOURCE LINE # 1054
+0000 900000      E     MOV     DPTR,#KSOL
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 46  
+
+;---- Variable 'BKSOL' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1055
+0005 900000      E     MOV     DPTR,#KSOH1
+0008 E0                MOVX    A,@DPTR
+0009 FE                MOV     R6,A
+;---- Variable 'BKSOH1' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 1056
+000A 900000      E     MOV     DPTR,#KSOH2
+000D E0                MOVX    A,@DPTR
+000E FD                MOV     R5,A
+;---- Variable 'BKSOH2' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 1058
+000F 900000      E     MOV     DPTR,#KSOL
+0012 74FF              MOV     A,#0FFH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1059
+0015 74BF              MOV     A,#0BFH
+                                           ; SOURCE LINE # 1060
+0017 120000      R     LCALL   L?0145
+001A 74FF              MOV     A,#0FFH
+                                           ; SOURCE LINE # 1061
+                                           ; SOURCE LINE # 1062
+                                           ; SOURCE LINE # 1063
+001C 120000      R     LCALL   L?0147
+001F 30E40B            JNB     ACC.4,?C0132
+                                           ; SOURCE LINE # 1064
+                                           ; SOURCE LINE # 1065
+0022 900000      E     MOV     DPTR,#KSOH1
+0025 74FF              MOV     A,#0FFH
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1066
+0028 900000      E     MOV     DPTR,#KSOL
+                                           ; SOURCE LINE # 1067
+                                           ; SOURCE LINE # 1068
+                                           ; SOURCE LINE # 1069
+002B 8017              SJMP    ?C0140
+                                           ; SOURCE LINE # 1070
+002D         ?C0132:
+                                           ; SOURCE LINE # 1072
+002D 900000      E     MOV     DPTR,#KSOL
+0030 74EF              MOV     A,#0EFH
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1073
+0033 74FF              MOV     A,#0FFH
+                                           ; SOURCE LINE # 1074
+0035 120000      R     LCALL   L?0145
+                                           ; SOURCE LINE # 1075
+                                           ; SOURCE LINE # 1076
+                                           ; SOURCE LINE # 1077
+0038 120000      R     LCALL   L?0147
+003B 900000      E     MOV     DPTR,#KSOL
+003E 30E211            JNB     ACC.2,?C0134
+                                           ; SOURCE LINE # 1078
+                                           ; SOURCE LINE # 1079
+0041 74FF              MOV     A,#0FFH
+0043 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1080
+0044         ?C0140:
+0044 EF                MOV     A,R7
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1081
+0046 900000      E     MOV     DPTR,#KSOH1
+C51 COMPILER V8.12   CORE_MAIN                                                             09/14/2018 11:07:50 PAGE 47  
+
+0049 EE                MOV     A,R6
+004A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1082
+004B 900000      E     MOV     DPTR,#KSOH2
+004E ED                MOV     A,R5
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1083
+0050 C3                CLR     C
+0051 22                RET     
+                                           ; SOURCE LINE # 1084
+0052         ?C0134:
+                                           ; SOURCE LINE # 1085
+0052 74FF              MOV     A,#0FFH
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1087
+0055 EF                MOV     A,R7
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1088
+0057 CF                XCH     A,R7
+0058 EE                MOV     A,R6
+0059 CF                XCH     A,R7
+005A 900000      E     MOV     DPTR,#KSOH1
+005D EE                MOV     A,R6
+005E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1089
+005F CF                XCH     A,R7
+0060 ED                MOV     A,R5
+0061 CF                XCH     A,R7
+0062 900000      E     MOV     DPTR,#KSOH2
+0065 ED                MOV     A,R5
+0066 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1091
+0067 D3                SETB    C
+                                           ; SOURCE LINE # 1092
+0068         ?C0133:
+0068 22                RET     
+             ; FUNCTION CheckCrisisMode (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1839    ----
+   CONSTANT SIZE    =     54    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

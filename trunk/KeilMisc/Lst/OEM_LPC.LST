@@ -1,0 +1,1672 @@
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_LPC
+OBJECT MODULE PLACED IN Code\Oem\OEM_LPC.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_LPC.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\INC
+                    -LUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_LPC.C
+   3           *
+   4           * Author : Dino
+   5           *
+   6           * Note : These functions are reference only.
+   7           *---------------------------------------------------------------------------*/
+   8          
+   9          #include <CORE_INCLUDE.H>
+  10          #include <OEM_INCLUDE.H>
+  11          
+  12          /*****************************************************************************/
+  13          // Procedure: MuteProcess                                                                               TimeDiv: 50mSec
+  14          // Description:
+  15          // GPIO: GPIOJ1
+  16          // Referrals:
+  17          /*****************************************************************************/
+  18          void MuteProcess(void)
+  19          {
+  20   1              //ANGELAG010: add start
+  21   1              if(!Read_SLPS3()) 
+  22   1              {
+  23   2                      EC_MUTE_ACT();
+  24   2                      return;
+  25   2              }
+  26   1              //ANGELAG010: add end
+  27   1              if ( SystemIsS0 )
+  28   1              {       // Check ISCT and command 94 status.
+  29   2                      if( MuteCount == 0 )
+  30   2                      {
+  31   3                              if ( (IS_MASK_CLEAR(uISCT_2, b3ISCT_MUTE)) && (IS_MASK_CLEAR(cCmd, b5VolMute)) )
+  32   3                              {
+  33   4                                      EC_MUTE_INACT();
+  34   4                                      return;
+  35   4                              }
+  36   3                      }
+  37   2                      else
+  38   2                      { 
+  39   3                          MuteCount--; 
+  40   3              }
+  41   2              }
+  42   1              EC_MUTE_ACT();
+  43   1      }
+  44          
+  45          /*****************************************************************************/
+  46          // Procedure: CameraProcess                                                                     TimeDiv: 100mSec
+  47          // Description:
+  48          // GPIO: GPIOG7
+  49          // Referrals:
+  50          /*****************************************************************************/
+  51          void CameraProcess(void)
+  52          {
+  53   1      #if Support_WebCam
+                      if ( SystemIsS0 )
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 2   
+
+                      {
+                              if ( IS_MASK_SET(SYS_MISC1,ACPI_OS) )
+                              {
+                                      if( nCameraExistGET && (IS_MASK_SET(pDevStus, pCamera)) && (IS_MASK_CLEAR(uISCT_2, b4ISCT_Camera)) )
+                                      {
+                                              SET_MASK(LENOVODEVICE,Camera_PwrOn);    // Set Camera power enable bit.
+                                              CMOS_Cam_ON();
+                                      }
+                                      else
+                                      {
+                                              CLR_MASK(LENOVODEVICE,Camera_PwrOn);    // Set Camera power disable bit.
+                                              CMOS_Cam_OFF();
+                                      }
+                              }
+                      }
+                      //else if ( SystemIsS5 || SystemIsS3 )
+                      //{ CMOS_Cam_ON(); }
+              #endif  // Support_WebCam
+  73   1      }
+  74          
+  75          /*****************************************************************************/
+  76          // Procedure: WirelessProcess                                                                   TimeDiv: 100mSec
+  77          // Description:
+  78          // GPIO: GPIOG7
+  79          // Referrals: disable and enable Wireless.
+  80          /*****************************************************************************/
+  81          void WirelessProcess(void)
+  82          {
+  83   1      #if Havekillswitch
+                      /*if( pDevStus.bit.pKillSwitch != nKillSwitchGET )
+                      {
+                              if( IS_MASK_SET(cCmd, b6TestBtnEn) )
+                                      StringToHost1( sKillSW_scan_codes );
+                              pDevStus.bit.pKillSwitch = nKillSwitchGET;
+              
+                              pSmiTrigSource4.bit.STS4_WLSwitch = 1;
+                              if( pDevStus.bit.pKillSwitch )
+                              { SET_MASK(DEVICEMODULE,b4KILL_STATUS); }
+                              else
+                              { CLR_MASK(DEVICEMODULE,b4KILL_STATUS); }
+              
+                              if ( cSysStus.bit.cSS_S0 && !cSysStus.bit.cSS_S3
+                                      && !pwrSUSPactive && cSysStus.bit.cSS_Acpi )
+                              {
+                                      uVPCeventSource = 0x00;
+                                      uVPCeventSource2 = VPCeventAllRF;
+                                      pSmiTrigSource4.bit.STS4_VPC = 1;
+                              }
+                      }
+                      */
+              #else
+ 106   1              SET_MASK(DEVICEMODULE,b4KILL_STATUS);  // workaround for no killswitch
+ 107   1      #endif
+ 108   1      
+ 109   1              if ( SystemIsS0 && (IS_MASK_SET(SYS_MISC1,ACPI_OS)) )
+ 110   1              {
+ 111   2                      #if Havekillswitch
+                              if( nKillSwitchGET )
+                              {
+                                      if ( uWLBTLanTemp != DEVICEMODULE )
+                                      {
+                                              uWLBTLanTemp = DEVICEMODULE;
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 3   
+
+                                              ECQEvent(WLAN_BTN_EVENT_65);    // 0x65 WLAN status notify.
+                                      }
+                              }
+                              #else
+ 121   2                      //Add sent Qevent 0x42 for WLAN&BT on/off under win7.
+ 122   2                      /*if ( IS_MASK_SET(DEVICEMODULE,WIRELESS_EXIST) )       // Check WLAN exist.
+ 123   2                      {
+ 124   2                              if ( IS_MASK_SET(pDevStus, pWireless) )
+ 125   2                              {
+ 126   2                                      SET_MASK(DEVICEMODULE,WIRELESS);        // Eanble WLAN.
+ 127   2                                      //if ( WLAN_OFF_Cnt == 0 )
+ 128   2                                      //{ WL_OFF_ON(); }
+ 129   2                                      //{ WLAN_OFF_Cnt--; }
+ 130   2                                      //WL_OFF_ON();
+ 131   2                              }
+ 132   2                              else
+ 133   2                              {
+ 134   2                                      //WL_OFF_OFF();
+ 135   2                                      //if ( WLAN_OFF_Cnt == 0 )
+ 136   2                                      //{ CLR_MASK(DEVICEMODULE,WIRELESS);  } // Disable WLAN.
+ 137   2                                      //else
+ 138   2                                      //{ WLAN_OFF_Cnt--; }
+ 139   2                                      CLR_MASK(DEVICEMODULE,WIRELESS);// Disable WLAN.
+ 140   2                              }
+ 141   2                      }
+ 142   2                      else
+ 143   2                      {
+ 144   2                              //WL_OFF_OFF();
+ 145   2                              CLR_MASK(DEVICEMODULE,WIRELESS);        // Disable WLAN.
+ 146   2                      }
+ 147   2      
+ 148   2                      if ( IS_MASK_SET(DEVICEMODULE,BLUETOOTH_EXIST) )        // Check BT exist.
+ 149   2                      {
+ 150   2                              if ( IS_MASK_SET(pDevStus, pBluetooth) )
+ 151   2                              { 
+ 152   2                                      nBlueToothEN; 
+ 153   2                           }
+ 154   2                              else
+ 155   2                              { 
+ 156   2                                      nBlueToothDIS; 
+ 157   2                            }
+ 158   2                      }
+ 159   2                      else
+ 160   2                      { 
+ 161   2                              nBlueToothDIS; 
+ 162   2                   }*/
+ 163   2                      // Add sent Qevent 0x42 for WLAN&BT on/off under win7.
+ 164   2      
+ 165   2                      if ( uWLBTLanTemp != DEVICEMODULE )
+ 166   2                      {
+ 167   3                              uWLBTLanTemp = DEVICEMODULE;
+ 168   3                              ECQEvent(WLAN_BTN_EVENT_65);    // 0x65 WLAN status notify.
+ 169   3                      }
+ 170   2                      #endif
+ 171   2              }
+ 172   1      }
+ 173          
+ 174          void IFFSProcess(void)
+ 175          {
+ 176   1              if (uIffsCnt == 0 ) 
+ 177   1              return;
+ 178   1              else 
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 4   
+
+ 179   1              uIffsCnt--;
+ 180   1      
+ 181   1              if (uIffsCnt==0)
+ 182   1              {
+ 183   2                      CLR_MASK(uCritBattWakeThre,IFFS_Enable);
+ 184   2                      if (SystemIsS3)
+ 185   2                      {
+ 186   3                              if (nBattGasgauge < uCritBattWakeThre)
+ 187   3                              {
+ 188   4                                      SET_MASK(uCritBattWakeThre,IFFS_Enable);
+ 189   4                      PWSeqStep = 1;
+ 190   4                                      PowSeqDelay = 1;
+ 191   4                      RamDebug(0x32);       
+ 192   4                      SysPowState=SYSTEM_S3_S0;
+ 193   4                              }
+ 194   3                      }
+ 195   2              }
+ 196   1      }
+ 197          //ANGELAS057:add start
+ 198          void ECPowerDownEnableExternalTimer2(void)
+ 199          {
+ 200   1          LWORD timersetting;
+ 201   1          LWORD g_ECPowerDownPeriodWakeUpTime;
+ 202   1          g_ECPowerDownPeriodWakeUpTime=240;  //MARTINH090:change '120' to '240'
+ 203   1      
+ 204   1          if (g_ECPowerDownPeriodWakeUpTime != 0x00)
+ 205   1          {
+ 206   2              timersetting = (LWORD)(g_ECPowerDownPeriodWakeUpTime * 32);
+ 207   2      
+ 208   2              CLEAR_MASK(CGCTRL1R, BIT6);         // ETWD clock operation
+ 209   2      
+ 210   2              ET2PSR = 0x02;                      // Prescaler 32 HZ
+ 211   2              ET2CNTLH2R =timersetting >> 16;  
+ 212   2              ET2CNTLHR = timersetting >> 8;
+ 213   2              ET2CNTLLR = timersetting;  
+ 214   2      
+ 215   2              ISR7= Int_ET2Intr;      // clear extern timer2  interrupt state register
+ 216   2              SET_MASK(IER7, Int_ET2Intr);        // enable extern timer2 interrupt
+ 217   2          }
+ 218   1             
+ 219   1      }
+ 220          void ECDisableExternalTimer2(void)
+ 221          {
+ 222   1          CLEAR_MASK(IER7, Int_ET2Intr);     // disable extern timer2 interrupt 
+ 223   1          SET_MASK(ISR7, Int_ET2Intr);        // clear extern timer2  interrupt state register
+ 224   1      }
+ 225          //ANGELAS057:add end
+ 226          void SetACIN_Int(void)
+ 227          {
+ 228   1              SET_MASK(IELMR13,Int_WKO101);
+ 229   1              CLR_MASK(WUEMR10,WUC_WUI53); 
+ 230   1              CLR_MASK(IPOLR13,Int_WKO101);// rising
+ 231   1              ISR13 = Int_WKO101;
+ 232   1              SET_MASK(IER13, Int_WKO101);
+ 233   1      }
+ 234          
+ 235          //MEILING039:S+ add AC out interrupt enable and disable function.
+ 236          void ACInOutIntEnable(void)  // AC_IN#   WU101 --------> int106 
+ 237          { 
+ 238   1              if(Read_AC_IN()) 
+ 239   1              { 
+ 240   2              SET_MASK(WUEMR10, BIT(5));//  Either-edge (rising-edge or falling-edge) triggered is selected.
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 5   
+
+ 241   2              } 
+ 242   1              else 
+ 243   1              { 
+ 244   2                      CLEAR_MASK(WUEMR10, BIT(5)); 
+ 245   2              }
+ 246   1              
+ 247   1          WUESR10 = BIT(5); 
+ 248   1      
+ 249   1          SET_MASK(IER13, Int_WKO101); 
+ 250   1              ISR13 = Int_WKO101;     
+ 251   1      } 
+ 252          
+ 253          void ACInOutIntDisable(void) // AC_IN#   WU101 --------> int106 
+ 254          { 
+ 255   1          ISR13 = Int_WKO101; // clear int 106 for  ISR 
+ 256   1          CLEAR_MASK(IER13, Int_WKO101); 
+ 257   1          WUESR10 = 0x20;  // clear wakeup status 
+ 258   1      }
+ 259          //MEILING039:E+ add end.
+ 260          //72JERRY020:s+ Modify enter EC sleep setting.
+ 261          void BatteryOutWakeEnable(void)         // GPI2   WUI73 -------> int126
+ 262          {
+ 263   1              WUEMR13 &= ~0x02;                                       // Wake-up falling-edge triggered is selected.
+ 264   1              WUESR13 = 0x02;
+ 265   1              
+ 266   1              SET_MASK(IER15, Int_WKO121);            // enable int121 for  Battery In
+ 267   1              ISR15 = Int_WKO121;                             // clear int 121 for  ISR
+ 268   1              
+ 269   1      }
+ 270          void BatteryINWakeEnable(void)  // BATT_TEMP(GPI2)   WU121 -------> INT126
+ 271          {
+ 272   1              WUEMR13 |= 0x02;                                        // Wake-up falling-edge triggered is selected.
+ 273   1              WUESR13 = 0x02;
+ 274   1              
+ 275   1              SET_MASK(IER15, Int_WKO121);            // enable int126 for  Battery In
+ 276   1              ISR15 = Int_WKO121;                             // clear int 126 for  ISR
+ 277   1              
+ 278   1      }
+ 279          //72JERRY020:e+ Modify enter EC sleep setting.
+ 280          void SetPWRSW_Int(void)
+ 281          {
+ 282   1              //GPCRB3 = ALT;  //  ON/OFF
+ 283   1              SET_MASK(IELMR1,Int_WKO25);
+ 284   1              SET_MASK(WUEMR2,WUC_PWRSW);
+ 285   1              //SET_MASK(WUENR2,WUC_PWRSW);
+ 286   1              CLR_MASK(IPOLR1,Int_WKO25);                             // falling
+ 287   1              SET_MASK(IER1, Int_WKO25);                              // Enable PWRSW Interrupt
+ 288   1      }
+ 289          
+ 290          void Setlanwake_Int(void)
+ 291          {
+ 292   1      
+ 293   1              SET_MASK(IELMR2,BIT(5));
+ 294   1              SET_MASK(WUEMR2,BIT(2));
+ 295   1              //SET_MASK(WUENR2,WUC_PWRSW);
+ 296   1              CLR_MASK(IPOLR2,BIT(5));                                // falling
+ 297   1              SET_MASK(IER2, BIT(5));                         // Enable LANWAKE Interrupt
+ 298   1      }
+ 299          
+ 300          
+ 301          void SetNovo_Int(void)
+ 302          {
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 6   
+
+ 303   1              //GPCRJ = ALT;   // NOVO
+ 304   1              SET_MASK(IELMR16,Int_WKO128);
+ 305   1              SET_MASK(WUEMR14,WUC_WUI80);
+ 306   1              //SET_MASK(WUENR14,WUC_WUI80);
+ 307   1              SET_MASK(IPOLR16,Int_WKO128);                           // falling
+ 308   1              SET_MASK(IER16, Int_WKO128);                            // Enable Novo Interrupt
+ 309   1      }
+ 310          
+ 311          /*****************************************************
+ 312          *****************************************************/
+ 313          void MXLID_Wake_En(void)                                // LID_SW----GPB1
+ 314          {
+ 315   1              SET_MASK(WUEMR10, BIT(6));              //  Either-edge (rising-edge or falling-edge) triggered is selected     
+ 316   1              WUESR10=BIT6;   
+ 317   1              ISR13 = BIT3;
+ 318   1              SET_MASK(IER13, BIT3);
+ 319   1      }
+ 320           
+ 321          void MXLID_Wake_Dis(void)                               // LID_SW----GPB1
+ 322          {
+ 323   1              CLEAR_MASK(IER13, BIT3);
+ 324   1      }
+ 325          
+ 326          /*****************************************************
+ 327          *****************************************************/
+ 328          
+ 329          void SlpS3_Wake_En(void)                        // novo----GPD0
+ 330          {
+ 331   1              //SET_MASK(IELMR0, Int_WKO20);  // select edge trigger mode 
+ 332   1              //SET_MASK(IPOLR0, Int_WKO20);  // select falling edge trigger
+ 333   1      
+ 334   1              //WUEMR2 = BIT0;                                // 0: Rising-edge triggered is selected
+ 335   1              CLEAR_MASK(WUEMR2,BIT0); //ANGELAS071: add
+ 336   1              WUESR2 = BIT0;
+ 337   1              ISR0 = Int_WKO20;
+ 338   1              SET_MASK(IER0, Int_WKO20);
+ 339   1      }
+ 340          void SlpS3_Wake_Dis(void)                       // SlpS3----GPD0
+ 341          {
+ 342   1              CLEAR_MASK(IER0, Int_WKO20);
+ 343   1      }
+ 344          
+ 345          
+ 346          //ANGELAS044:add start
+ 347          void SlpS4_Wake_En(void)                        // SlpS4----GPD1
+ 348          {
+ 349   1              WUESR2 = BIT1;
+ 350   1              ISR3 = Int_WKO21; //ANGELAS063: ISR0 TO ISR3
+ 351   1              SET_MASK(IER3, Int_WKO21); //ANGELAS063:IER0 TO IER3
+ 352   1      }
+ 353          void SlpS4_Wake_Dis(void)                       // SlpS4----GPD1
+ 354          {
+ 355   1              CLEAR_MASK(IER3, Int_WKO21); //ANGELAS063:IER0 TO IER3
+ 356   1      }
+ 357          //ANGELAS063:add start
+ 358          void SLPS3_Sleep_En(void)                       // novo----GPD0
+ 359          {
+ 360   1              WUEMR2 |= BIT0;                         // 1: falling-edge triggered is selected
+ 361   1              WUESR2 = BIT0;
+ 362   1              ISR0 = Int_WKO20;
+ 363   1              SET_MASK(IER0, Int_WKO20);
+ 364   1      }
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 7   
+
+ 365          void SLPS4_Sleep_En(void)                       // novo----GPD0
+ 366          {
+ 367   1              WUEMR2 |= BIT1;                         // 1: falling-edge triggered is selected
+ 368   1              WUESR2 = BIT1;
+ 369   1              ISR3 = Int_WKO21;
+ 370   1              SET_MASK(IER3, Int_WKO21);
+ 371   1      }
+ 372          //ANGELAS063:add end
+ 373          //72JERRY028: s+Modify Voice Wake signal status in deep sleep.
+ 374          void SetWOV_Int(void)// WOV ----GPC5
+ 375          {
+ 376   1      
+ 377   1              CLEAR_MASK(WUEMR11,WUC_WUI61);// rising-edge
+ 378   1              WUESR11 = WUC_WUI61;
+ 379   1              ISR14 = Int_WKO109;
+ 380   1              SET_MASK(IER14, Int_WKO109);
+ 381   1      }
+ 382          //72JERRY028: e+Modify Voice Wake signal status in deep sleep.
+ 383          void InterKBDWakeEnable(void)
+ 384          {
+ 385   1               CLEAR_MASK(pDevStatus1,b2DisableKB);//MARTINY013:add
+ 386   1              KSOL=0x00;    //W120:sometimes from pad to NB kb can't wake up.        
+ 387   1              KSOH1=0x00;  //W120
+ 388   1              WUEMR3 = 0xFF;                                          // KSI0 ~ KSI7 falling edge
+ 389   1              WUESR3 = 0xFF;                                          // Clear WU20 ~ WU27 wakeup status
+ 390   1              WUENR3 = 0xFF;                                          // Enable WU20 ~ WU27
+ 391   1              ISR1 = Int_WKINTC;                                      // Clear INT13 interrupt flag           
+ 392   1              SET_MASK(IER1,Int_WKINTC);                              // Enable INT13                                 // Enable WU20 ~ WU27
+ 393   1              SET_MASK(IER1,Int_KB);      // enable KSI interrupt
+ 394   1      }
+ 395          void InterKBDWakeDisable(void)
+ 396          {
+ 397   1              WUESR3 = 0xFF; //W131
+ 398   1              ISR1 = Int_WKINTC;                                      // Clear INT13 interrupt flag   
+ 399   1              WUENR3 = 0; // W131: Clear interrupt
+ 400   1              CLEAR_MASK(IER1,Int_WKINTC);            // Enable INT13                                 // Enable WU20 ~ WU27
+ 401   1      }
+ 402          //ANGELAS044:add end
+ 403          
+ 404          /*****************************************************
+ 405          *****************************************************/
+ 406          void PS2_Wake_En(void)
+ 407          {
+ 408   1          WUENR1 |= BIT1;                             // Enable WU42
+ 409   1          WUEMR1 |= BIT1;                             // PS2DAT0
+ 410   1          WUESR1 = BIT1;                              // Clear WU42 wakeup status
+ 411   1      
+ 412   1      }
+ 413          void SetExTimer1(void)
+ 414          {
+ 415   1              ETPSR = 0x00;
+ 416   1              ETCNTLHR = 0x7F;//0x06;
+ 417   1              ETCNTLLR = 0xF8;//0x66;                                 //Period 1 sec  //Period 50ms
+ 418   1              IER3 |= 0x40;                                                   //ExTimer1
+ 419   1              /*
+ 420   1              ETPSR = 0x01;
+ 421   1              ETCNTLHR = 0x04;
+ 422   1              ETCNTLLR = 0x00;                                        //Period 31.25ms(26.91ms, Do Not Modify)
+ 423   1              IER3 |= 0x40;                                           //ExTimer1
+ 424   1              */
+ 425   1      }
+ 426          
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 8   
+
+ 427          void SetVGA_AC_DET(void)
+ 428          {
+ 429   1              if( SystemIsS0 || SystemIsS3)
+ 430   1              {
+ 431   2                      if (!Read_AC_IN())
+ 432   2                      {
+ 433   3                              AC_PRESENT_LOW();
+ 434   3                      //      VGA_AC_DET_LO();
+ 435   3                      }
+ 436   2                      else
+ 437   2                      {
+ 438   3                              AC_PRESENT_HI();
+ 439   3                 // if(SystemIsS0)
+ 440   3                 // { VGA_AC_DET_HI(); }
+ 441   3                 // else
+ 442   3                 // { VGA_AC_DET_LO(); }
+ 443   3                      }
+ 444   2              }
+ 445   1              if(SystemIsDSX)
+ 446   1              {
+ 447   2                      TYPE_C_M0_LOW();
+ 448   2                      TYPE_C_M1_LOW();
+ 449   2              }
+ 450   1              else
+ 451   1              {
+ 452   2                      TYPE_C_M0_HI();
+ 453   2                      TYPE_C_M1_HI();
+ 454   2              }
+ 455   1      }
+ 456          void SetAOU_DET_Int(void)//WU71 External Source from GPE1 WKO[71], to INT73 //HEGANGS021:one key wake
+ 457          {
+ 458   1          SET_MASK(WUEMR7, BIT(1));//  Either-edge (rising-edge or falling-edge) triggered is selected.
+ 459   1              WUESR7 = BIT(1);         //  Clear wakeup status
+ 460   1              
+ 461   1              ISR9 = Int_WKO71;        // Clear interrupt status
+ 462   1          SET_MASK(IER9, Int_WKO71); // Enable interrupt
+ 463   1      }
+ 464          
+ 465          void WakeUp_DO_Function(void)
+ 466          {
+ 467   1      #if UCS1022_Support
+                  UCS1002_TimerX_FakeISR();
+              #endif  // UCS1022_Support
+ 470   1      
+ 471   1          if(ExtTimeCnt == 1)
+ 472   1          {
+ 473   2              UCS1002ID_Main();
+ 474   2              ExtTimeCnt=0;
+ 475   2          }
+ 476   1          else
+ 477   1          { 
+ 478   2              ExtTimeCnt++; 
+ 479   2          }
+ 480   1      
+ 481   1          ChkBattery_Percl();
+ 482   1              //Check_EC_ON();
+ 483   1              /*//ANGELAS007:Optimize power on sequence.
+ 484   1              //ANGELAS005:s+ Support UMA SKU EC_ON pin design.
+ 485   1              if(NTC_V1>682)
+ 486   1              {
+ 487   1                      GPCRF0 = OUTPUT;
+ 488   1                      SET_MASK(GPDRF,BIT(0));
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 9   
+
+ 489   1              }
+ 490   1              else
+ 491   1              //ANGELAS005:e+ Support UMA SKU EC_ON pin design.
+ 492   1              *///ANGELAS007:Optimize power on sequence.
+ 493   1          //EC_ON_HI(); //ANGELAS038:remove  
+ 494   1              //      EC_ON2_HI();
+ 495   1          //EC_MainPwr_ON(); //ANGELAS044:remove
+ 496   1      
+ 497   1              if( Read_EC_NOVO() )
+ 498   1              { uNovoVPCCount = 1; }
+ 499   1              else
+ 500   1              { uNovoVPCCount = 0; }
+ 501   1              Init_VC(3);             // CMW Temp
+ 502   1      }
+ 503          
+ 504          void WakeUp_30ms_Function(void)
+ 505          {
+ 506   1              Lenovo_LED();
+ 507   1      }
+ 508          
+ 509          /*****************************************************************************/
+ 510          // Procedure: ISCT_Process                                                                      TimeDiv: 500mSec
+ 511          // Description: Intel Smart Connect Technology process
+ 512          // GPIO:
+ 513          // Referrals:
+ 514          /*****************************************************************************/
+ 515          void ISCT_Process(void)
+ 516          {
+ 517   1      #if SW_ISCT
+                      if( (IS_MASK_SET(AOAC_STATUS, ISCT_Enable)) && (SystemNotS5) )          // Check ISCT enable?
+                      {
+                              if( IS_MASK_SET(nBatteryStatus1, ENEXIST) )             // Check BAT1 exist.
+                              {
+                                      if( nBattGasgauge <= ISCT_BAT_LOW )                     // Check BAT under 20%.
+                                      { 
+                                              SET_MASK(AOAC_STATUS, ISCT_BAT_Capy); 
+                          }   // Battery under 20%
+                                      else
+                                      { 
+                                          CLR_MASK(AOAC_STATUS, ISCT_BAT_Capy); 
+                          }   // Battery over 20%
+              
+                                      // Check BAT over 50 degree amd under -5 degree.
+                                      //if( ( ( nBattAverTemp >= ISCT_BAT_OvTpLimit ) && !( nBattAverTemp & BATUnZeroTemp ) )
+                                      //      || ( (nBattAverTemp & BATUnZeroTemp) && ( nBattAverTemp <= ISCT_BAT_UnTpLimit ) ) )
+                                      // Check BAT over 50 degree.
+                                      if( nBattAverTemp >= ISCT_BAT_OvTpLimit )
+                                      { 
+                                          SET_MASK(AOAC_STATUS, ISCT_BAT_Temp); 
+                          }   // Battery Over 50 and under -5 degree.
+                                      else
+                                      { 
+                                          CLR_MASK(AOAC_STATUS, ISCT_BAT_Temp); 
+                          }   // Battery under 50 and over -5 degree.
+                              }
+                              else
+                              {
+                                      CLR_MASK(AOAC_STATUS, ISCT_BAT_Capy);           // Clear battery capacity of fail bit.
+                                      CLR_MASK(AOAC_STATUS, ISCT_BAT_Temp);           // Clear battery temperature of fail bit.
+                              }
+              
+                              if( SystemIsS3 )
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 10  
+
+                              {
+                                      if ( (AOAC_STATUS & 0xC0) != 0 )
+                                      {
+                                              SET_MASK(AOAC_STATUS, ISCT_S0_ISCT);    // Set S0_ISCT
+                                              PM_PWRBTN_LOW();
+                                      }
+                                      ISCT_Behavior();
+                              }
+                      }
+                      else
+                      {
+                              AOAC_STATUS = 0xC0;             // Clear ISCT status.
+                              ISCT_Behavior();
+                      }
+              #endif  // SW_ISCT
+ 566   1      }
+ 567          
+ 568          /*****************************************************************************/
+ 569          // Procedure: ISCT_Behavior
+ 570          // Description: Intel Smart Connect Technology mode behavior.
+ 571          // GPIO:
+ 572          // Referrals:
+ 573          /*****************************************************************************/
+ 574          void ISCT_Behavior(void)
+ 575          {
+ 576   1              #if SW_ISCT
+                      if( (IS_MASK_SET(AOAC_STATUS, ISCT_S0_ISCT)) && (SystemNotS5) )                 // Can do AOAC.
+                      {
+                              // AOAC_PWRON();                                                // ISCT Turn on WLAN.
+                              uISCT |= 0x30;                                          // bit4:Disable FAN, bit5:Enable BKOFF.
+                              uISCT_2 |= 0x28;                                        // bit3:Enable Mute, bit4:Disable Camera, bit5:Disable Power LED.
+                              SET_MASK(pPROCHOT, b1ISCT_PROCHOTon);   // Set CPU Prochot function.
+                      }
+                      else
+                      {
+                              // AOAC_PWRON();                                                // ISCT Turn on WLAN.
+                              uISCT &= 0xCF;                                          // bit4:Enable FAN, bit5:Disable BKOFF.
+                              uISCT_2 |= 0xC7;                                        // bit3:Disable Mute, bit4:Enable Camera, bit5:Enable Power LED.
+                              CLR_MASK(pPROCHOT, b1ISCT_PROCHOTon);   // Clear CPU Prochot function.
+                      }
+                      #endif  // SW_ISCT
+ 592   1      }
+ 593          
+ 594          /*****************************************************************************/
+ 595          // Procedure: ISCT_Timer                                                                                TimeDiv: 1 Min
+ 596          // Description: Intel Smart Connect Technology timer.
+ 597          // GPIO:
+ 598          // Referrals:
+ 599          /*****************************************************************************/
+ 600          void ISCT_TimerCnt(void)
+ 601          {
+ 602   1              #if SW_ISCT
+                      if ( (IS_MASK_SET(AOAC_STATUS, ISCT_Enable)) && (SystemIsS3) )  // Check ISCT enable?
+                      {
+                              if ( ISCT_Timer == 0 )
+                              {
+                                      AOAC_STATUS |= 0x40;    // Set EC wake function.
+                              }
+                              else
+                              { 
+                                  ISCT_Timer--; 
+                      }
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 11  
+
+                      }
+                      #endif  // SW_ISCT
+ 615   1      }
+ 616          
+ 617          /*****************************************************************************/
+ 618          // Procedure: GL887_Main                                                                        TimeDiv: 100mSec
+ 619          // Description: Check USB charger of device.
+ 620          // GPIO:
+ 621          // Referrals: Genesys GL887 IC.
+ 622          /*****************************************************************************/
+ 623          #if Support_USB_Charge 
+                  #if UCS1022_Support
+                  #else
+              void GL887_Main(void)
+              {
+                      if( SystemIsS3 || SystemIsS5 )
+                      {
+                              if ( (IS_MASK_SET(SYS_STATUS,AC_ADP) || (nBattGasgauge > USB_BAT_LOW)) && (IS_MASK_CLEAR(USB_Charger, b2
+             -USB_TmlDis)) )
+                              {
+                                      if ( (IS_MASK_SET(EMStatusBit, b1SetUSBChgEn)) || (SystemIsS3) )        // check to always charger.
+                                      {
+                                              USB_CHG_MOD_HI();       // Genesys Auto mode(DCP and Apple 2A).
+                                              USB_CH_INPUT;           // Turn on USB charger port.
+                                              return;
+                                      }
+                              }
+                              USB_CHG_MOD_LOW();              // Genesys CDP Mode
+                              USB_CH_OUTPUT;                  // Turn off USB charger port.
+                              USB_CH_LOW();
+                      }
+                      else
+                      {
+                              USB_CHG_MOD_LOW();              // Genesys CDP Mode
+                              USB_CH_INPUT;                   // Turn on USB charger port.
+                      }
+              }
+                  #endif
+              #endif                     
+ 651          
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 12  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0041 (BEGIN)
+0000         L?0066:
+0000 F0                MOVX    @DPTR,A
+0001 900000      E     MOV     DPTR,#WUESR13
+0004 7402              MOV     A,#02H
+0006 F0                MOVX    @DPTR,A
+0007 900000      E     MOV     DPTR,#IER15
+000A E0                MOVX    A,@DPTR
+000B 4440              ORL     A,#040H
+000D F0                MOVX    @DPTR,A
+000E 900000      E     MOV     DPTR,#ISR15
+0011 7440              MOV     A,#040H
+0013 F0                MOVX    @DPTR,A
+0014 22                RET     
+0015         L?0067:
+0015 F0                MOVX    @DPTR,A
+0016 900000      E     MOV     DPTR,#WUESR2
+0019 7401              MOV     A,#01H
+001B F0                MOVX    @DPTR,A
+001C 900000      E     MOV     DPTR,#ISR0
+001F 04                INC     A
+0020 F0                MOVX    @DPTR,A
+0021 900000      E     MOV     DPTR,#IER0
+0024 E0                MOVX    A,@DPTR
+0025 4402              ORL     A,#02H
+0027 F0                MOVX    @DPTR,A
+0028 22                RET     
+0029         L?0068:
+0029 900000      E     MOV     DPTR,#WUESR2
+002C 7402              MOV     A,#02H
+002E F0                MOVX    @DPTR,A
+002F 900000      E     MOV     DPTR,#ISR3
+0032 7480              MOV     A,#080H
+0034 F0                MOVX    @DPTR,A
+0035 900000      E     MOV     DPTR,#IER3
+0038 E0                MOVX    A,@DPTR
+0039 4480              ORL     A,#080H
+003B F0                MOVX    @DPTR,A
+003C 22                RET     
+003D         L?0069:
+003D 7404              MOV     A,#04H
+003F         L?0070:
+003F 900000      E     MOV     DPTR,#ISR13
+0042 F0                MOVX    @DPTR,A
+0043 900000      E     MOV     DPTR,#IER13
+0046 E0                MOVX    A,@DPTR
+0047 22                RET     
+0048         L?0071:
+0048 EF                MOV     A,R7
+0049         L?0072:
+0049 F0                MOVX    @DPTR,A
+004A 900000      R     MOV     DPTR,#timersetting
+004D 020000      E     LJMP    ?C?LLDXDATA
+0050         L?0073:
+0050 FE                MOV     R6,A
+0051 FD                MOV     R5,A
+0052 FC                MOV     R4,A
+0053 900000      R     MOV     DPTR,#g_ECPowerDownPeriodWakeUpTime
+0056 020000      E     LJMP    ?C?LLDXDATA0
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 13  
+
+             ; FUNCTION Com0041 (END)
+
+             ; FUNCTION MuteProcess (BEGIN)
+                                           ; SOURCE LINE # 18
+                                           ; SOURCE LINE # 19
+                                           ; SOURCE LINE # 21
+0000 900000      E     MOV     DPTR,#GPDRD
+0003 E0                MOVX    A,@DPTR
+0004 30E003            JNB     ACC.0,?C0002
+0007 D3                SETB    C
+0008 8001              SJMP    ?C0003
+000A         ?C0002:
+000A C3                CLR     C
+000B         ?C0003:
+000B 4002              JC      ?C0001
+                                           ; SOURCE LINE # 22
+                                           ; SOURCE LINE # 23
+000D 802A              SJMP    ?C0064
+                                           ; SOURCE LINE # 25
+000F         ?C0001:
+                                           ; SOURCE LINE # 27
+000F 900000      E     MOV     DPTR,#SysPowState
+0012 E0                MOVX    A,@DPTR
+0013 6410              XRL     A,#010H
+0015 7022              JNZ     ?C0005
+                                           ; SOURCE LINE # 28
+                                           ; SOURCE LINE # 29
+0017 900000      E     MOV     DPTR,#MuteCount
+001A E0                MOVX    A,@DPTR
+001B 7016              JNZ     ?C0006
+                                           ; SOURCE LINE # 30
+                                           ; SOURCE LINE # 31
+001D 900000      E     MOV     DPTR,#uISCT_2
+0020 E0                MOVX    A,@DPTR
+0021 20E315            JB      ACC.3,?C0005
+0024 900000      E     MOV     DPTR,#cCmd
+0027 E0                MOVX    A,@DPTR
+0028 20E50E            JB      ACC.5,?C0005
+                                           ; SOURCE LINE # 32
+                                           ; SOURCE LINE # 33
+002B 900000      E     MOV     DPTR,#GPDRJ
+002E E0                MOVX    A,@DPTR
+002F 4402              ORL     A,#02H
+0031 F0                MOVX    @DPTR,A
+0032 22                RET     
+                                           ; SOURCE LINE # 35
+                                           ; SOURCE LINE # 36
+0033         ?C0006:
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+0033 900000      E     MOV     DPTR,#MuteCount
+0036 E0                MOVX    A,@DPTR
+0037 14                DEC     A
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 41
+0039         ?C0005:
+                                           ; SOURCE LINE # 42
+0039         ?C0064:
+0039 900000      E     MOV     DPTR,#GPDRJ
+003C E0                MOVX    A,@DPTR
+003D 54FD              ANL     A,#0FDH
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 14  
+
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 43
+0040         ?C0004:
+0040 22                RET     
+             ; FUNCTION MuteProcess (END)
+
+             ; FUNCTION CameraProcess (BEGIN)
+                                           ; SOURCE LINE # 51
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 73
+0000 22                RET     
+             ; FUNCTION CameraProcess (END)
+
+             ; FUNCTION WirelessProcess (BEGIN)
+                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 106
+0000 900000      E     MOV     DPTR,#DEVICEMODULE
+0003 E0                MOVX    A,@DPTR
+0004 4410              ORL     A,#010H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+0007 900000      E     MOV     DPTR,#SysPowState
+000A E0                MOVX    A,@DPTR
+000B B41020            CJNE    A,#010H,?C0012
+000E 900000      E     MOV     DPTR,#SYS_MISC1
+0011 E0                MOVX    A,@DPTR
+0012 30E719            JNB     ACC.7,?C0012
+                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 165
+0015 900000      E     MOV     DPTR,#DEVICEMODULE
+0018 E0                MOVX    A,@DPTR
+0019 FF                MOV     R7,A
+001A 900000      E     MOV     DPTR,#uWLBTLanTemp
+001D E0                MOVX    A,@DPTR
+001E 6F                XRL     A,R7
+001F 600D              JZ      ?C0012
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+0021 900000      E     MOV     DPTR,#DEVICEMODULE
+0024 E0                MOVX    A,@DPTR
+0025 900000      E     MOV     DPTR,#uWLBTLanTemp
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+0029 7F65              MOV     R7,#065H
+002B 120000      E     LCALL   _ECQEvent
+                                           ; SOURCE LINE # 169
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+002E         ?C0012:
+002E 22                RET     
+             ; FUNCTION WirelessProcess (END)
+
+             ; FUNCTION IFFSProcess (BEGIN)
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+                                           ; SOURCE LINE # 176
+0000 900000      E     MOV     DPTR,#uIffsCnt
+0003 E0                MOVX    A,@DPTR
+0004 6047              JZ      ?C0014
+0006         ?C0013:
+                                           ; SOURCE LINE # 179
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 15  
+
+0006 900000      E     MOV     DPTR,#uIffsCnt
+0009 E0                MOVX    A,@DPTR
+000A 14                DEC     A
+000B F0                MOVX    @DPTR,A
+000C         ?C0015:
+                                           ; SOURCE LINE # 181
+000C 900000      E     MOV     DPTR,#uIffsCnt
+000F E0                MOVX    A,@DPTR
+0010 703B              JNZ     ?C0014
+                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 183
+0012 900000      E     MOV     DPTR,#uCritBattWakeThre
+0015 E0                MOVX    A,@DPTR
+0016 54FE              ANL     A,#0FEH
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 184
+0019 900000      E     MOV     DPTR,#SysPowState
+001C E0                MOVX    A,@DPTR
+001D B4332D            CJNE    A,#033H,?C0014
+                                           ; SOURCE LINE # 185
+                                           ; SOURCE LINE # 186
+0020 900000      E     MOV     DPTR,#uCritBattWakeThre
+0023 E0                MOVX    A,@DPTR
+0024 FF                MOV     R7,A
+0025 900000      E     MOV     DPTR,#nBattGasgauge
+0028 E0                MOVX    A,@DPTR
+0029 C3                CLR     C
+002A 9F                SUBB    A,R7
+002B 5020              JNC     ?C0014
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 188
+002D 900000      E     MOV     DPTR,#uCritBattWakeThre
+0030 E0                MOVX    A,@DPTR
+0031 4401              ORL     A,#01H
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 189
+0034 900000      E     MOV     DPTR,#PWSeqStep
+0037 7401              MOV     A,#01H
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 190
+003A 900000      E     MOV     DPTR,#PowSeqDelay
+003D E4                CLR     A
+003E F0                MOVX    @DPTR,A
+003F A3                INC     DPTR
+0040 04                INC     A
+0041 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 191
+0042 7F32              MOV     R7,#032H
+0044 120000      E     LCALL   _RamDebug
+                                           ; SOURCE LINE # 192
+0047 900000      E     MOV     DPTR,#SysPowState
+004A 7430              MOV     A,#030H
+004C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 193
+                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 196
+004D         ?C0014:
+004D 22                RET     
+             ; FUNCTION IFFSProcess (END)
+
+             ; FUNCTION ECPowerDownEnableExternalTimer2 (BEGIN)
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 16  
+
+                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 202
+0000 900000      R     MOV     DPTR,#g_ECPowerDownPeriodWakeUpTime
+0003 120000      E     LCALL   ?C?LSTKXDATA
+0006 00                DB      00H
+0007 00                DB      00H
+0008 00                DB      00H
+0009 F0                DB      0F0H
+                                           ; SOURCE LINE # 204
+000A E4                CLR     A
+000B FF                MOV     R7,A
+000C 120000      R     LCALL   L?0073
+000F C3                CLR     C
+0010 120000      E     LCALL   ?C?ULCMP
+0013 6046              JZ      ?C0020
+                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 206
+0015 E4                CLR     A
+0016 7F20              MOV     R7,#020H
+0018 120000      R     LCALL   L?0073
+001B 120000      E     LCALL   ?C?LMUL
+001E 900000      R     MOV     DPTR,#timersetting
+0021 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 208
+0024 900000      E     MOV     DPTR,#CGCTRL1R
+0027 E0                MOVX    A,@DPTR
+0028 54BF              ANL     A,#0BFH
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 210
+002B 900000      E     MOV     DPTR,#ET2PSR
+002E 7402              MOV     A,#02H
+                                           ; SOURCE LINE # 211
+0030 120000      R     LCALL   L?0072
+0033 7810              MOV     R0,#010H
+0035 120000      E     LCALL   ?C?ULSHR
+0038 900000      E     MOV     DPTR,#ET2CNTLH2R
+                                           ; SOURCE LINE # 212
+003B 120000      R     LCALL   L?0071
+003E 7808              MOV     R0,#08H
+0040 120000      E     LCALL   ?C?ULSHR
+0043 900000      E     MOV     DPTR,#ET2CNTLHR
+                                           ; SOURCE LINE # 213
+0046 120000      R     LCALL   L?0071
+0049 900000      E     MOV     DPTR,#ET2CNTLLR
+004C EF                MOV     A,R7
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 215
+004E 900000      E     MOV     DPTR,#ISR7
+0051 7404              MOV     A,#04H
+0053 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 216
+0054 900000      E     MOV     DPTR,#IER7
+0057 E0                MOVX    A,@DPTR
+0058 4404              ORL     A,#04H
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 219
+005B         ?C0020:
+005B 22                RET     
+             ; FUNCTION ECPowerDownEnableExternalTimer2 (END)
+
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 17  
+
+             ; FUNCTION ECDisableExternalTimer2 (BEGIN)
+                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+0000 900000      E     MOV     DPTR,#IER7
+0003 E0                MOVX    A,@DPTR
+0004 54FB              ANL     A,#0FBH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 223
+0007 900000      E     MOV     DPTR,#ISR7
+000A E0                MOVX    A,@DPTR
+000B 4404              ORL     A,#04H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+000E 22                RET     
+             ; FUNCTION ECDisableExternalTimer2 (END)
+
+             ; FUNCTION SetACIN_Int (BEGIN)
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 228
+0000 900000      E     MOV     DPTR,#IELMR13
+0003 E0                MOVX    A,@DPTR
+0004 4404              ORL     A,#04H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 229
+0007 900000      E     MOV     DPTR,#WUEMR10
+000A E0                MOVX    A,@DPTR
+000B 54DF              ANL     A,#0DFH
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 230
+000E 900000      E     MOV     DPTR,#IPOLR13
+0011 E0                MOVX    A,@DPTR
+0012 54FB              ANL     A,#0FBH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 231
+                                           ; SOURCE LINE # 232
+0015 120000      R     LCALL   L?0069
+0018 4404              ORL     A,#04H
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 233
+001B 22                RET     
+             ; FUNCTION SetACIN_Int (END)
+
+             ; FUNCTION ACInOutIntEnable (BEGIN)
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 238
+0000 900000      E     MOV     DPTR,#GPDRB
+0003 E0                MOVX    A,@DPTR
+0004 900000      E     MOV     DPTR,#WUEMR10
+0007 30E006            JNB     ACC.0,?C0023
+                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 240
+000A E0                MOVX    A,@DPTR
+000B 4420              ORL     A,#020H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+000E 8004              SJMP    ?C0024
+0010         ?C0023:
+                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 244
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 18  
+
+0010 E0                MOVX    A,@DPTR
+0011 54DF              ANL     A,#0DFH
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+0014         ?C0024:
+                                           ; SOURCE LINE # 247
+0014 900000      E     MOV     DPTR,#WUESR10
+0017 7420              MOV     A,#020H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 249
+001A 900000      E     MOV     DPTR,#IER13
+001D E0                MOVX    A,@DPTR
+001E 4404              ORL     A,#04H
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 250
+0021 900000      E     MOV     DPTR,#ISR13
+0024 7404              MOV     A,#04H
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 251
+0027 22                RET     
+             ; FUNCTION ACInOutIntEnable (END)
+
+             ; FUNCTION ACInOutIntDisable (BEGIN)
+                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 255
+                                           ; SOURCE LINE # 256
+0000 120000      R     LCALL   L?0069
+0003 54FB              ANL     A,#0FBH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 257
+0006 900000      E     MOV     DPTR,#WUESR10
+0009 7420              MOV     A,#020H
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+000C 22                RET     
+             ; FUNCTION ACInOutIntDisable (END)
+
+             ; FUNCTION BatteryOutWakeEnable (BEGIN)
+                                           ; SOURCE LINE # 261
+                                           ; SOURCE LINE # 262
+                                           ; SOURCE LINE # 263
+0000 900000      E     MOV     DPTR,#WUEMR13
+0003 E0                MOVX    A,@DPTR
+0004 54FD              ANL     A,#0FDH
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 267
+0006 120000      R     LCALL   L?0066
+                                           ; SOURCE LINE # 269
+0009 22                RET     
+             ; FUNCTION BatteryOutWakeEnable (END)
+
+             ; FUNCTION BatteryINWakeEnable (BEGIN)
+                                           ; SOURCE LINE # 270
+                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 272
+0000 900000      E     MOV     DPTR,#WUEMR13
+0003 E0                MOVX    A,@DPTR
+0004 4402              ORL     A,#02H
+                                           ; SOURCE LINE # 273
+                                           ; SOURCE LINE # 275
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 19  
+
+                                           ; SOURCE LINE # 276
+0006 120000      R     LCALL   L?0066
+                                           ; SOURCE LINE # 278
+0009 22                RET     
+             ; FUNCTION BatteryINWakeEnable (END)
+
+             ; FUNCTION SetPWRSW_Int (BEGIN)
+                                           ; SOURCE LINE # 280
+                                           ; SOURCE LINE # 281
+                                           ; SOURCE LINE # 283
+0000 900000      E     MOV     DPTR,#IELMR1
+0003 E0                MOVX    A,@DPTR
+0004 4440              ORL     A,#040H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+0007 900000      E     MOV     DPTR,#WUEMR2
+000A E0                MOVX    A,@DPTR
+000B 4420              ORL     A,#020H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 286
+000E 900000      E     MOV     DPTR,#IPOLR1
+0011 E0                MOVX    A,@DPTR
+0012 54BF              ANL     A,#0BFH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 287
+0015 900000      E     MOV     DPTR,#IER1
+0018 E0                MOVX    A,@DPTR
+0019 4440              ORL     A,#040H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 288
+001C 22                RET     
+             ; FUNCTION SetPWRSW_Int (END)
+
+             ; FUNCTION Setlanwake_Int (BEGIN)
+                                           ; SOURCE LINE # 290
+                                           ; SOURCE LINE # 291
+                                           ; SOURCE LINE # 293
+0000 900000      E     MOV     DPTR,#IELMR2
+0003 E0                MOVX    A,@DPTR
+0004 4420              ORL     A,#020H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 294
+0007 900000      E     MOV     DPTR,#WUEMR2
+000A E0                MOVX    A,@DPTR
+000B 4404              ORL     A,#04H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 296
+000E 900000      E     MOV     DPTR,#IPOLR2
+0011 E0                MOVX    A,@DPTR
+0012 54DF              ANL     A,#0DFH
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 297
+0015 900000      E     MOV     DPTR,#IER2
+0018 E0                MOVX    A,@DPTR
+0019 4420              ORL     A,#020H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 298
+001C 22                RET     
+             ; FUNCTION Setlanwake_Int (END)
+
+             ; FUNCTION SetNovo_Int (BEGIN)
+                                           ; SOURCE LINE # 301
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 20  
+
+                                           ; SOURCE LINE # 302
+                                           ; SOURCE LINE # 304
+0000 900000      E     MOV     DPTR,#IELMR16
+0003 E0                MOVX    A,@DPTR
+0004 4401              ORL     A,#01H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 305
+0007 900000      E     MOV     DPTR,#WUEMR14
+000A E0                MOVX    A,@DPTR
+000B 4401              ORL     A,#01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 307
+000E 900000      E     MOV     DPTR,#IPOLR16
+0011 E0                MOVX    A,@DPTR
+0012 4401              ORL     A,#01H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 308
+0015 900000      E     MOV     DPTR,#IER16
+0018 E0                MOVX    A,@DPTR
+0019 4401              ORL     A,#01H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 309
+001C 22                RET     
+             ; FUNCTION SetNovo_Int (END)
+
+             ; FUNCTION MXLID_Wake_En (BEGIN)
+                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+0000 900000      E     MOV     DPTR,#WUEMR10
+0003 E0                MOVX    A,@DPTR
+0004 4440              ORL     A,#040H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 316
+0007 900000      E     MOV     DPTR,#WUESR10
+000A 7440              MOV     A,#040H
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 317
+000D 7408              MOV     A,#08H
+                                           ; SOURCE LINE # 318
+000F 120000      R     LCALL   L?0070
+0012 4408              ORL     A,#08H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 319
+0015 22                RET     
+             ; FUNCTION MXLID_Wake_En (END)
+
+             ; FUNCTION MXLID_Wake_Dis (BEGIN)
+                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 322
+                                           ; SOURCE LINE # 323
+0000 900000      E     MOV     DPTR,#IER13
+0003 E0                MOVX    A,@DPTR
+0004 54F7              ANL     A,#0F7H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 324
+0007 22                RET     
+             ; FUNCTION MXLID_Wake_Dis (END)
+
+             ; FUNCTION SlpS3_Wake_En (BEGIN)
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 21  
+
+                                           ; SOURCE LINE # 335
+0000 900000      E     MOV     DPTR,#WUEMR2
+0003 E0                MOVX    A,@DPTR
+0004 54FE              ANL     A,#0FEH
+                                           ; SOURCE LINE # 336
+                                           ; SOURCE LINE # 337
+                                           ; SOURCE LINE # 338
+0006 120000      R     LCALL   L?0067
+                                           ; SOURCE LINE # 339
+0009 22                RET     
+             ; FUNCTION SlpS3_Wake_En (END)
+
+             ; FUNCTION SlpS3_Wake_Dis (BEGIN)
+                                           ; SOURCE LINE # 340
+                                           ; SOURCE LINE # 341
+                                           ; SOURCE LINE # 342
+0000 900000      E     MOV     DPTR,#IER0
+0003 E0                MOVX    A,@DPTR
+0004 54FD              ANL     A,#0FDH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 343
+0007 22                RET     
+             ; FUNCTION SlpS3_Wake_Dis (END)
+
+             ; FUNCTION SlpS4_Wake_En (BEGIN)
+                                           ; SOURCE LINE # 347
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 349
+                                           ; SOURCE LINE # 350
+                                           ; SOURCE LINE # 351
+0000 120000      R     LCALL   L?0068
+                                           ; SOURCE LINE # 352
+0003 22                RET     
+             ; FUNCTION SlpS4_Wake_En (END)
+
+             ; FUNCTION SlpS4_Wake_Dis (BEGIN)
+                                           ; SOURCE LINE # 353
+                                           ; SOURCE LINE # 354
+                                           ; SOURCE LINE # 355
+0000 900000      E     MOV     DPTR,#IER3
+0003 E0                MOVX    A,@DPTR
+0004 547F              ANL     A,#07FH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 356
+0007 22                RET     
+             ; FUNCTION SlpS4_Wake_Dis (END)
+
+             ; FUNCTION SLPS3_Sleep_En (BEGIN)
+                                           ; SOURCE LINE # 358
+                                           ; SOURCE LINE # 359
+                                           ; SOURCE LINE # 360
+0000 900000      E     MOV     DPTR,#WUEMR2
+0003 E0                MOVX    A,@DPTR
+0004 4401              ORL     A,#01H
+                                           ; SOURCE LINE # 361
+                                           ; SOURCE LINE # 362
+                                           ; SOURCE LINE # 363
+0006 120000      R     LCALL   L?0067
+                                           ; SOURCE LINE # 364
+0009 22                RET     
+             ; FUNCTION SLPS3_Sleep_En (END)
+
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 22  
+
+             ; FUNCTION SLPS4_Sleep_En (BEGIN)
+                                           ; SOURCE LINE # 365
+                                           ; SOURCE LINE # 366
+                                           ; SOURCE LINE # 367
+0000 900000      E     MOV     DPTR,#WUEMR2
+0003 E0                MOVX    A,@DPTR
+0004 4402              ORL     A,#02H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 368
+                                           ; SOURCE LINE # 369
+                                           ; SOURCE LINE # 370
+0007 120000      R     LCALL   L?0068
+                                           ; SOURCE LINE # 371
+000A 22                RET     
+             ; FUNCTION SLPS4_Sleep_En (END)
+
+             ; FUNCTION SetWOV_Int (BEGIN)
+                                           ; SOURCE LINE # 374
+                                           ; SOURCE LINE # 375
+                                           ; SOURCE LINE # 377
+0000 900000      E     MOV     DPTR,#WUEMR11
+0003 E0                MOVX    A,@DPTR
+0004 54DF              ANL     A,#0DFH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 378
+0007 900000      E     MOV     DPTR,#WUESR11
+000A 7420              MOV     A,#020H
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 379
+000D 900000      E     MOV     DPTR,#ISR14
+0010 7404              MOV     A,#04H
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 380
+0013 900000      E     MOV     DPTR,#IER14
+0016 E0                MOVX    A,@DPTR
+0017 4404              ORL     A,#04H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 381
+001A 22                RET     
+             ; FUNCTION SetWOV_Int (END)
+
+             ; FUNCTION InterKBDWakeEnable (BEGIN)
+                                           ; SOURCE LINE # 383
+                                           ; SOURCE LINE # 384
+                                           ; SOURCE LINE # 385
+0000 900000      E     MOV     DPTR,#pDevStatus1
+0003 E0                MOVX    A,@DPTR
+0004 54FB              ANL     A,#0FBH
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 386
+0007 E4                CLR     A
+0008 900000      E     MOV     DPTR,#KSOL
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 387
+000C 900000      E     MOV     DPTR,#KSOH1
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 388
+0010 900000      E     MOV     DPTR,#WUEMR3
+0013 74FF              MOV     A,#0FFH
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 389
+0016 900000      E     MOV     DPTR,#WUESR3
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 23  
+
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 390
+001A 900000      E     MOV     DPTR,#WUENR3
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 391
+001E 900000      E     MOV     DPTR,#ISR1
+0021 7420              MOV     A,#020H
+0023 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 392
+0024 900000      E     MOV     DPTR,#IER1
+0027 E0                MOVX    A,@DPTR
+0028 4420              ORL     A,#020H
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 393
+002B E0                MOVX    A,@DPTR
+002C 4408              ORL     A,#08H
+002E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 394
+002F 22                RET     
+             ; FUNCTION InterKBDWakeEnable (END)
+
+             ; FUNCTION InterKBDWakeDisable (BEGIN)
+                                           ; SOURCE LINE # 395
+                                           ; SOURCE LINE # 396
+                                           ; SOURCE LINE # 397
+0000 900000      E     MOV     DPTR,#WUESR3
+0003 74FF              MOV     A,#0FFH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 398
+0006 900000      E     MOV     DPTR,#ISR1
+0009 7420              MOV     A,#020H
+000B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 399
+000C E4                CLR     A
+000D 900000      E     MOV     DPTR,#WUENR3
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 400
+0011 900000      E     MOV     DPTR,#IER1
+0014 E0                MOVX    A,@DPTR
+0015 54DF              ANL     A,#0DFH
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 401
+0018 22                RET     
+             ; FUNCTION InterKBDWakeDisable (END)
+
+             ; FUNCTION PS2_Wake_En (BEGIN)
+                                           ; SOURCE LINE # 406
+                                           ; SOURCE LINE # 407
+                                           ; SOURCE LINE # 408
+0000 900000      E     MOV     DPTR,#WUENR1
+0003 E0                MOVX    A,@DPTR
+0004 4402              ORL     A,#02H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 409
+0007 900000      E     MOV     DPTR,#WUEMR1
+000A E0                MOVX    A,@DPTR
+000B 4402              ORL     A,#02H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 410
+000E 900000      E     MOV     DPTR,#WUESR1
+0011 7402              MOV     A,#02H
+0013 F0                MOVX    @DPTR,A
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 24  
+
+                                           ; SOURCE LINE # 412
+0014 22                RET     
+             ; FUNCTION PS2_Wake_En (END)
+
+             ; FUNCTION SetExTimer1 (BEGIN)
+                                           ; SOURCE LINE # 413
+                                           ; SOURCE LINE # 414
+                                           ; SOURCE LINE # 415
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#ETPSR
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 416
+0005 900000      E     MOV     DPTR,#ETCNTLHR
+0008 747F              MOV     A,#07FH
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 417
+000B 900000      E     MOV     DPTR,#ETCNTLLR
+000E 74F8              MOV     A,#0F8H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 418
+0011 900000      E     MOV     DPTR,#IER3
+0014 E0                MOVX    A,@DPTR
+0015 4440              ORL     A,#040H
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 425
+0018 22                RET     
+             ; FUNCTION SetExTimer1 (END)
+
+             ; FUNCTION SetVGA_AC_DET (BEGIN)
+                                           ; SOURCE LINE # 427
+                                           ; SOURCE LINE # 428
+                                           ; SOURCE LINE # 429
+0000 900000      E     MOV     DPTR,#SysPowState
+0003 E0                MOVX    A,@DPTR
+0004 6410              XRL     A,#010H
+0006 6005              JZ      ?C0046
+0008 E0                MOVX    A,@DPTR
+0009 6433              XRL     A,#033H
+000B 7019              JNZ     ?C0045
+000D         ?C0046:
+                                           ; SOURCE LINE # 430
+                                           ; SOURCE LINE # 431
+000D 900000      E     MOV     DPTR,#GPDRB
+0010 E0                MOVX    A,@DPTR
+0011 30E003            JNB     ACC.0,?C0048
+0014 D3                SETB    C
+0015 8001              SJMP    ?C0049
+0017         ?C0048:
+0017 C3                CLR     C
+0018         ?C0049:
+0018 900000      E     MOV     DPTR,#GPDRJ
+001B E0                MOVX    A,@DPTR
+001C 4005              JC      ?C0047
+                                           ; SOURCE LINE # 432
+                                           ; SOURCE LINE # 433
+001E 54BF              ANL     A,#0BFH
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 435
+0021 8003              SJMP    ?C0045
+0023         ?C0047:
+                                           ; SOURCE LINE # 437
+                                           ; SOURCE LINE # 438
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 25  
+
+0023 4440              ORL     A,#040H
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 443
+                                           ; SOURCE LINE # 444
+0026         ?C0045:
+                                           ; SOURCE LINE # 445
+0026 900000      E     MOV     DPTR,#SysPowState
+0029 E0                MOVX    A,@DPTR
+002A 900000      E     MOV     DPTR,#GPDRH
+002D B4660C            CJNE    A,#066H,?C0051
+                                           ; SOURCE LINE # 446
+                                           ; SOURCE LINE # 447
+0030 E0                MOVX    A,@DPTR
+0031 54FE              ANL     A,#0FEH
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 448
+0034 900000      E     MOV     DPTR,#GPDRI
+0037 E0                MOVX    A,@DPTR
+0038 54F7              ANL     A,#0F7H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 449
+003B 22                RET     
+003C         ?C0051:
+                                           ; SOURCE LINE # 451
+                                           ; SOURCE LINE # 452
+003C E0                MOVX    A,@DPTR
+003D 4401              ORL     A,#01H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 453
+0040 900000      E     MOV     DPTR,#GPDRI
+0043 E0                MOVX    A,@DPTR
+0044 4408              ORL     A,#08H
+0046 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 454
+                                           ; SOURCE LINE # 455
+0047         ?C0053:
+0047 22                RET     
+             ; FUNCTION SetVGA_AC_DET (END)
+
+             ; FUNCTION SetAOU_DET_Int (BEGIN)
+                                           ; SOURCE LINE # 456
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 458
+0000 900000      E     MOV     DPTR,#WUEMR7
+0003 E0                MOVX    A,@DPTR
+0004 4402              ORL     A,#02H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 459
+0007 900000      E     MOV     DPTR,#WUESR7
+000A 7402              MOV     A,#02H
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 461
+000D 900000      E     MOV     DPTR,#ISR9
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 462
+0011 900000      E     MOV     DPTR,#IER9
+0014 E0                MOVX    A,@DPTR
+0015 4402              ORL     A,#02H
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 463
+0018 22                RET     
+             ; FUNCTION SetAOU_DET_Int (END)
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 26  
+
+
+             ; FUNCTION WakeUp_DO_Function (BEGIN)
+                                           ; SOURCE LINE # 465
+                                           ; SOURCE LINE # 466
+                                           ; SOURCE LINE # 471
+0000 900000      E     MOV     DPTR,#ExtTimeCnt
+0003 E0                MOVX    A,@DPTR
+0004 B4010A            CJNE    A,#01H,?C0055
+                                           ; SOURCE LINE # 472
+                                           ; SOURCE LINE # 473
+0007 120000      E     LCALL   UCS1002ID_Main
+                                           ; SOURCE LINE # 474
+000A E4                CLR     A
+000B 900000      E     MOV     DPTR,#ExtTimeCnt
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 475
+000F 8006              SJMP    ?C0056
+0011         ?C0055:
+                                           ; SOURCE LINE # 477
+                                           ; SOURCE LINE # 478
+0011 900000      E     MOV     DPTR,#ExtTimeCnt
+0014 E0                MOVX    A,@DPTR
+0015 04                INC     A
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 479
+0017         ?C0056:
+                                           ; SOURCE LINE # 481
+0017 120000      E     LCALL   ChkBattery_Percl
+                                           ; SOURCE LINE # 497
+001A 900000      E     MOV     DPTR,#GPDRJ
+001D E0                MOVX    A,@DPTR
+001E 20E008            JB      ACC.0,?C0057
+                                           ; SOURCE LINE # 498
+0021 900000      E     MOV     DPTR,#uNovoVPCCount
+0024 7401              MOV     A,#01H
+0026 F0                MOVX    @DPTR,A
+0027 8005              SJMP    ?C0058
+0029         ?C0057:
+                                           ; SOURCE LINE # 500
+0029 E4                CLR     A
+002A 900000      E     MOV     DPTR,#uNovoVPCCount
+002D F0                MOVX    @DPTR,A
+002E         ?C0058:
+                                           ; SOURCE LINE # 501
+002E 7F03              MOV     R7,#03H
+0030 020000      E     LJMP    _Init_VC
+             ; FUNCTION WakeUp_DO_Function (END)
+
+             ; FUNCTION WakeUp_30ms_Function (BEGIN)
+                                           ; SOURCE LINE # 504
+                                           ; SOURCE LINE # 505
+                                           ; SOURCE LINE # 506
+0000 020000      E     LJMP    Lenovo_LED
+             ; FUNCTION WakeUp_30ms_Function (END)
+
+             ; FUNCTION ISCT_Process (BEGIN)
+                                           ; SOURCE LINE # 515
+                                           ; SOURCE LINE # 516
+                                           ; SOURCE LINE # 566
+0000 22                RET     
+             ; FUNCTION ISCT_Process (END)
+
+C51 COMPILER V8.12   OEM_LPC                                                               09/14/2018 11:08:37 PAGE 27  
+
+             ; FUNCTION ISCT_Behavior (BEGIN)
+                                           ; SOURCE LINE # 574
+                                           ; SOURCE LINE # 575
+                                           ; SOURCE LINE # 592
+0000 22                RET     
+             ; FUNCTION ISCT_Behavior (END)
+
+             ; FUNCTION ISCT_TimerCnt (BEGIN)
+                                           ; SOURCE LINE # 600
+                                           ; SOURCE LINE # 601
+                                           ; SOURCE LINE # 615
+0000 22                RET     
+             ; FUNCTION ISCT_TimerCnt (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    956    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

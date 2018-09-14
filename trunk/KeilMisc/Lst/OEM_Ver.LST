@@ -1,0 +1,73 @@
+C51 COMPILER V8.12   OEM_VER                                                               09/14/2018 11:08:27 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_VER
+OBJECT MODULE PLACED IN Code\Oem\OEM_Ver.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_Ver.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\INC
+                    -LUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*----------------------------------------------------------------------------
+   2           * Filename: OEM_Ver.C  For Chipset: ITE.IT85XX
+   3           *
+   4           * Function: Project version
+   5           *
+   6           *---------------------------------------------------------------------------*/
+   7          
+   8          #include <CORE_INCLUDE.H>
+   9          #include <OEM_INCLUDE.H>
+  10          
+  11          //----------------------------------------------------------------------------
+  12          // Project Information
+  13          //----------------------------------------------------------------------------
+  14          const unsigned char code ProjectInfoI[] =
+  15          {
+  16                  ProjectID0L,
+  17                  ProjectID0H,
+  18                  REV0_BYTE0,
+  19                  REV0_BYTE1,
+  20                  REV0_BYTE2,
+  21                  REV0_BYTE3,
+  22                  REV0_BYTE4,
+  23          
+  24                  CHIP_TYPE0,
+  25                  CUSTOMER_ID0,
+  26                  0x00,
+  27                  "QIQY5",        // formodule name
+  28          };
+  29          
+  30          const unsigned char code ProjectInfoII[] =
+  31          {
+  32                  ProjectID0L,
+  33                  ProjectID0H,
+  34                  REV0_BYTE0,
+  35                  REV0_BYTE1,
+  36                  REV0_BYTE2,
+  37                  REV0_BYTE3,
+  38                  REV0_BYTE4,
+  39          
+  40                  CHIP_TYPE0,
+  41                  CUSTOMER_ID0,
+  42                  0x00,
+  43                  "QIQY6",        // formodule name
+  44          };
+C51 COMPILER V8.12   OEM_VER                                                               09/14/2018 11:08:27 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =     32    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

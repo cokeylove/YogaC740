@@ -1,0 +1,128 @@
+++++++++++++++++++++++++++++++++++++++++++++++++++
+product name:                    Yoga530  
+project name (TDMS):             Prague          
+PLM code:                        EYG10
+EC chip /charger IC:             ITE8586 / BQ24780S
+temperature:                     SMBUS(thermistor) 
+base on:                         720S IKB 
+++++++++++++++++++++++++++++++++++++++++++++++++++
+========================================================================================
+7QEC22WW: Release 22 version EC.
+========================================================================================
+1.Add Fn+Q hot key to switch quiet mode.
+========================================================================================
+7QEC21WW: Release 21 version EC.
+========================================================================================
+1.Add Fn+Q hot key to switch high performance.
+========================================================================================
+7QEC20WW: Release 20 version EC.
+========================================================================================
+7QEC19WW: Release 19 version EC.
+========================================================================================
+7QEC18WW: Release 18 version EC.
+========================================================================================
+1.Add workaroud WDT to 250s
+2.Modify power setting when Rsoc<10 
+========================================================================================
+7QEC17WW: Release 17 version EC.
+========================================================================================
+1.HEGANGS054:Add the cpu i5 turbo temperature and modify power setting
+2.HEGANGS055:Add the MFG test power amber led CMD
+========================================================================================
+7QEC16WW: Release 16 version EC.
+========================================================================================
+7QEC15WW: Release 15 version EC.
+==============================================================================
+1.HEGANGS052:Add the 530s Quiet mode fan table
+2.HEGANGS053:Modify the 5valways setting when battery rsoc<=20 
+========================================================================================
+7QEC14WW: Release 14 version EC.
+========================================================================================
+7QEC13WW: Release 13 version EC.
+==============================================================================
+1.HEGANGS049:Add the 530s Highper formance and yoga30 quite mode function
+2.HEGANGS050:Add the RSOC0-1 charge led blink 3times 
+3.HEGANGS051:Modify the quite mode fan table
+========================================================================================
+7QEC12WW: Release 12 version EC.
+========================================================================================
+1.HEGANGS042:Modify the led behavior follow new spec
+2.HEGANGS043:Add smi hang check post code"ctrl+D+D"
+3.HEGANGS044:Modify the fan table follow the 1226 table
+4.HEGANGS045:Modify the 5VALW power off if the charge in battery Mode is disable
+5.HEGANGS046:Disable the onekey battery function when ec receive the keep pch cmd
+6.HEGANGS047:Modify the KB backlight code
+7.HEGANGS048:Modify the D-state setting when AC in
+
+========================================================================================
+7QEC11WW: Release 11 version EC.
+========================================================================================
+1.HEGANGS037:Remove the charge current limit
+2.HEGANGS038:Modify the charger IC turbo boost point (RSOC>10% Enable)
+3.HEGANGS039:Disable KB backlight in Pad/Tent/Stand mode
+4.HEGANGS040:Ignore the enable TP CMD if PAD_LID is closed
+5.HEGANGS041:Modify the fan table
+========================================================================================
+7QEC10WW: Release 10 version EC.
+========================================================================================
+1.HEGANGS034:Modify onekey battery function
+2.HEGANGS035:Add 530S 15inch DIS fan table
+3.HEGANGS036:Enable WTD reset function for hang bios
+========================================================================================
+7QEC09WW: Release 09 version EC.
+========================================================================================
+1.HEGANGS028:Disable powersw when flash bios
+2.HEGANGS029:Enable battery sha1 function
+3.HEGANGS030:Disable key wake in pad mode
+4.HEGANGS031:Modify fan table
+5.HEGANGS032:Modify power setting
+6.HEGANGS033:Modify VPC notify when TP state is changed
+========================================================================================
+7QEC08WW: Release 08 version EC.
+========================================================================================
+1.Modify onekey battery function
+2.Modify usb power setting when bios has detected the wake up device
+3.Add the function of YMC control the TP
+========================================================================================
+7QEC07WW: Release 07 version EC.
+========================================================================================
+1.HEGANGS020:Modify GPIO follow latest table
+2.HEGANGS021:Add onekey battery function
+3.HEGANGS022:Add smi hang check function
+4.HEGANGS023:Modify fan table
+5.HEGANGS024:Modify power setting
+========================================================================================
+7QEC06WW: Release 06 version EC.
+========================================================================================
+1.HEGANGS016:Enable EC internal watchdog
+2.HEGANGS017:Modify s5 sleep gpio setting
+3.HEGANGS018:Modify DC only turbo setting
+4.HEGANGS019:Modify fan table control
+========================================================================================
+7QEC05WW: Release 05 version EC.
+========================================================================================
+1.HEGANGS015:Clear pmic init_ok flag in DC S5
+========================================================================================
+7QEC04WW: Release 04 version EC.
+========================================================================================
+1.HEGANGS008:Mofify power setting
+2.HEGANGS009:Enable ec sleep and modify DC-S5 gpio setting
+3.HEGANGS010:Enable GPU temperature and remove read remote temp
+4.HEGANGS012:Modify 14 inch keyboard scanner table
+5.HEGANGS013:Modify cpu turbo setting
+6.HEGANGS014:Cut off 5V always power if aou mode is disabe
+========================================================================================
+7QEC03WW: Release 03 version EC.
+========================================================================================
+1.HEGANGS006:Modify protect setting
+2.HEGANGS007:Keep EC_ON_5V_HI to fix DC s4 can not wake up
+========================================================================================
+7QEC02WW: Release 02 version EC.
+========================================================================================
+1.HEGANGS001:Set VGA_AC_DET pull high
+2.HEGANGS002:Support gpu D-state and cpu prochot
+3.HEGANGS003:Add PMIC vendor id
+4.HEGANGS004:Modify after flash EC can reset
+========================================================================================
+7QEC01WW: Release 01 version EC.
+========================================================================================

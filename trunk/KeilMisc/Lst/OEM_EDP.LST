@@ -1,0 +1,238 @@
+C51 COMPILER V8.12   OEM_EDP                                                               09/14/2018 11:08:07 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_EDP
+OBJECT MODULE PLACED IN Code\Oem\OEM_EDP.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_EDP.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\INC
+                    -LUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_EDP.C
+   3           *
+   4           * Author : Parade Technologies inc.
+   5           *
+   6           * Note : These functions are reference code and LCFC setting code about PS8622.
+   7           *        Please follow your project software specification to do some modification.
+   8           *---------------------------------------------------------------------------*/
+   9          
+  10          #include <CORE_INCLUDE.H>
+  11          #include <OEM_INCLUDE.H>
+  12          /* I2C command format:[Slave Address,Offset,Value]
+  13          A. Write/Read Slave Address PS8622 Device Slave Address: 0x10~0x1F
+  14                  0x10/1x11:      Write/Read value to register at offset of Page0. 
+  15                  0x12/1x13:      Write/Read value to register at offset of Page1. 
+  16                  0x14/1x15:      Write/Read value to register at offset of Page2. 
+  17                  0x16/1x17:      Write/Read value to register at offset of Page3. 
+  18                  0x18/1x19:      Write/Read value to register at offset of Page4. 
+  19                  0x1A/1x1B:      Write/Read value to register at offset of Page5. 
+  20                  0x1C/1x1D:      Write/Read value to register at offset of Page6.
+  21                  0x1E/1x1F:      Write/Read value to register at offset of Page7. 
+  22          B. Offset:
+  23                  Range:0x00~0xFF
+  24          C. Value:
+  25                  Range:0x00~0xFF
+  26          */      
+  27          // Sample code for initialing PS8622 - Compliant to PS8622 initial code Ver1.05
+  28          // Note: Pin I2C_CFG = M
+  29          // void IICWrite(byte I2C_address,byte reg_offset,byte data);
+  30          
+  31          void IICWrite( BYTE I2C_address, BYTE Reg_offset, BYTE PS_data ,BYTE index)
+  32          {
+  33   1              if(!bRWSMBus(SMbusCh4, SMbusWB, I2C_address, Reg_offset, &PS_data, SMBus_NoPEC))
+  34   1              {
+  35   2                      TEMP_Error++;
+  36   2              }
+  37   1              else
+  38   1              {
+  39   2                      initMark++;
+  40   2                      //TEMP_Error = 0x00;
+  41   2                      if( index == (PS8625_INITMAX-1) )
+  42   2                      {
+  43   3                              initMark = 0xAA;
+  44   3                      }
+  45   2              }
+  46   1      }
+  47          
+  48          const sPSXSmbusStruct code initPS8625Table[] = 
+  49          {       //      address         offset          value.
+  50                  { PS8625P2,             0xa1            ,0x01},         // HPD = Low            
+  51                  { PS8625P4,             0x14            ,0x01},                         
+  52                  { PS8625P4,             0xe3            ,0x20},                         
+  53                  { PS8625P4,             0xe2            ,0x80},                         
+  54                  { PS8625P4,             0x8a            ,0x0c},                         
+C51 COMPILER V8.12   OEM_EDP                                                               09/14/2018 11:08:07 PAGE 2   
+
+  55                  { PS8625P4,             0x89            ,0x08},                         
+  56                  { PS8625P4,             0x71            ,0x2d},                         
+  57                  { PS8625P4,             0x7d            ,0x07},                         
+  58                  { PS8625P4,             0x7b            ,0x00},                         
+  59                  { PS8625P4,             0x7a            ,0xfd},                         
+  60                  { PS8625P4,             0xc0            ,0x12},                         
+  61                  { PS8625P4,             0xc1            ,0x92},                         
+  62                  { PS8625P4,             0xc2            ,0x1c},                         
+  63                  { PS8625P4,             0x32            ,0x80},                         
+  64                  { PS8625P4,             0x00            ,0xb0},                         
+  65                  { PS8625P4,             0x15            ,0x40},                         
+  66                  { PS8625P4,             0x54            ,0x10},                         
+  67                  { PS8625P0,             0x52            ,0x20},                         
+  68                  { PS8625P0,             0xf1            ,0x03},                         
+  69                  { PS8625P0,             0x62            ,0x41},                         
+  70                  { PS8625P0,             0xf6            ,0x01},
+  71                  { PS8625P0,             0x77            ,0x06},
+  72                  { PS8625P0,             0x4c            ,0x04},
+  73                  { PS8625P1,             0xc0            ,0x00},
+  74                  { PS8625P1,             0xc1            ,0x1c},
+  75                  { PS8625P1,             0xc2            ,0xf8},
+  76                  { PS8625P1,             0xc3            ,0x44},
+  77                  { PS8625P1,             0xc4            ,0x32},
+  78                  { PS8625P1,             0xc5            ,0x44},
+  79                  { PS8625P1,             0xc6            ,0x4c},
+  80                  { PS8625P1,             0xc7            ,0x56},
+  81                  { PS8625P1,             0xc8            ,0x35},
+  82                  { PS8625P1,             0xca            ,0x01},
+  83                  { PS8625P1,             0xcb            ,0x04},
+  84                  { PS8625P1,             0xce            ,0xd9},//test
+  85                  { PS8625P4,             0x59            ,0x60},
+  86                  { PS8625P4,             0x54            ,0x14},
+  87                  { PS8625P2,             0xa1            ,0x91},         // HPD = High
+  88          };
+  89          
+  90          
+  91          void Init_PS8625(void)
+  92          {
+  93   1      
+  94   1              IICWrite(initPS8625Table[initMark].smbaddr,initPS8625Table[initMark].smboffset,initPS8625Table[initMark].
+             -smbvalue,initMark);
+  95   1              
+  96   1      }
+C51 COMPILER V8.12   OEM_EDP                                                               09/14/2018 11:08:07 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Com0006 (BEGIN)
+0000         L?0007:
+0000         L?0008:
+0000 900000      E     MOV     DPTR,#initMark
+0003 E0                MOVX    A,@DPTR
+0004 75F003            MOV     B,#03H
+0007 A4                MUL     AB
+0008 22                RET     
+             ; FUNCTION Com0006 (END)
+
+             ; FUNCTION _IICWrite (BEGIN)
+                                           ; SOURCE LINE # 31
+0000 900000      R     MOV     DPTR,#PS_data
+0003 EB                MOV     A,R3
+0004 F0                MOVX    @DPTR,A
+;---- Variable 'Reg_offset' assigned to Register 'R5' ----
+;---- Variable 'I2C_address' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 32
+                                           ; SOURCE LINE # 33
+0005 CB                XCH     A,R3
+0006 EF                MOV     A,R7
+0007 CB                XCH     A,R3
+0008 900000      E     MOV     DPTR,#?_bRWSMBus?BYTE+03H
+000B ED                MOV     A,R5
+000C F0                MOVX    @DPTR,A
+000D A3                INC     DPTR
+000E 7400        R     MOV     A,#HIGH PS_data
+0010 F0                MOVX    @DPTR,A
+0011 A3                INC     DPTR
+0012 7400        R     MOV     A,#LOW PS_data
+0014 F0                MOVX    @DPTR,A
+0015 E4                CLR     A
+0016 A3                INC     DPTR
+0017 F0                MOVX    @DPTR,A
+0018 7D88              MOV     R5,#088H
+001A 7F03              MOV     R7,#03H
+001C 120000      E     LCALL   _bRWSMBus
+001F EF                MOV     A,R7
+0020 7007              JNZ     ?C0001
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 35
+0022 900000      E     MOV     DPTR,#TEMP_Error
+0025 E0                MOVX    A,@DPTR
+0026 04                INC     A
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 36
+0028 22                RET     
+0029         ?C0001:
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+0029 900000      E     MOV     DPTR,#initMark
+002C E0                MOVX    A,@DPTR
+002D 04                INC     A
+002E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 41
+002F 900000      R     MOV     DPTR,#index
+0032 E0                MOVX    A,@DPTR
+0033 B42506            CJNE    A,#025H,?C0004
+                                           ; SOURCE LINE # 42
+C51 COMPILER V8.12   OEM_EDP                                                               09/14/2018 11:08:07 PAGE 4   
+
+                                           ; SOURCE LINE # 43
+0036 900000      E     MOV     DPTR,#initMark
+0039 74AA              MOV     A,#0AAH
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 46
+003C         ?C0004:
+003C 22                RET     
+             ; FUNCTION _IICWrite (END)
+
+             ; FUNCTION Init_PS8625 (BEGIN)
+                                           ; SOURCE LINE # 91
+                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 94
+0000 120000      R     LCALL   L?0007
+0003 2400        R     ADD     A,#LOW initPS8625Table
+0005 F582              MOV     DPL,A
+0007 E4                CLR     A
+0008 3400        R     ADDC    A,#HIGH initPS8625Table
+000A F583              MOV     DPH,A
+000C E4                CLR     A
+000D 93                MOVC    A,@A+DPTR
+000E FF                MOV     R7,A
+000F 120000      R     LCALL   L?0007
+0012 2400        R     ADD     A,#LOW initPS8625Table+01H
+0014 F582              MOV     DPL,A
+0016 E4                CLR     A
+0017 3400        R     ADDC    A,#HIGH initPS8625Table+01H
+0019 F583              MOV     DPH,A
+001B E4                CLR     A
+001C 93                MOVC    A,@A+DPTR
+001D FD                MOV     R5,A
+001E 120000      R     LCALL   L?0008
+0021 2400        R     ADD     A,#LOW initPS8625Table+02H
+0023 F582              MOV     DPL,A
+0025 E4                CLR     A
+0026 3400        R     ADDC    A,#HIGH initPS8625Table+02H
+0028 F583              MOV     DPH,A
+002A E4                CLR     A
+002B 93                MOVC    A,@A+DPTR
+002C FB                MOV     R3,A
+002D 900000      E     MOV     DPTR,#initMark
+0030 E0                MOVX    A,@DPTR
+0031 900000      R     MOV     DPTR,#?_IICWrite?BYTE+03H
+0034 F0                MOVX    @DPTR,A
+0035 020000      R     LJMP    _IICWrite
+             ; FUNCTION Init_PS8625 (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    126    ----
+   CONSTANT SIZE    =    114    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

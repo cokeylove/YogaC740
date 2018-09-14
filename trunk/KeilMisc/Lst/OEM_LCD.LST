@@ -1,0 +1,608 @@
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE OEM_LCD
+OBJECT MODULE PLACED IN Code\Oem\OEM_LCD.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Code\Oem\OEM_LCD.C LA WL(1) CD OT(9,SIZE) NOAREGS OR INCDIR(.\Code\CORE\INC
+                    -LUDE\;.\Code\OEM\INCLUDE\;.\Code\CHIP\INCLUDE\)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------------
+   2           * TITLE: OEM_LCD.C
+   3           *
+   4           * Author : Dino
+   5           *
+   6           * Note : These functions are reference only.
+   7           *        Please follow your project software specification to do some modification.
+   8           *---------------------------------------------------------------------------*/
+   9          
+  10          #include <CORE_INCLUDE.H>
+  11          #include <OEM_INCLUDE.H>
+  12          
+  13          
+  14          //-----------------------------------------------------------------------------
+  15          // Initialize Brightness Frequency.
+  16          //-----------------------------------------------------------------------------
+  17          void Init_LCD_Freq(void)
+  18          {
+  19   1              #if EC_Brightness_Ctrl
+                      WORD BLCDFreq;
+              
+                      if ( (SYS_STATUS & 0x07) == 0x03 )      // Win7
+                      { BLCDFreq = (WORD)(Bri_Table[cPanelId][BRIGHT_MAX_STEP + 2] << 8) | Bri_Table[cPanelId][BRIGHT_MAX_STEP 
+             -+ 1]; }
+                      else
+                      { BLCDFreq = (WORD)(WIN8_Bri_Tab[cPanelId][WIN8_BRI_MAX_STEP + 2] << 8) | WIN8_Bri_Tab[cPanelId][WIN8_BRI
+             -_MAX_STEP + 1]; }
+              
+                      C7CPRS = (24 * 1000) / BLCDFreq;
+                      if ( BLCDFreq > 5000 )
+                      { C7CPRS++; }
+                      #endif  // EC_Brightness_Ctrl
+  31   1      }
+  32          
+  33          /* ========================================================================
+  34           * Brightness table define here
+  35           * ======================================================================== */
+  36          #if EC_Brightness_Ctrl
+              BYTE code Bri_Table[BriTable_MAX][BRIGHT_MAX_STEP + 4] =
+              {
+              // Dark <------------------------------------------------> Light,       DAC_BRIG, Freq(2 byte), BL_Stable_time
+                      1,      2,      2,      3,      5,      7,      10,     14,     19,     24,     31,     39,     46,     56,     67,     100,  00,       0xF4, 0x01,                     0x03,   //0x00 Default 500Hz
+                      1,      2,      2,      3,      5,      7,      10,     14,     19,     24,     31,     39,     46,     56,     67,     100,  00,       0x10, 0x27,                     0x03,   //0x01 AUO B156XTN02
+             - 10KHz
+                      2,      2,      3,      4,      6,      9,      13,     18,     23,     30,     38,     45,     55,     65,     78,     100,  00,       0x58, 0x02,                     0x03,   //0x02 LGD LP156WH4-
+             -TLN1 600Hz
+                      1,      2,      3,      5,      7,      11,     15,     21,     27,     34,     42,     52,     63,     73,     86,     100,  00,       0x58, 0x02,                     0x03,   //0x03 LGD LP156WF1
+             --TLB2(FHD_Anti) 600Hz
+                      1,      2,      3,      4,      6,      8,      12,     16,     22,     28,     35,     43,     52,     61,     73,     100,  00,       0x58, 0x02,                     0x03,   //0x04 SEC LTN156AT2
+             -4-L01 600Hz
+                      2,      2,      3,      4,      6,      10,     14,     19,     25,     31,     39,     48,     57,     68,     79,     100,  00,       0xE8, 0x03,                     0x03,   //0x05 CMI N156BGE-
+             -L21        1KHz
+                      2,      2,      3,      4,      6,      10,     14,     19,     25,     32,     41,     50,     61,     74,     88,     100,  00,       0x58, 0x02,                     0x03,   //0x06 AUO B140XTN0
+             -3 600Hz
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 2   
+
+                      2,      2,      3,      4,      7,      10,     14,     19,     25,     33,     41,     50,     61,     73,     86,     100,  00,       0x58, 0x02,                     0x03,   //0x07 LGD LP140WH2
+             --TLE2 600Hz
+                      2,      3,      3,      5,      7,      11,     16,     21,     28,     36,     44,     54,     65,     76,     89,     100,  00,       0x58, 0x02,                     0x03,   //0x08 SEC LTN140AT
+             -20-L01 600Hz
+                      2,      3,      3,      5,      7,      11,     15,     21,     27,     35,     43,     53,     63,     75,     87,     100,  00,       0x2C, 0x01,                     0x03,   //0x09 CMI N140BGE-
+             -L42        300Hz
+                      5,      6,      7,      8,      9,      10,     14,     19,     25,     31,     39,     48,     57,     68,     79,     100,  00,       0x58, 0x02,                     0x03,   //0x0A LGD LP156WF1
+             --TLC1(FHD_Glare) 600Hz
+                      1,      2,      2,      3,      5,      8,      12,     17,     22,     28,     36,     44,     53,     63,     75,     100,  00,       0xE8, 0x03,                     0x03,   //0x0B BOE HB156WX1-
+             -100 1KHz
+              };
+              
+              BYTE code WIN8_Bri_Tab[BriTable_MAX][WIN8_BRI_MAX_STEP + 4] =
+              {
+              // Dark <-----------------------------------------------------------------------> Light, DAC_BRIG, Freq(2 
+             -byte), BL_Stable_time
+                      1,      2,      2,      3,      3,      5,      6,      7,      8,      10,     12,     14,     16,     19,     22,     26,     33,     42,     53,     66,     100,    00,             0x10, 0x27,             0x03,   //0x0
+             -0 Default 500Hz
+                      1,      2,      2,      3,      3,      5,      6,      7,      8,      10,     12,     14,     16,     19,     22,     26,     33,     42,     53,     66,     100,    00,     0x10, 0x27,             0x03,   //0x0
+             -1 AUO B156XTN02 10KHz
+                      2,      3,      3,      4,      5,      6,      7,      9,      11,     13,     15,     18,     21,     24,     29,     33,     40,     51,     63,     77,     100,    00,     0x58, 0x02,             0x03,   //0
+             -x02 LGD LP156WH4-TLN1 600Hz
+                      3,      3,      4,      4,      5,      5,      7,      8,      9,      10,     12,     13,     16,     20,     23,     27,     33,     43,     55,     68,     100,    00,     0x58, 0x02,             0x03,   //
+             -0x03 LGD LP156WF1-TLB2(FHD_Anti) 600Hz
+                      1,      2,      2,      3,      4,      4,      6,      7,      9,      11,     13,     14,     17,     20,     24,     28,     33,     42,     52,     63,     100,    00,     0x58, 0x02,             0x03,   //
+             -0x04 SEC LTN156AT24-L01 600Hz
+                      2,      2,      3,      4,      5,      6,      7,      9,      11,     14,     16,     18,     21,     26,     30,     34,     41,     52,     64,     77,     100,    00,     0xE8, 0x03,             0x03,   /
+             -/0x05 CMI N156BGE-L21 1KHz
+                      2,      2,      3,      3,      4,      6,      7,      9,      11,     13,     16,     18,     21,     25,     29,     34,     41,     54,     67,     83,     100,    00,     0x58, 0x02,             0x03,   //0x
+             -06 AUO B140XTN03 600Hz
+                      2,      3,      3,      4,      4,      6,      7,      9,      11,     13,     16,     18,     21,     26,     29,     34,     41,     53,     65,     79,     100,    00,     0x58, 0x02,             0x03,   //
+             -0x07 LGD LP140WH2-TLE2 600Hz
+                      2,      2,      3,      4,      4,      6,      7,      9,      11,     13,     15,     17,     20,     24,     27,     32,     38,     48,     60,     72,     100,    00,     0x58, 0x02,             0x03,   //
+             -0x08 SEC LTN140AT20-L01 600Hz
+                      2,      3,      3,      4,      5,      7,      8,      10,     13,     15,     18,     20,     24,     28,     33,     38,     45,     58,     71,     85,     100,    00,     0x2C, 0x01,             0x03,   /
+             -/0x09 CMI N140BGE-L42 300Hz
+                      2,      2,      3,      3,      4,      5,      6,      7,      9,      11,     12,     14,     16,     19,     23,     26,     31,     41,     49,     60,     100,    00,     0x58, 0x02,             0x03,   //0x0
+             -A LGD LP156WF1-TLC1(FHD_Glare) 600Hz
+                      2,      2,      3,      3,      4,      6,      7,      9,      11,     13,     15,     17,     20,     24,     28,     33,     39,     50,     61,     74,     100,    00,     0xE8, 0x03,             0x03,   //0x
+             -0B BOE HB156WX1-100 1KHz
+              };
+              #endif  // EC_Brightness_Ctrl
+  71          
+  72          void Load_PWMTimeOut_Timer(void)
+  73          {
+  74   1              #if EC_Brightness_Ctrl
+                  TR1 = 0;                    // Disable timer1
+                  ET1 = 0;                    // Disable timer1 interrupt
+                  TL1 = Timer_5ms;                    // Reload timer
+                  TH1 = Timer_5ms>>8;                 // 5ms
+                      TF1 = 0;                                        // Clear overflow flag
+                      TR1 = 1;                                        // Enable timer1
+                      #endif  // EC_Brightness_Ctrl
+  82   1      }
+  83          
+  84          void Set_PWM_Value(BYTE PWM_Value)
+  85          {
+  86   1              #if EC_Brightness_Ctrl
+                      if ((DCR7 != 0) && (DCR7 != CTR3))
+                      {
+                              Load_PWMTimeOut_Timer();
+                              while(!TF1)
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 3   
+
+                              {
+                                      if ( Read_EC_INVT_PWM() == HighActive)
+                                      {
+                                              break;
+                                      }
+                              }
+                              Load_PWMTimeOut_Timer();
+                              while(!TF1)
+                              {
+                                      if (Read_EC_INVT_PWM()== LowActive)
+                                      {
+                                              DCR7 = PWM_Value;
+                                              return;
+                                      }
+                              }
+                      }
+                      else
+                      { DCR7 = PWM_Value; }
+                      #endif  // EC_Brightness_Ctrl
+ 110   1      }
+ 111          
+ 112          /*****************************************************************************/
+ 113          // Procedure: Brightness_Control                                                                TimeDiv: 10mSec
+ 114          // Description:
+ 115          // GPIO:
+ 116          // Referrals:
+ 117          /*****************************************************************************/
+ 118          void Brightness_Control(void)
+ 119          {
+ 120   1              #if EC_Brightness_Ctrl
+                      BYTE BBri_Level;
+                      BYTE DCR7_Temp;
+              
+                      if ( (SystemNotS0) || (!Read_ENBKL_IN()) )      // Check S0 state and LCD backlight.
+                      {
+                              if(!Read_BKOFF())
+                              {
+                                      DCR7 = 0;
+                              }
+                              return;
+                      }
+              
+                      if ( (SYS_STATUS & 0x07) == 0x03 )      // Win7
+                      {
+                              if ( nBrightValue >= BRIGHT_MAX_STEP )          // Over 16 Step duty.
+                              { nBrightValue = (BRIGHT_MAX_STEP - 1); }
+                              BBri_Level = Cal_PWM_Duty(Bri_Table[cPanelId][nBrightValue],CTR3);
+                      }
+                      else
+                      {
+                              if ( nBrightValue >= WIN8_BRI_MAX_STEP )        // Over 21 Step duty.
+                              { nBrightValue = (WIN8_BRI_MAX_STEP - 1); }
+                              BBri_Level = Cal_PWM_Duty(WIN8_Bri_Tab[cPanelId][nBrightValue],CTR3);
+                      }
+              
+                      if ( DCR7 == BBri_Level ) { return; }
+              
+                      DCR7_Temp = DCR7;
+                  if( DCR7 > BBri_Level )
+                      {
+                              //DCR7--;
+                              DCR7_Temp--;
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 4   
+
+                              Set_PWM_Value(DCR7_Temp);
+                      }       // Over level.
+                      else
+                      {
+                              //DCR7++;
+                              DCR7_Temp++;
+                              Set_PWM_Value(DCR7_Temp);
+                      }       // Less level.
+                      #endif  // EC_Brightness_Ctrl
+ 162   1      }
+ 163          
+ 164          //=============================================================================
+ 165          //      Calculate PWM duty.
+ 166          //=============================================================================
+ 167          BYTE Cal_PWM_Duty(BYTE BCalDuty, BYTE BPWMBase)
+ 168          {
+ 169   1              return ( BCalDuty = (WORD)((BCalDuty * BPWMBase) / 100));
+ 170   1      }
+ 171          
+ 172          /*****************************************************************************/
+ 173          // Procedure: Backlight_Control                                                                 TimeDiv: 10mSec
+ 174          // Description:
+ 175          // GPIO: GPIOG2, GPIOF7
+ 176          // Referrals:
+ 177          /*****************************************************************************/
+ 178          void Backlight_Control(void)
+ 179          {
+ 180   1              if ( SystemIsS0 && (IS_MASK_CLEAR(uISCT, b5ISCT_BKOFF)) )       // Check S0 and ISCT BKOFF status.
+ 181   1              {
+ 182   2                      //if ( (Read_ENBKL_IN()) && (IS_MASK_CLEAR(cCmd, b3BkOff)) && Read_LID_SW_IN())  //ANGELAG005:remove.
+ 183   2                      if ( (Read_ENBKL_IN()) && (IS_MASK_CLEAR(cCmd, b3BkOff)) && Read_LID_SW_IN()&&(IS_MASK_CLEAR(OEMControl,
+             - b1BkOff))) //ANGELAG005:add. 
+ 184   2                      {
+ 185   3                              #if EC_Brightness_Ctrl
+                                      if (DCR7 == 0)
+                                      {       //Mos: force Back light enable after PWM stable.
+                                              if ( (SYS_STATUS & 0x07) == 0x03 )      // Win7
+                                              { BackLight_En_Delay = Bri_Table[cPanelId][BRIGHT_MAX_STEP+3]; }
+                                              else    // Win8
+                                              { BackLight_En_Delay = WIN8_Bri_Tab[cPanelId][WIN8_BRI_MAX_STEP+3]; }
+                                      }
+                                      #endif  // EC_Brightness_Ctrl
+ 194   3      
+ 195   3                              //Mos: Enable Backlight after PWM stable
+ 196   3                              if (BackLight_En_Delay != 0)
+ 197   3                              {
+ 198   4                                      BackLight_En_Delay--;
+ 199   4                              }
+ 200   3                              else
+ 201   3                              {
+ 202   4                                      BKOFF_ON();
+ 203   4                                      EC_TS_ON_HI(); //72JERRY049:Add enable/disable touch panel pin.
+ 204   4                                      CLR_MASK(pProject0,b0DispToggleEn);
+ 205   4                                      return;
+ 206   4                              }
+ 207   3                      }
+ 208   2              }
+ 209   1              BKOFF_OFF();
+ 210   1              EC_TS_ON_LOW(); //72JERRY049:Add enable/disable touch panel pin.
+ 211   1      }
+ 212          
+ 213          /*****************************************************************************/
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 5   
+
+ 214          // Procedure: Lid_Process                                                                       TimeDiv: 500mSec
+ 215          // Description:
+ 216          // GPIO: GPIOH0, GPIOH3
+ 217          // Referrals:
+ 218          /*****************************************************************************/
+ 219          #if 0
+              void Lid_Process(void)
+              {
+                      if ((SystemIsS5)||((DSxPowState == SYSTEM_DSxOK) && (IS_MASK_CLEAR(SysStatus,EnterDS3byLid))) )
+                      {
+                              //EC_LID_OUT_LOW();
+                              CLEAR_MASK(SysStatus,LidStatus);
+                              LID_DEBOUNCE_CNT =0;
+                      }
+                     else
+                    {
+                              if ( (IS_MASK_SET(ACPI_HOTKEY,b5BIOS_IFFS)) )
+                              { 
+                                  return; 
+                            }
+              
+                            if( Read_LID_SW_IN() )
+                           {  //LCD Cover Open (LID OPEN)
+                         
+                               if(IS_MASK_CLEAR(SysStatus,LidStatus))
+                              {
+                                   LID_DEBOUNCE_CNT++;
+                                   if( LID_DEBOUNCE_CNT > _LID_DEBOUNCE )     // Debounce 2 timer.
+                                  {
+                                                      CLEAR_MASK(SysStatus,CloseLid);
+                                                      CLEAR_MASK(SysStatus,EnterS3Lid);
+                                                      if (IS_MASK_SET(SysStatus,EnterDS3byLid))
+                                                      {
+                                                              CLEAR_MASK(SysStatus,EnterDS3byLid);
+                                                              if ((DSxPowState == SYSTEM_DSxOK)||((DSxPowState == SYSTEM_S3S4)&&(SystemIsS3)))
+                                                              {
+                                                                      PM_PWRBTN_LOW();
+                                                                      PWRBTN_pressCnt = 6;            // delay 60ms.
+                                                              }
+                                                              else
+                                                              {
+                                                               
+                                                                      SET_MASK(SysStatus,LidStatus);
+                                                              //EC_LID_OUT_HI();
+                                                              ECSMI_SCIEvent(0x15); //T25B+  //T25+ //T25A- 
+                                                                    LID_DEBOUNCE_CNT = 0;
+                                                              }
+                                                      }
+              /*  
+                                                      else if(SystemIsS3)
+                                                      {
+                                                                      PM_PWRBTN_LOW();
+                                                                      PWRBTN_pressCnt = 6;            // delay 60ms.
+                                                      }
+              */ 
+                                                      else
+                                                      {
+                                                      
+                                                          SET_MASK(SysStatus,LidStatus);
+                                                        // EC_LID_OUT_HI();
+                                                         ECSMI_SCIEvent(0x15);  
+                                                          LID_DEBOUNCE_CNT = 0;
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 6   
+
+                                                      }
+                                      }
+                              }
+                          else
+                          { 
+                              LID_DEBOUNCE_CNT =0;
+                          }
+                      }
+                      else
+                      {       //LCD Cover Close (LID Close)
+                          if(IS_MASK_SET(SysStatus,LidStatus))
+                          {
+                              LID_DEBOUNCE_CNT++;
+                              if( LID_DEBOUNCE_CNT > _LID_CLOSE_DEBOUNCE ) //G66:Modify lid close debounce time from 1s 
+             -to 3s. 
+                              
+                              {
+                                  CLEAR_MASK(SysStatus,LidStatus);
+                                  LID_DEBOUNCE_CNT = 0;
+                                   if(SystemNotS3)   
+                                  {
+                                      //EC_LID_OUT_LOW();
+                                       // SET_MASK(SysStatus,CloseLid);   
+                                         if(SystemIsS0)
+                                        { 
+                                              SET_MASK(SysStatus,CloseLid);    
+                                              ECSMI_SCIEvent(0x16);  
+                                     }        // For Deep S3 wake up.
+                                  }
+                              }
+                          }
+                          else
+                          { LID_DEBOUNCE_CNT = 0; }
+                      }
+                  }
+              }
+              #endif
+ 312          //ANGELAG008: add start
+ 313          void Lid_Process(void)
+ 314          {
+ 315   1              if( Read_LID_SW_IN() )
+ 316   1              {
+ 317   2                      if(!READ_EC_TP_ON())
+ 318   2                      {
+ 319   3                              EC_TP_ON_HI();
+ 320   3                      }
+ 321   2              }
+ 322   1              else
+ 323   1              {
+ 324   2                      if(READ_EC_TP_ON())
+ 325   2                      {
+ 326   3                              EC_TP_ON_LOW();
+ 327   3                      }
+ 328   2              }
+ 329   1      }
+ 330          //ANGELAG008: add end
+ 331          //72JERRY065:S+Add CMD 0x59 test voice wake up for MFG.
+ 332          void Voicewakeup_MFG_Process(void)
+ 333          {
+ 334   1      if(cDev.fbit.cD_WovMFGtest==1)
+ 335   1      {
+ 336   2              //if(Read_WOV_IRQ())
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 7   
+
+ 337   2              {
+ 338   3      //      EC_LID_OUT_LOW();
+ 339   3              }
+ 340   2      
+ 341   2      }
+ 342   1      }
+ 343          //72JERRY065:E+Add CMD 0x59 test voice wake up for MFG.
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 8   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Init_LCD_Freq (BEGIN)
+                                           ; SOURCE LINE # 17
+                                           ; SOURCE LINE # 18
+                                           ; SOURCE LINE # 31
+0000 22                RET     
+             ; FUNCTION Init_LCD_Freq (END)
+
+             ; FUNCTION Load_PWMTimeOut_Timer (BEGIN)
+                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 82
+0000 22                RET     
+             ; FUNCTION Load_PWMTimeOut_Timer (END)
+
+             ; FUNCTION _Set_PWM_Value (BEGIN)
+                                           ; SOURCE LINE # 84
+0000 900000      R     MOV     DPTR,#PWM_Value
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 110
+0005 22                RET     
+             ; FUNCTION _Set_PWM_Value (END)
+
+             ; FUNCTION Brightness_Control (BEGIN)
+                                           ; SOURCE LINE # 118
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 162
+0000 22                RET     
+             ; FUNCTION Brightness_Control (END)
+
+             ; FUNCTION _Cal_PWM_Duty (BEGIN)
+                                           ; SOURCE LINE # 167
+;---- Variable 'BCalDuty' assigned to Register 'R3' ----
+0000 CB                XCH     A,R3
+0001 EF                MOV     A,R7
+0002 CB                XCH     A,R3
+;---- Variable 'BPWMBase' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 168
+                                           ; SOURCE LINE # 169
+0003 CF                XCH     A,R7
+0004 ED                MOV     A,R5
+0005 CF                XCH     A,R7
+0006 EB                MOV     A,R3
+0007 8FF0              MOV     B,R7
+0009 A4                MUL     AB
+000A FF                MOV     R7,A
+000B AEF0              MOV     R6,B
+000D 7C00              MOV     R4,#00H
+000F 7D64              MOV     R5,#064H
+0011 120000      E     LCALL   ?C?UIDIV
+                                           ; SOURCE LINE # 170
+0014         ?C0005:
+0014 22                RET     
+             ; FUNCTION _Cal_PWM_Duty (END)
+
+             ; FUNCTION Backlight_Control (BEGIN)
+                                           ; SOURCE LINE # 178
+                                           ; SOURCE LINE # 179
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 9   
+
+                                           ; SOURCE LINE # 180
+0000 900000      E     MOV     DPTR,#SysPowState
+0003 E0                MOVX    A,@DPTR
+0004 6410              XRL     A,#010H
+0006 7044              JNZ     ?C0006
+0008 900000      E     MOV     DPTR,#uISCT
+000B E0                MOVX    A,@DPTR
+000C 20E53D            JB      ACC.5,?C0006
+                                           ; SOURCE LINE # 181
+                                           ; SOURCE LINE # 183
+000F 900000      E     MOV     DPTR,#GPDRJ
+0012 E0                MOVX    A,@DPTR
+0013 30E536            JNB     ACC.5,?C0006
+0016 900000      E     MOV     DPTR,#cCmd
+0019 E0                MOVX    A,@DPTR
+001A 20E32F            JB      ACC.3,?C0006
+001D 900000      E     MOV     DPTR,#GPDRB
+0020 E0                MOVX    A,@DPTR
+0021 30E128            JNB     ACC.1,?C0006
+0024 900000      E     MOV     DPTR,#OEMControl
+0027 E0                MOVX    A,@DPTR
+0028 20E121            JB      ACC.1,?C0006
+                                           ; SOURCE LINE # 184
+                                           ; SOURCE LINE # 196
+002B 900000      E     MOV     DPTR,#BackLight_En_Delay
+002E E0                MOVX    A,@DPTR
+002F 6005              JZ      ?C0008
+                                           ; SOURCE LINE # 197
+                                           ; SOURCE LINE # 198
+0031 E0                MOVX    A,@DPTR
+0032 14                DEC     A
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 199
+0034 8016              SJMP    ?C0006
+0036         ?C0008:
+                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 202
+0036 900000      E     MOV     DPTR,#GPDRG
+0039 E0                MOVX    A,@DPTR
+003A 4401              ORL     A,#01H
+003C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 203
+003D 900000      E     MOV     DPTR,#GPDRJ
+0040 E0                MOVX    A,@DPTR
+0041 4404              ORL     A,#04H
+0043 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 204
+0044 900000      E     MOV     DPTR,#pProject0
+0047 E0                MOVX    A,@DPTR
+0048 54FE              ANL     A,#0FEH
+004A F0                MOVX    @DPTR,A
+004B 22                RET     
+                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 208
+004C         ?C0006:
+                                           ; SOURCE LINE # 209
+004C 900000      E     MOV     DPTR,#GPDRG
+004F E0                MOVX    A,@DPTR
+0050 54FE              ANL     A,#0FEH
+0052 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 210
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 10  
+
+0053 900000      E     MOV     DPTR,#GPDRJ
+0056 E0                MOVX    A,@DPTR
+0057 54FB              ANL     A,#0FBH
+0059 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 211
+005A         ?C0010:
+005A 22                RET     
+             ; FUNCTION Backlight_Control (END)
+
+             ; FUNCTION Lid_Process (BEGIN)
+                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+0000 900000      E     MOV     DPTR,#GPDRB
+0003 E0                MOVX    A,@DPTR
+0004 30E115            JNB     ACC.1,?C0011
+                                           ; SOURCE LINE # 316
+                                           ; SOURCE LINE # 317
+0007 900000      E     MOV     DPTR,#GPDRJ
+000A E0                MOVX    A,@DPTR
+000B 30E303            JNB     ACC.3,?C0013
+000E D3                SETB    C
+000F 8001              SJMP    ?C0014
+0011         ?C0013:
+0011 C3                CLR     C
+0012         ?C0014:
+0012 4013              JC      ?C0017
+                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 319
+0014 900000      E     MOV     DPTR,#GPDRJ
+0017 E0                MOVX    A,@DPTR
+0018 4408              ORL     A,#08H
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 321
+001B 22                RET     
+001C         ?C0011:
+                                           ; SOURCE LINE # 323
+                                           ; SOURCE LINE # 324
+001C 900000      E     MOV     DPTR,#GPDRJ
+001F E0                MOVX    A,@DPTR
+0020 30E304            JNB     ACC.3,?C0017
+                                           ; SOURCE LINE # 325
+                                           ; SOURCE LINE # 326
+0023 E0                MOVX    A,@DPTR
+0024 54F7              ANL     A,#0F7H
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 329
+0027         ?C0017:
+0027 22                RET     
+             ; FUNCTION Lid_Process (END)
+
+             ; FUNCTION Voicewakeup_MFG_Process (BEGIN)
+                                           ; SOURCE LINE # 332
+                                           ; SOURCE LINE # 333
+                                           ; SOURCE LINE # 334
+0000 900000      E     MOV     DPTR,#cDev
+0003 E0                MOVX    A,@DPTR
+                                           ; SOURCE LINE # 335
+                                           ; SOURCE LINE # 337
+C51 COMPILER V8.12   OEM_LCD                                                               09/14/2018 11:08:28 PAGE 11  
+
+                                           ; SOURCE LINE # 339
+                                           ; SOURCE LINE # 341
+                                           ; SOURCE LINE # 342
+0004         ?C0019:
+0004 22                RET     
+             ; FUNCTION Voicewakeup_MFG_Process (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    166    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
