@@ -1,2 +1,5 @@
----- chPWSW1WDT Matches (1 in 1 files) ----
-Cmd_45 in OEM_6064.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 	#if chPWSW1WDT
+---- SUPPORT_UCSI Matches (4 in 4 files) ----
+Core_Initialization in CORE_INIT.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\CORE\CORE_COMMON) : 	#if SUPPORT_UCSI
+Hook_Timer20msEventA in OEM_MAIN.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 	#if SUPPORT_UCSI
+OEM_Project.H (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\INCLUDE) line 30 : #define SUPPORT_UCSI                FALSE //72JERRY060： UCSI feature//72JERRY083//72JERRY084: Disable UCSI feature.
+OEM_UCSI_CYP_CCG4.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) line 17 : #if SUPPORT_UCSI

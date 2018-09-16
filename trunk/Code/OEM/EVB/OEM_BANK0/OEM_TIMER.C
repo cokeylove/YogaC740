@@ -66,10 +66,12 @@ void SystemAutoOn(void)
 			{
 				SET_MASK(SysStatus,ERR_ShuntDownFlag);
 				ProcessSID(BOOTFAIL_ID);
+#if !EN_PwrSeqTest        
 				AutoTimer = 0x83;
 				PWSeqStep = 1;
 				PowSeqDelay = 0x00;
 				SysPowState=SYSTEM_S0_S5;
+#endif        
 			}
 		}
 	}

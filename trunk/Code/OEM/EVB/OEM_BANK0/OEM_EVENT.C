@@ -19,51 +19,31 @@ void NullEvent(void)
 
 }
 
-//-----------------------------------------------------------------------------
-// Adapter in function
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: AdapterIn       
+*
+* Descriptoin: Adapter in function.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void AdapterIn(void)
 {
-	//DPWROK_EC_HI();
-	/*ANGELAS031 remove start
-	if(SystemIsS5)
-	{
-		//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-		if(NTC_V1>682)
-		{
-			GPCRF0 = OUTPUT; 
-			SET_MASK(GPDRF,BIT(0));
-			NTC_FLAG=1; //ANGELAS007:Optimize power on sequence.
-		}
-		else
-		//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
-		{ //ANGELAS007:Optimize power on sequence.
-			GPCRF0 = INPUT; //ANGELAS020
-			EC_ON_HI();
-			NTC_FLAG=0; //ANGELAS007:Optimize power on sequence.
-		} //ANGELAS007:Optimize power on sequence.
-		Delay1MS(1);
-		PM_PWRBTN_HI();
-		Delay1MS(10);
-		PCH_PWR_EN_ON();
-		Delay1MS(30);
-		RSMRST_HI();
-		//Delay1MS(20);
-	}
-	*///ANGELAS031 remove end
-
 	PECI_SETPL2Watts(2);
 	
-	if ( IS_MASK_CLEAR(SYS_STATUS,AC_ADP) )
-	{ 
-		//cBATTThrottling = 0;  //MEILING048:remove.//MEILING051:-Add cpu P_STATE function.
-	}
 	
 	AC_PRESENT_HI(); 
-	ACInOutIntEnable(); //MEILING039:add.
+	ACInOutIntEnable(); 
 	Unlock_ShipMode();  
 	SET_MASK(SYS_STATUS,AC_ADP);	//set AC flag
-	if( IS_MASK_SET(nBatteryStatus1, ENEXIST) )  //G10:add check battery state
+	if( IS_MASK_SET(nBatteryStatus1, ENEXIST) )  //add check battery state
 	{
 		Chk_Battery_Full();
 	}
@@ -74,11 +54,11 @@ void AdapterIn(void)
 		PWM_BEEP = 0x7F;			// Out beep
 		PWM_LEDBeep_CNT = 0x0A;		// 50ms*10
 	}
-	//SetACIN_Int(); //ANGELAS079:remove
-	InitChargerIC();//ANGELAS016:Change charge IC option setting.
+
+	InitChargerIC();//Change charge IC option setting.
 	BatSMbusFailCount = 0;
 	nBattErrorCnt = 0;
-	//Mos: Set 0x12h and 0x3Fh before set ChargeCurrent and ChargeVoltage.
+	// Set 0x12h and 0x3Fh before set ChargeCurrent and ChargeVoltage.
 	CHGIC_ptr = 1;
 	WriteSmartChgIC();
 	WriteSmartChgIC();
@@ -86,38 +66,38 @@ void AdapterIn(void)
 	ReadSmartChgIC();
     if (IS_MASK_SET(SYS_STATUS,AC_ADP)) 
     {
-	    //ADAPTERIDON_LOW(); //MEILING001:remove.
-	    AdapterIDOn_Flag = 0x01; //MEILING001:add.
+	    AdapterIDOn_Flag = 0x01; 
         ADPIDON10MS_NUM =0x0A; //change 0x05 to 0x0A to avoid read dirty data.
     }    
-//   SetPowerBatteryparameter(); 
-//   ADAPTERIDON_HI();  
 	if(SystemIsS4||SystemIsS5||SystemIsDSX)
 	{
 		S4S5_KeyWake(2);//HEGANGS021:one key wake
 	}
-}
 
-//-----------------------------------------------------------------------------
-// Adapter out function
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: AdapterOut       
+*
+* Descriptoin: Adapter out function.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void AdapterOut(void)
 {
-	//ADAPTERIDON_HI();//when remove AC do not read adapter ID. //MEILING001:remove.
-	AdapterIDOn_Flag = 0x00;//MEILING001:add.
-	AdapterID=0x00;//72JERRY069
-	TYPEC_Adapter_Watts=0x00;//72JERRY069
-	//MEILING039:S- remove.
-	/*if(SystemIsS0)	//ANGELAS095:Modify PROCHOT# unplug AC under S5.
-	{
-		H_PROCHOT_ON(); //ANGELAS026:Modify PROCHOT# function.
-		ProchotONCnt = 2; //MEILING033:add(Prochot on 2S when AC out).
-	}*/
-	//MEILING039:E-.
-	
-	BATT_LEN_OFF();//JERRYCRZ030 remove AC_OFF function follow charge IC bq24780.
+	AdapterIDOn_Flag = 0x00;
+	AdapterID=0x00;
+	TYPEC_Adapter_Watts=0x00;
+		
+	BATT_LEN_OFF();  //remove AC_OFF function follow charge IC bq24780.
 	AC_PRESENT_LOW(); 
-	ACInOutIntEnable(); //MEILING054:add.
+	ACInOutIntEnable(); 
     CLEAR_MASK(SYS_STATUS,b4IllegalAdp);
 	CLEAR_MASK(SYS_STATUS,b5UnSuitAdpPow);
 	SetVGA_AC_DET();
@@ -127,12 +107,8 @@ void AdapterOut(void)
 	Chk_Battery_Full();
    	ECSMI_SCIEvent(ACPI_ACOUT_SCI);
 
-	//Mos: Set P-State highest to force that ChkBattery_OCP will decress P-State step by step.
+	//Set P-State highest to force that ChkBattery_OCP will decress P-State step by step.
 	SET_MASK(BatteryAlarm,BATOCP);
-    // if(SMB_BCNT==0x55)  
-	//cBATTThrottling = 0x0F;
-	//cBATTThrottling = PSTATE_MAXStep;//0ptimize CPU P_state (change 16 step to 8 step).  //MEILING048:remove.//MEILING051:-Add cpu P_STATE function.
-	//Mos: Send QEvent to Bios
 	ThrottlingControl(); 
 
    	if( SystemIsS0 )
@@ -148,24 +124,36 @@ void AdapterOut(void)
 		    ECSMI_SCIEvent(SDV_VPC_notify);
         }
 	}
-//72JERRY050:S+Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
+//Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
 	if((SystemIsS3)&&(!Read_LID_SW_IN()))
-		{USB_ON_INPUT;
-		}
-		//72JERRY050:E+Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
+	{
+		USB_ON_INPUT;
+	}
+		//Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
 	nAvgCurrentL = 0;
 	nAvgCurrentH = 0;
 	Bat0x0BFakeCnt = 60;
-	//CLR_MASK(LENOVOPMFW,BATTERY_CYCLE);
     DSxPowState = SYSTEM_S3S4;
     ADPIDON10MS_NUM=0xFF; 
 	InitChargerIC();
-	//SetACIN_Int();
 }
 
-//-----------------------------------------------------------------------------
-//power button was pressed
-//-----------------------------------------------------------------------------
+
+/*
+*******************************************************************************
+* Function name: PSWPressed       
+*
+* Descriptoin: power button was pressed.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void PSWPressed(void)
 {
 	if ( IS_MASK_SET(cCmd, b6TestBtnEn) )
@@ -174,56 +162,29 @@ void PSWPressed(void)
 		Buffer_Key(0x25);		//
 		F_Service_SEND = 1;
 	}
-	/*// ANGELAS007: s-Optimize power on sequence.
-	//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-	if(NTC_V1>682)
-	{
-		GPCRF0 = OUTPUT;
-		SET_MASK(GPDRF,BIT(0));
-	}
-	else
-	//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
 
-	//EC_ON_HI();
-	//EC_ON2_HI();
-	*///ANGELAS007: e-Optimize power on sequence.
 	ECSleepCount = 3;
 
-	//Mos: Clear PswPressedCounter
+	//Clear PswPressedCounter
 	CountSecAfterPswPressed = 0;
-	/*//ANGELAS007:s-Optimize power on sequence.
-	//JERRYCRZ022:+ S Filter press power button over 8s can auto power on.
-	#if !EN_PwrSeqTest
-	if (LID_readytime !=0)
-	{
-		//SET_MASK(SysStatus2,PWRBTN_press_retry);  
-		return;
-	}
-	 #endif
-	//JERRYCRZ022:+ E Filter press power button over 8s can auto power on.	
-	*///ANGELAS007:e-Optimize power on sequence.
-	CLEAR_MASK(SysStatus2,PWRBTN_press_retry);
-	/*ANGELAS036: remove start
-	if(!Read_LID_SW_IN())
-	{
-		DSxPowState = SYSTEM_S3S4; //ANGELAS031
-		return;
-	}
-  	//LID have not ready, it will influence power button on, so remove it temporary
-	*///ANGELAS036: remove end
 
-	//LMLKBL0008:S+ Add ignore power button press when lid close.
+	CLEAR_MASK(SysStatus2,PWRBTN_press_retry);
+
+	//Add ignore power button press when lid close.
 	if(!Read_LID_SW_IN())
-	{ return; }
-	//LMLKBL0008:E+.
+	{ 
+		return; 
+	}
+	//
 	
     switch (SysPowState)
     {
     case SYSTEM_S4 :
     	break;
-	case SYSTEM_DSX://72JERRY006: Add DC S5 states.
+        
+    case SYSTEM_DSX:
     case SYSTEM_S5 :
-		//ANGELAS111:S+Modify code for befor power on check Battery RSOC in DC mode.
+		//S+Modify code for befor power on check Battery RSOC in DC mode.
 		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
 		{			 	
 			BatSMbusFailCount = 0;
@@ -239,7 +200,7 @@ void PSWPressed(void)
 					else
 			 		{
 						BatSMbusFailCount=0;
-			            break; //JIMGBRW022
+			            break; 
 					}
 				}
 			 				  			 			 
@@ -247,32 +208,14 @@ void PSWPressed(void)
 			if(BatSMbusFailCount>=4) 
 				break;
 			
-			if (BAT1PERCL < 0x02)  //T064: change 0x05 to 0x00 G23:modify battery capacity point from 0 to 1 for fliker.
+			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
 			{
 				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
 				LOWBATT_3TIMES = 100;		// set 5 sec
 				break;
 			}
 		}
-		//ANGELAS111:E+Modify code for befor power on check Battery RSOC in DC mode.
-		//if ((Battdata_ready != 1)&&(!Read_AC_IN()||Read_ACOFF()))
-		/*if ((Battdata_ready != 1)&&(!Read_AC_IN()))
-		{
-			FirstGetBatData();
-			if (Battdata_ready != 1)
-			{
-				Battdata_ready = 0xFF;
-				break;
-			}
-		}
-		//if ((BAT1PERCL < 0x02)&&(!Read_AC_IN()||Read_ACOFF()))  //change 0x05 to 0x00 G23:modify battery capacity point from 0 to 1 for fliker.
-		if ((BAT1PERCL < 0x02)&&(!Read_AC_IN()))  //change 0x05 to 0x00 G23:modify battery capacity point from 0 to 1 for fliker.
-		{
-			SET_MASK(nBatteryStatL,CMBS_LOWBATT);
-			LOWBATT_3TIMES = 100;		// set 5 se
-			break;
-		}*///ANGELAS111:-Modify code for befor power on check Battery RSOC in DC mode.
-		//if ((!Read_AC_IN()||Read_ACOFF()))			// if DC mode
+
 		if ((!Read_AC_IN()))			// if DC mode
 		{
 			BatSMbusFailCount = 0;
@@ -289,7 +232,6 @@ void PSWPressed(void)
         }
 		uNovoVPCCount = 0;
 		ONEKEY_FLAG = 0;//HEGANGS021:one key wake
-	//	ONEKEY_TEMP_FLAG = 0;
 		PWSeqStep = 1;
         PowSeqDelay = 0x00;
         RamDebug(0x51);
@@ -298,12 +240,12 @@ void PSWPressed(void)
 
     case SYSTEM_S3 :
 	case SYSTEM_S0 :
-		RamDebug(0xF4);//test 
+		RamDebug(0xF4);
 		if (IS_MASK_CLEAR(pProject4,pPWSWdisable)) //HEGANGS028:Disable POWERSW when flash bios
 		{
 			PM_PWRBTN_LOW();
 		}   
-		SET_MASK(SysStatus2,PWRBTN_press_retry);//72JERRY064:Modify press button 1s enter S3/S4/shutdown follow UI spec.
+		SET_MASK(SysStatus2,PWRBTN_press_retry);//Modify press button 1s enter S3/S4/shutdown follow UI spec.
 		
 		break;
 
@@ -312,9 +254,21 @@ void PSWPressed(void)
     }
 }
 
-//-----------------------------------------------------------------------------
-//power button was released
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: PSWReleased       
+*
+* Descriptoin: power button was released.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void PSWReleased(void)
 {
 	CLEAR_MASK(F2_Pressed, F12Flag);// HEGANGS034:Modify onekey battery function
@@ -336,16 +290,14 @@ void PSWReleased(void)
 	{
 		CLEAR_MASK(SysStatus2, b3EC8S_Reset);
 	}
-      PWRBTN_press_debounce=0;//72JERRY064:Modify press button 1s enter S3/S4/shutdown follow UI spec.
-	  CLEAR_MASK(SysStatus2,PWRBTN_press_retry);   //72JERRY064:Modify press button 1s enter S3/S4/shutdown follow UI spec.           
-//	if(DSxPowState == SYSTEM_S3S4) //LMLNANO016:add.
-//	{
-//		PM_PWRBTN_HI(); //LMLNANO014:add. 
-//	}
-    if(!Read_LID_SW_IN())
-	{ return; }
+      PWRBTN_press_debounce=0;//Modify press button 1s enter S3/S4/shutdown follow UI spec.
+	  CLEAR_MASK(SysStatus2,PWRBTN_press_retry);   //Modify press button 1s enter S3/S4/shutdown follow UI spec.           
 
-    //PM_PWRBTN_HI();   //LMLNANO014:remove.
+    if(!Read_LID_SW_IN())
+	{ 
+		return; 
+	}
+
 
 	PSW_COUNTER = T_PSWOFF;	// initialize counter
 	switch (SysPowState)
@@ -359,48 +311,56 @@ void PSWReleased(void)
 	case SYSTEM_S3 :
 	case SYSTEM_S0 :
 		PM_PWRBTN_HI();
+		//ECQEvent(ACPI_PWRBTN_SCI); //Send POWER Button Low Event when Release Power button
 		break;
 
 	default :
 		break;
 	}
 }
-//-----------------------------------------------------------------------------
-//power button was overrided
-//-----------------------------------------------------------------------------
+
+/*
+*******************************************************************************
+* Function name: PSWOverrided       
+*
+* Descriptoin: power button was overrided.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void PSWOverrided(void)
 {
 	if(!Read_LID_SW_IN())
 	{ return; }
     if (Read_EC_PWRBTN()&&Read_EC_NOVO())
-    { return; }
-	PowerBottonEvent();//72JERRY064:Modify press button 1s enter S3/S4/shutdown follow UI spec.
-	//LMLKBL0011:S- remove press power button 4s force shutdown function.
-	/*if (SystemIsS0 || SystemIsS3)
-	{
-		if (Read_EC_PWRBTN())
-		{
-			PSW_COUNTER--;
-			if (PSW_COUNTER == 0)
-			{
-				PWSeqStep = 1;
-				PowSeqDelay = 0x00;
-                RamDebug(0x0C);
-				SysPowState=SYSTEM_S0_S5;
-			}
-		}
-		else
-		{
-			PSW_COUNTER = T_PSWOFF;		// initialize counter
-		}
-	}*/
-	//LMLKBL0011:E-.
+    { 
+		return; 
+	}
+	PowerBottonEvent();//Modify press button 1s enter S3/S4/shutdown follow UI spec.
 }
 
 
-//-----------------------------------------------------------------------------
-//NOVO button was pressed
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: NOVOPressed       
+*
+* Descriptoin: NOVO button was pressed.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void NOVOPressed(void)
 {
 	if ( IS_MASK_SET(cCmd, b6TestBtnEn) )
@@ -409,45 +369,23 @@ void NOVOPressed(void)
 		Buffer_Key(0x49);	// page down make
 		F_Service_SEND = 1;
 	}
-	/*//ANGELAS007:s-Optimize power on sequence.
-	//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-	if(NTC_V1>682)
-	{
-		GPCRF0 = OUTPUT;
-		SET_MASK(GPDRF,BIT(0));
-	}
-	else
-	//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
 
-	//EC_ON_HI();
-	//EC_ON2_HI();
-	*///ANGELAS007:e-Optimize power on sequence.
 	ECSleepCount = 3;
-	/*//ANGELAS007:s-Optimize power on sequence.
-	#if !EN_PwrSeqTest
-	if (LID_readytime !=0)
-	{
-		//SET_MASK(SysStatus2,b1NOVOBTN_retry); 
-		return;
-	}
- 	#endif
- 	*///ANGELAS007:e-Optimize power on sequence.
+
 	CLEAR_MASK(SysStatus2,b1NOVOBTN_retry);
 
     if(!Read_LID_SW_IN())
 	{ return; }
 
-	//Mos: Clear NOVOPressedCounter
+	//Clear NOVOPressedCounter
 	CountSecAfterNOVOPressed = 0;
 
 	switch (SysPowState)
     {
 	case SYSTEM_S4 :
-		//break;
-		case SYSTEM_DSX://72JERRY006: Add DC S5 states.
     case SYSTEM_S5 :
-		// Battery capacity > 5% or not
-		//ANGELAS111:S+Modify code for befor power on check Battery RSOC in DC mode.
+    case SYSTEM_DSX:
+		//Modify code for befor power on check Battery RSOC in DC mode.
 		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
 		{			 	
 			BatSMbusFailCount = 0;
@@ -471,17 +409,16 @@ void NOVOPressed(void)
 			if(BatSMbusFailCount>=4) 
 			 	break;
 			
-			if (BAT1PERCL < 0x02)  //T064: change 0x05 to 0x00 G23:modify battery capacity point from 0 to 1 for fliker.
+			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
 			{
 				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
 				LOWBATT_3TIMES = 100;		// set 5 sec
 				break;
 			}
 		}
-		//ANGELAS111:E+Modify code for befor power on check Battery RSOC in DC mode.
+		//Modify code for befor power on check Battery RSOC in DC mode.
 		if(LOWBATT_3TIMES == 0)
         {
-			//EEPROM_PwrSts = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07),0xDF);
           	// NOVO button should be no function when resuming from S4
 	        if( (EEPROM_PwrSts & 0x10) == 0 )
 	        {
@@ -493,7 +430,7 @@ void NOVOPressed(void)
 			uNovoVPCCount = 1;
 			PWSeqStep = 1;
 			PowSeqDelay = 0x00;
-            RamDebug(0x52);// T045+
+            RamDebug(0x52);
 			SysPowState=SYSTEM_S5_S0;
 		}
         break;
@@ -508,18 +445,29 @@ void NOVOPressed(void)
 			uNovoVPCCount++;
 			if( uNovoVPCCount > (10+1) )
 				{ uNovoVPCCount--; }
-			//uNovoVPCCount=0;
-			//PM_PWRBTN_LOW();
+
 		}
-		//break;
     default :
         break;
     }
 }
 
-//-----------------------------------------------------------------------------
-//NOVO button was released
-//-----------------------------------------------------------------------------
+
+/*
+*******************************************************************************
+* Function name: NOVOReleased       
+*
+* Descriptoin: NOVO button was released.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void NOVOReleased(void)
 {
 	NOVO_COUNTER = T_PSWOFF;//Hang check
@@ -533,20 +481,18 @@ void NOVOReleased(void)
 		F_Service_SEND = 1;
 	}
 
-	//CLR_MASK(SysStatus2,b2NOVOKey_Press);		// Release NOVO key.   
     if(!Read_LID_SW_IN())
 	{ return; }
 
 	switch (SysPowState)
 	{
 	case SYSTEM_S4 :
-		//break;
+
 	case SYSTEM_S5 :
-		//break;
+
 	case SYSTEM_S3 :
 		break;
 	case SYSTEM_S0 :
-		//PM_PWRBTN_HI();
 		if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
 		{
 			if( uNovoVPCCount > 10 )		// Delay 100 mSec.
@@ -557,15 +503,26 @@ void NOVOReleased(void)
 		    uVPCeventSource2 = 0;
 			ECQEvent(SDV_VPC_notify);		// 0x44 for Levono used.
 		}
-		//break;
 	default :
 		break;
 	}
 }
 
-//-----------------------------------------------------------------------------
-//power button was overrided
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: NOVOOverrided       
+*
+* Descriptoin: NOVO button was overrided.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void NOVOOverrided(void)
 {
 	//HEGANGS022:Add SMI hang check function
@@ -583,13 +540,24 @@ void NOVOOverrided(void)
 //HEGANGS022:Add SMI hang check function
 }
 
-//-----------------------------------------------------------------------------
-//LAN_WAKE was low
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: LanWakeLow       
+*
+* Descriptoin: LAN_WAKE was low.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void LanWakeLow(void)
 {
 	#if	Support_EC_LANWake
-	//if (uReserve07.fbit.nPmeWakeEN==0) return;
 
 	switch (SysPowState)
 	{
@@ -597,9 +565,6 @@ void LanWakeLow(void)
 		break;
 
 	case SYSTEM_S5 :
-		//PWSeqStep = 1;
-		//PowSeqDelay = 0x00;
-		//SysPowState=SYSTEM_S5_S0;
 		break;
 
 	case SYSTEM_S3 :
@@ -628,13 +593,24 @@ void LanWakeLow(void)
 	#endif	// Support_EC_LANWake
 }
 
-//-----------------------------------------------------------------------------
-//LAN_WAKE was hi
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: LanWakeHi       
+*
+* Descriptoin: LAN_WAKE was Hi.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void LanWakeHi(void)
 {
 	#if	Support_EC_LANWake
-	//if (uReserve07.fbit.nPmeWakeEN==0) return;
 
 	switch (SysPowState)
 	{
@@ -668,19 +644,20 @@ void LanWakeHi(void)
 //-----------------------------------------------------------------------------
 // VoiceWakeSystem(): When mic input voice string match "xxx", Realtek chip 
 // notify EC and EC wake up system from s3/S4/S5 except modern standby(s3).
-// 72JERRY012£ºVoice wake system event function
+//Voice wake system event function
 //-----------------------------------------------------------------------------
 void VoiceWakeSystem(void)
 {
  if(cDev.fbit.cD_WovMFGtest==1)//enable wov MFG test
- 	{return;
+ 	{
+		return;
  	}
- 	//72JERRY065:Add CMD 0x59 test voice wake up for MFG.
+ 	//:Add CMD 0x59 test voice wake up for MFG.
 	switch(SysPowState)
 	{
 	  case SYSTEM_S5:
-	  case SYSTEM_DSX://72JERRY029: Modify Voice Wake system method,Add DC S5 wake up status.
-	  //72JERRY076:s+Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
+	  case SYSTEM_DSX:// Modify Voice Wake system method,Add DC S5 wake up status.
+	  //Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
 	  if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
 		{			 	
 			BatSMbusFailCount = 0;
@@ -734,48 +711,47 @@ void VoiceWakeSystem(void)
 	}
 }
 
-//-----------------------------------------------------------------------------
-// battery 1 in function
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: Battery1In       
+*
+* Descriptoin: battery 1 in function.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void Battery1In(void)
 {
-	/*ANGELAS038: remove start
-	//ANGELAS020:S+
-	if(IS_MASK_CLEAR(SYS_STATUS,AC_ADP) &&(!(NTC_V1>682)))
-	{
-		GPCRF0 = INPUT; 
-	}
-	//ANGELAS020:E+
-	//ANGELAS023:S+Modify UMA LED function.
-	if((SystemIsS5) && (IS_MASK_CLEAR(SYS_STATUS,AC_ADP)))
-	{
-		if(NTC_V1>682)
-			NTC_FLAG=1; 
-		else
-			NTC_FLAG=0;
-	}
-	//ANGELAS023:E+Modify UMA LED function.
-	*///ANGELAS038:remove end
 	SET_MASK(SEL_STATE0,PRESENT_A);  	//set battery flag
 	SET_MASK(nBatteryStatus1,ENEXIST);  //set battery flag
 	FirstGetBatData();					//first get battery data
    	ECSMI_SCIEvent(ACPI_BAT1IN_SCI);
 	Service_Auth_Step = 1;				// start SHA1
- 	/*    
-       if (IS_MASK_SET(SYS_STATUS,AC_ADP)) 
-       {
-	    ADAPTERIDON_LOW();
-       }
- 	*/           
- 	//SetPowerBatteryparameter(); 
-  	//ADAPTERIDON_HI();   
-	//Mos: Clean Get_Batt_debounce_count to make it check battery data stable or not?
+	//Clean Get_Batt_debounce_count to make it check battery data stable or not?
 	Get_Batt_debounce_count = 0;
 }
 
-//-----------------------------------------------------------------------------
-// battery 1 out function
-//-----------------------------------------------------------------------------
+/*
+*******************************************************************************
+* Function name: Battery1Out       
+*
+* Descriptoin: battery 1 out function.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void Battery1Out(void)
 {
 	PORT_BYTE_PNTR BAT1_pntr;
@@ -816,20 +792,51 @@ void Battery1Out(void)
 	CellCount=0; //MEILING017: add
 	ECSMI_SCIEvent(ACPI_BAT1IN_SCI);
 }
-//change LID implement method.
+
+
+/*
+*******************************************************************************
+* Function name: LID_Pressed       
+*
+* Descriptoin: Lid pressed.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void LID_Pressed(void)
 {
     CLEAR_MASK(SWI_EVENT,LID);
 	ECQEvent(SCI_LID_Close);
 	RamDebug(0x15);
-	//EC_TS_ON_LOW();//Add touch panel control signal.  //MEILING001:add.
-	//72JERRY050:S+Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
+	//Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
 	if((SystemIsS3)&&(!Read_AC_IN()))
-		{USB_ON_INPUT;
-		}
-	//72JERRY050:E+Modify the USB mouse can wake up from S3 at DC mode when the LID closed,not follow UI SPEC.
+	{
+		USB_ON_INPUT;
+	}
 	
 }
+
+/*
+*******************************************************************************
+* Function name: LID_Released       
+*
+* Descriptoin: Lid released.
+*
+* Invoked by: EventManager()
+*
+* TimeDiv:NA
+*
+* Arguments: NA   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 void LID_Released(void)
 {
 	SET_MASK(SWI_EVENT,LID);
@@ -839,10 +846,9 @@ void LID_Released(void)
 	}
     ECQEvent(SCI_LID_Open);
 	RamDebug(0x16);
-	//EC_TS_ON_HI();//Add touch panel control signal.  //MEILING001:add.
 }
 
-//MARTINM026:add start
+
 void LID_PAD_Pressed(void)
 {
 	 SET_MASK(SYS_STATUS2,PadLidClose);
@@ -926,7 +932,7 @@ void LID_PAD_Pressed(void)
 
 void LID_PAD_Released(void)
 {
-    CLEAR_MASK(SYS_STATUS2,PadLidClose);//MARTINM037:Add
+    CLEAR_MASK(SYS_STATUS2,PadLidClose);
 	RamDebug(0x94);
 	if(SystemIsS0)
     {
@@ -983,7 +989,6 @@ void LID_PAD_Released(void)
 		}		
 }
 
-//change LID implement method.
 // ----------------------------------------------------------------------------
 // Device insert/remove debounce routine.
 // input:   device_id
@@ -1004,40 +1009,33 @@ const struct sDebounce code Debounce_TBL[] =
 	{&EVT_STATUS1	,DummyFlag		  ,&DEBOUNCE_CONT10  ,T_EXTEVT_DEBOUNCE	 	,NullEvent	    ,NullEvent		,NullEvent	    },
 };
 
-// ----------------------------------------------------------------------------
-// EventManager function
-//
-// Note :
-//	If want to call the function of status not change, please set nochange_func = 1
-// ----------------------------------------------------------------------------
+
+/*
+*******************************************************************************
+* Function name: EventManager       
+*
+* Descriptoin: Event manager.
+*              If want to call the function of status not change, please set nochange_func = 1
+*
+* Invoked by: Hook_Timer1msEvent()
+*
+* TimeDiv:1ms
+*
+* Arguments: EventId   
+*
+* Return Values: NA
+*******************************************************************************
+*/
 #pragma OT(8, SPEED)
 void EventManager(BYTE device_id)
 {
 	BYTE new_state,old_state;
 	BYTE device_flag;
-	//BYTE do_nochange_func = 0x00;
 	switch(device_id)
 	{
 	case 0 :
-    	if (Read_EC_PWRBTN()&&Read_EC_NOVO()) 	return;  //ANGELAS099:Optimize power switch and NOVO control method.//ANGELAS101:Optimize ANGELAS099 change break to return.
+    	if (Read_EC_PWRBTN()&&Read_EC_NOVO()) 	return;  
         new_state = Read_EC_PWRBTN();                            
-		/*  
-		if ( IS_MASK_CLEAR(SysStatus2,b2NOVOKey_Press) )
-		{
-			if (((Battdata_ready == 0xFF)&&(!Read_AC_IN()||Read_ACOFF()))||
-				(IS_MASK_SET(SysStatus2,PWRBTN_press_retry)))
-			{
-				//new_state = !Read_EC_PWRBTN();       
-				//old_state = Read_EC_PWRBTN();          
-				new_state = Read_EC_PWRBTN();      
-				old_state = !Read_EC_PWRBTN();          			
-			}
-			else
-			{ new_state = Read_EC_PWRBTN(); }
-		}
-		else
-		{ new_state = old_state = 0; }
-		*/	
 		break;
 
 	case 1 :
@@ -1045,26 +1043,10 @@ void EventManager(BYTE device_id)
 		break;
 
 	case 2 :
-		/*if((BATTEMP<0x390)) //martin0216 0x390 -> 0x390*3/0x400 -> 2.67
-		{ new_state = 1; }
-		else
-		{ new_state = 0; }*/
-		new_state=Read_BAT_IN();//G03:ADD battery detect
+		new_state=Read_BAT_IN();//ADD battery detect
 		break;
 
-	case 3 :
-		/*             
-        	if ( Read_EC_NOVO() )                                                                      
- 		{ SET_MASK(SysStatus2,b2NOVOKey_Press); }	// Press NOVO key.    
-
-		if ( IS_MASK_SET(SysStatus2,b1NOVOBTN_retry) )
-		{
-			new_state = !Read_EC_NOVO();
-			old_state = Read_EC_NOVO();
-		}
-		else
-		{ new_state = Read_EC_NOVO(); }
-		*/    	
+	case 3 :	
         new_state = Read_EC_NOVO(); 
 		break;
 
@@ -1077,10 +1059,9 @@ void EventManager(BYTE device_id)
 		break;
 
 	case 5 :
-		//achange LID implement method.
 		if(IS_MASK_CLEAR(SysStatus,LidKBIgnore)) 
 		{
-			#if LID_OnlyQEvent_Support //add judge
+			#if LID_OnlyQEvent_Support 
 			new_state = !Read_LID_SW_IN(); //Open: LID_SW_IN: high else: low
 			#else
 			new_state = 0x00;
@@ -1091,7 +1072,6 @@ void EventManager(BYTE device_id)
 			new_state = 0x00;
 		}
 		break;
-		// change LID implement method.
 	case 6 :
 		
 		new_state = !Read_LID_PAD(); //Open: LID_SW_IN: high else: low
@@ -1124,11 +1104,7 @@ void EventManager(BYTE device_id)
 	{
 		if((*Tmp_XPntr1) == 0x00)
 		{
-			//LMLNANO008:S+ modify power button debunce time in S0.
-			//if((device_id==0) && (SystemIsS0) && (IS_MASK_CLEAR(cCmd, b6TestBtnEn))) //LMLNANO026:add solution for P/L test Power Button.//72JERRY042:Modify press power button debounce in SO follow UI spec.
-				//(*Tmp_XPntr1) = T_PSW_DEBOUNCE_S0;//72JERRY042:Modify press power button debounce in SO follow UI spec.
-			//else//72JERRY042:Modify press power button debounce in SO follow UI spec.
-			//LMLNANO008:E+.
+			//modify power button debunce time in S0.
 			(*Tmp_XPntr1) = Debounce_TBL[device_id].Time;
 		}
 		else
@@ -1157,7 +1133,7 @@ void EventManager(BYTE device_id)
 
 	(Debounce_TBL[device_id].nochange)();
 }
-//72JERRY064:s+Modify press button 1s enter S3/S4/shutdown follow UI spec.
+//Modify press button 1s enter S3/S4/shutdown follow UI spec.
 void PowerBottonEvent(void)
 {
 		 if(IS_MASK_SET(SysStatus2, PWRBTN_press_retry))
@@ -1170,5 +1146,4 @@ void PowerBottonEvent(void)
 		 		}
 		 	}
 }
-//72JERRY064:e+Modify press button 1s enter S3/S4/shutdown follow UI spec.
 
