@@ -20,7 +20,7 @@
 #include <OEM_LED.H>
 #include <OEM_FAN.H>
 #include <OEM_BATTERY.H>
-#include <OEM_UCSI_CYP_CCG4.H>//72JERRY060
+#include <OEM_UCSI_CYP_CCG4.H>
 #include <OEM_MEMORY.H>
 #include <OEM_POWER.H>
 #include <OEM_EVENT.H>
@@ -51,20 +51,18 @@
 #include <OEM_ASM.H>
 #include <OEM_Debug.H>
 #include <OEM_CYPRESS.H>
-#include <OEM_AOU.H>////72JERRY008:
+#include <OEM_AOU.H>
 #include <OEM_SHA1.H>
 #include <stdlib.h>
-#include <OEM_EDP.H>	// CMW 20121203
+#include <OEM_EDP.H>	
 //----------------------------------------------------------------------------
 // OEM Bank1
 //----------------------------------------------------------------------------
 #include <OEM_BANK1_Func.H>
-#include <SMSc_UCS1002.H>
 //----------------------------------------------------------------------------
 // OEM Bank2
 //----------------------------------------------------------------------------
 #include <OEM_BANK2_Func.H>
-#include <UCS1002_Profiles.H>
 //----------------------------------------------------------------------------
 // OEM Ban3
 //----------------------------------------------------------------------------

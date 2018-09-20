@@ -36,7 +36,6 @@
 #define	SYSTEM_EC_WDTRST	0xFF
 #define SYSTEM_S3_DS3		0x60
 #define SYSTEM_DS3			0x63
-#define SYSTEM_DSxOK		0x64
 #define SYSTEM_DS3_S3		0x65
 #define	SYSTEM_S3S4			0x34
 

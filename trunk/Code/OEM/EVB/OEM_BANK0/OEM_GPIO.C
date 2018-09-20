@@ -17,16 +17,13 @@ const sInitGPIOReg code asInitGPIOReg[] =
 {
  	{ &GCR,		GCR_Init		},	//
  	{ &GCR2,	GCR2_Init		},	//
-// 	{ &GCR3,	GCR3_Init		},	//72JERRY021: Modify clkrun signal setting follow quiet mode.
+// 	{ &GCR3,	GCR3_Init		},	//
  	{ &GCR10,	GCR10_Init		},
  //	{ &GPOTE,	GPOTE_Init		},
-// 	{ &GPOTD,	GPOTD_Init		}, //BROOKEW005: start configure GPIO 1.8V and Open drain
- 	{ &GPOTH,	GPOTH_Init		}, //72JERRY021: Modify clkrun signal setting follow quiet mode.
+// 	{ &GPOTD,	GPOTD_Init		}, //
+ 	{ &GPOTH,	GPOTH_Init		}, 
  	
- 	
- 	//{ &GPOTA,	0x06			},	// msmart  /AC  //cwy
- //	{ &GPOTA,	GPOTA_Init			},	//ANGELAS011 :Set  EC_VCCST_PWRGD pin is OD.//72JERRY037: Modify power sequence and GPIO setting follow EE.
-// 	{ &GPOTE,	GPOTE_Init			},	//MEILING039 :Set  GPU_PROCHOT_ON# pin is OD.
+ //	{ &GPOTA,	GPOTA_Init		},	
  	
 
 	{ &GPDRA,	PortA_Init		},	// Port A Data port Init

@@ -249,7 +249,9 @@ void Hook_60Port(BYTE KBHICmd)
         USB_ON_INPUT;
         USB_Delay=KBHIData;
         if(USB_Delay==0)
-        	{USB_Delay=0x0A;}
+        {
+            USB_Delay=0x0A;
+        }
 		break;
 	case 0xB3:
 		if (KBHIStep == 0x01)
@@ -524,15 +526,6 @@ void Cmd_45(BYTE nPort, BYTE sCount)
 {
 	switch( sCount )
 	{
-	
-	#if Lenovo_Brightness
-	case 0x10://BIOS confirm Panel ok
-		uReserve07.fbit.uE_PanelOK = 1;
-		break;
-	case 0x11://BIOS confirm Panel fail
-		uReserve07.fbit.uE_PanelOK = 0;
-		break;
-	#endif	// Lenovo_Brightness
 
 	case 0x20:	//Enable power switch WDT function
 		  CLEAR_MASK(pProject4,pPWSWdisable); //HEGANGS028:Disable POWERSW when flash bios
@@ -588,7 +581,7 @@ void Cmd_45(BYTE nPort, BYTE sCount)
 			CLEAR_MASK(LENOVOPMFW_Temp,EEPROM_Token);
 		}
 		break;
-	#endif                        //Support_USB_Charge
+	#endif                 
 	case 0x90:
 		CURRENT_STATUS &= 0x3F;
 		CURRENT_STATUS |= 0x40;				// For BIOS set Legacy HDD.
@@ -1022,13 +1015,7 @@ void Cmd_55(BYTE nData)
 
 void Cmd_58(BYTE sCount)
 {
-	#if EC_Brightness_Ctrl
-	if( sCount >= BriTable_MAX )
-	{ cPanelId = BriTable_MAX - 1; }	// Set max. level.
-	else
-	{ cPanelId = sCount; }
-	Init_LCD_Freq();
-	#endif	// EC_Brightness_Ctrl
+	cPanelId = sCount;
 }
 
 void Cmd_59(BYTE nPort, BYTE nData, BYTE nData2)
@@ -1472,7 +1459,6 @@ void Cmd_B2(BYTE nPort,BYTE nData)
 	  MultiB2Port(nPort, P80CMOS[4]);
 	  MultiB2Port(nPort, P80CMOS[5]);
 	  Data2PortDirect(nPort, P80CMOS[6]);   //MultiB2Port to Data2PortDirect
-	  //MultiB2Port(nPort, P80Index);  
 	  CLR_MASK(P80CMOSSts,P80CMOSDis);
 	  CLR_MASK(ACPI_HOTKEY, b6Cmd_NoShut);//When battery mode press FN+D,do not cut power only for debug.
 	  break;

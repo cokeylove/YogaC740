@@ -497,7 +497,6 @@ extern XBYTE	pDevStus;					//_at_ OEMRAM2+0x03 203
 //ANGELAS033:Add end
 //ANGELAS107:E-Add code for GBSI function.
 extern XBYTE  batteryChemistry[4];          //_at_ OEMRAM2+06 //ANGELAS107:Add code for GBSI function.
-extern XBYTE		pOneKeyAPPStatus;		//_at_ OEMRAM2+0x0B;	// Lenovo_VGATurbo
 #define	pReserve0B_bit0			BIT0
 #define	pTheaterKey				BIT1
 #define	pSecurityKey			BIT2
@@ -1239,7 +1238,7 @@ extern XBYTE F2_Pressed;                      //_at_(OEMRAM4+0xFC) //ANGELAG001:
 #define F2Flag          BIT0  //ANGELAG001:add.
 #define F12Flag         BIT1  //ANGELAG001:add.
 extern XBYTE	nAtmFan1Speed; 					//_at_(NameSpace+0xFE);//72JERRY014: Add the second fan method
-extern XBYTE	EM8_TEST;						//_at_(NameSpace+0xFF);		//  replace 0x407 data for EM8.0 test
+extern XBYTE	EM8_TEST;						//_at_(NameSpace+0xFF);	
 
 //*******************************************************************************
 //-------------------------------------------------------------------------------

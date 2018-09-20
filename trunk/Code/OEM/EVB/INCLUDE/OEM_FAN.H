@@ -174,7 +174,7 @@ BYTE Fan_Temp_compare(BYTE BCPU_Step,BYTE BVGA_Step,BYTE BTType);	// Fan CPU and
 void Fan_Cal_PWMStep(BYTE BStep,BYTE BPWM_Max, BYTE BPWM_Min, BYTE BPWM_Step1, BYTE BPWM_Step2, BYTE BPWM_Step3, BYTE FAN_Type_Tab);	// Calculation temperature Step  //MEILING003:add step3 for fan control.
 void Fan_Cal_PWMDuty(BYTE BPWM_Max, BYTE BPWM_Min , BYTE BTmin, BYTE BTmax, BYTE BTemp, XBYTE *BTg_Duty);	// Calculate PWM duty.
 void Fan_Offset_Chk(BYTE Duty_Offset, XBYTE *BDCRx);	// Check PWM Duty Offset.
-//72JERRY014¡êos+ Add the second fan method
+//Add the second fan method
 extern void Oem_Fan1_Speed(void);	// Read Fan Speed RPM.
 extern void Oem_Fan1_Control(void);	// Main FAN control.
 extern void Chk_FAN1_RPM_Control(void);	// Check FAN is AP control.
@@ -183,17 +183,9 @@ BYTE Fan1_Temp_compare(BYTE BCPU_Step,BYTE BVGA_Step,BYTE BTType);	// Fan CPU an
 void Fan1_Cal_PWMStep(BYTE BStep,BYTE BPWM_Max, BYTE BPWM_Min, BYTE BPWM_Step1, BYTE BPWM_Step2, BYTE BPWM_Step3, BYTE FAN_Type_Tab);	// Calculation temperature Step  //MEILING003:add step3 for fan control.
 void Fan1_Cal_PWMDuty(BYTE BPWM_Max, BYTE BPWM_Min , BYTE BTmin, BYTE BTmax, BYTE BTemp, XBYTE *BTg_Duty);	// Calculate PWM duty.
 void Fan1_Offset_Chk(BYTE Duty_Offset, XBYTE *BDCRx);	// Check PWM Duty Offset.
-//72JERRY014¡êo e+Add the second fan method
+//Add the second fan method
 //=============================================================================
 //=======Throttling============================================================
-/* //ANGELAS050:remove start
-#if Support_Steering_Fun
-#define VGA_Steer85_On		70			// VGA Steering ON
-#define VGA_Steer85_Off		80			// VGA Steering OFF
-#define VGA_Steer_On		80			// VGA Steering ON
-#define VGA_Steer_Off		90			// VGA Steering OFF
-#endif
-*/ //ANGELAS050:remove end
 #define Thro_Shut_Cnt		3			// 3 times.
 #define RSOC_Shut_Cnt		30           //ANGELAS043: add
 

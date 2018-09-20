@@ -410,7 +410,7 @@ void OSSMbusComd(void)
   	}
 }
 
-#endif	// ACPI_Smbus
+#endif
 
 //----------------------------------------------------------------------------
 // Hook function of ACPI command

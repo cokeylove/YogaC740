@@ -62,199 +62,7 @@ void OEM_Write_Leds(BYTE data_byte)
 	}
 }
 
-//MEILING030:S- remove old LED control function.
-/*void Lenovo_LED(void)
-{
-	if ( SystemIsS5 )
-	{ PWR_LED_OFF(); }
-	else
-	{
-		LOWBATT_3TIMES =0;
-		if ( SystemIsS3 || (IS_MASK_SET(uISCT_2, b5ISCT_PwrLED)) )	// Check S3 and ISCT status.
-		{
-			PowerLed_Count++;
-			if ( PowerLed_Count < 20 )
-			{
-				PWR_LED_ON();
-			}
-			if( (PowerLed_Count > 20) && (PowerLed_Count <40) )
-			{
-				PWR_LED_OFF();
-			}
-			if ( PowerLed_Count > 40 )
-			{
-				PowerLed_Count = 0;
-				PWR_LED_ON();
-			}
-		}
-		else
-		{
-			if ( SystemIsS0 || (SysPowState==SYSTEM_S5_S0))	// Check S0 and power on sequence status.
-				PWR_LED_ON();
-		}
-	}
-
-	// Battery LED control
-	GPCRA1 = ALT;
-	GPCRA2 = ALT;
-	if ( IS_MASK_SET(SYS_MISC1,b5Crisis_LED) )
-	{
-		if(IS_MASK_SET(SEL_STATE0,PRESENT_A))
-		{	// under 5%
-			// 660mHz of Amber, 1000ms on/ 500ms off
-			C4CPRS = 0xC0;	// set frequence
-			C4MCPRS = 0x00;
-			DCR2 = 0x55;	// On Amber
-			DCR1 = 0xFF;	// Off Green
-		}
-		else
-		{ DCR1 = DCR2 = 0xFF; }	// Off Amber and Green.
-	}
-	else
-	{
-		if( IS_MASK_SET(LV_Authen_Step_CNT,BIT(6)) )
-		{	// authentication Fail
-			C4CPRS = 0xFF;	// set frequence
-			C4MCPRS = 0x00;
-
-	        if(SystemIsS0 || Read_AC_IN())
-	        {
-	            DCR2 = 0x7F;	// On Amber
-	    		DCR1 = 0xFF;	// Off Green
-	        }
-	        else // not S0 & Battery Only
-	        { DCR1 = DCR2 = 0xFF; }	// Off Amber and Green.
-		}
-		else if( IS_MASK_SET(Bat1_FPChgFlag,BIT(0)) )
-		{	//  abnormal pre-charge
-			// Amber and Green xchange at 250ms
-	    	C4CPRS = 0x3F;	// set frequence
-	    	C4MCPRS = 0x00;
-
-	        if(SystemIsS0 || Read_AC_IN())
-	        {
-	            DCR2 = 0x7F;	// On Amber
-	    		DCR1 = 0xFF;	// Off Green
-	        }
-	        else // not S0 & Battery Only
-	        { DCR1 = DCR2 = 0xFF; }	// Off Amber and Green.
-		}
-		else if( Read_AC_IN() )
-		{	// AC IN
-			LOWBATT_3TIMES =0;
-			PWMPOL = 0x00;						// sync. Green and Amber
-					
-			if(IS_MASK_SET(SEL_STATE0,PRESENT_A))
-			{	// Battery IN, Charging mode
-				if( BAT1PERCL >= 0x50 )
-				{	// over 80%
-					// Green always on
-					DCR2 = 0xFF;	// Off Amber
-					DCR1 = 0x00;	// On Green
-				}
-				else if( BAT1PERCL >= 0x14 )
-				{	// over 20%
-					// 196mHz of Green, 5000ms on/ 100ms off
-					C4CPRS = 0x90;	// set frequence
-					C4MCPRS = 0x02;
-					DCR2 = 0xFF;	// Off Amber
-					DCR1 = 0x05;	// On Green
-				}
-				else if( BAT1PERCL >= 0x05 )
-				{	// over 5%
-					// 303mHz of Amber, 3200ms on/ 100ms off
-					C4CPRS = 0xA8;	// set frequence
-					C4MCPRS = 0x01;
-					DCR2 = 0x08;	// On Amber
-					DCR1 = 0xFF;	// Off Green
-				}
-				else
-				{	// under 5%
-					// 660mHz of Amber, 1000ms on/ 500ms off
-					C4CPRS = 0xC0;	// set frequence
-					C4MCPRS = 0x00;
-					DCR2 = 0x55;	// On Amber
-					DCR1 = 0xFF;	// Off Green
-				}
-			}
-			else
-			{ DCR1 = DCR2 = 0xFF; }	// Off Amber and Green.
-		}
-		else
-		{	// Dischage mode
-			if ( SystemIsS5 )
-			{
-				DCR1 = 0xFF;		// Off Green
-				if (LOWBATT_3TIMES ==0)
-				{
-					DCR2 = 0xFF;	// Off Amber
-				}
-				else
-				{
-					if (LOWBATT_3TIMES > 80)
-						DCR2 = 0x00;					// On Amber
-					else if (LOWBATT_3TIMES > 60)
-						DCR2 = 0xFF;					// Off Amber
-					else if (LOWBATT_3TIMES > 40)
-						DCR2 = 0x00;					// On Amber
-					else if (LOWBATT_3TIMES > 20)
-						DCR2 = 0xFF;					// Off Amber
-					else if (LOWBATT_3TIMES > 0)
-						DCR2 = 0x00;					// On Amber
-
-					LOWBATT_3TIMES--;
-					if (LOWBATT_3TIMES==0)
-						DCR2 = 0xFF;					// Off Amber
-				}
-			}
-			else
-			{
-				PWMPOL = 0x00;		// sync. Green and Amber
-				if( SystemIsS3 )
-				{	// DC S3 mode
-					DCR2 = 0xFF;	// Off Amber
-					DCR1 = 0xFF;	// Off Green
-				}
-				else if( BAT1PERCL >= 0x14 )
-				{
-					// Green always on
-					DCR2 = 0xFF;	// Off Amber
-					DCR1 = 0x00;	// On Green
-				}
-				else if( BAT1PERCL >= 0x05 )
-				{	// over 5%
-					// Amber always on
-					DCR2 = 0x00;	// On Amber
-					DCR1 = 0xFF;	// Off Green
-				}
-				else
-				{	// under 5%
-					// 660mHz of Amber, 1000ms on/ 500ms off
-					C4CPRS = 0xC0;	// set frequence
-					C4MCPRS = 0x00;
-					DCR2 = 0x55;	// On Amber
-					DCR1 = 0xFF;	// Off Green
-				}
-			}
-		}
-	}
-	if( cCHIPType==0x01 )	// IT8586EX
-	{
-		DCR0 = DCR1;
-	}
-
-
-	#if Support_TPLED
-	if ( IS_MASK_SET(pDevStus, pENABLE_TP) )
-	{// TPLED_OFF(); }	// TouchPad ON.
-	else
-	{ //TPLED_ON(); }		// TouchPad OFF.
-	#endif	// Support_TPLED
-}*/
-//MEILING030:E- remove old LED control function.
-
-
-//MEILING030:S+ add new LED control function.
+//add new LED control function.
 void Battery_Charge_Discharge_LED_CONTROL(WORD LED_ON,BYTE LED_OFF)   
 {
 	if(!(BAT_LED_Cnt_OFF|BAT_LED_Cnt_ON))
@@ -511,31 +319,9 @@ void Lenovo_LED(void)
 			}
 		}
 	}
-	/*
-	if ( SystemIsS0 )
-	{
-		if ( (DEVICEMODULE & 0x43) != 0 )
-		{ RF_LED_LOW(); }	// RF LED ON.
-		else
-		{ RF_LED_HI(); }	// RF LED OFF.
-	}
-	else
-	{ RF_LED_HI(); }		// RF LED OFF.
-	*/
-
-	#if Support_TPLED
-	if ( IS_MASK_SET(pDevStus, pENABLE_TP) )
-	{
-		//TPLED_OFF();
-	}	// TouchPad ON.
-	else
-	{ 
-		//TPLED_ON();
-	}	// TouchPad OFF.
-	#endif	// Support_TPLED
 }
 
-//MEILING030:E+ add new LED control function.
+//add new LED control function.
 
 void MFG_LED(void)
 {
@@ -548,36 +334,25 @@ void MFG_LED(void)
 	else
 		PWR_AMBERLED_OFF();
 	if(cOsLedCtrl.fbit.cOL_ChgLed == 1)
-		//DCR1=0;  //MEILING030:remove.
-		BAT_CHG_LED_ON(); //MEILING030:add.
+		BAT_CHG_LED_ON(); 
 	else
-		//DCR1=0xFF;  //MEILING030:remove.
-		BAT_CHG_LED_OFF(); //MEILING030:add.
+		BAT_CHG_LED_OFF(); 
 
 	if(cOsLedCtrl.fbit.cOL_DisChgLed == 1)
-		//DCR2=0;  //MEILING030:remove.
-		BAT_LOW_LED_ON(); //MEILING030:add.
+		BAT_LOW_LED_ON();
 	else
-		//DCR2=0xFF;  //MEILING030:remove.
-		BAT_LOW_LED_OFF(); //MEILING030:add.  //MEILING056:modify led on to off.
+		BAT_LOW_LED_OFF(); 
 
-	/*
-	if(cOsLedCtrl.fbit.cOL_WLANLed == 1)
-		RF_LED_LOW();
-	else
-		RF_LED_HI();
-	*/
-
-    if( uMBID & 0x01 ) // Check 15"G52:modify board id for MFG  from 0x04 to 0x01 follow new ec common spec
+    if( uMBID & 0x01 ) //modify board id for MFG  from 0x04 to 0x01 follow new ec common spec
 	{
 		if( cOsLedCtrl.fbit.cOL_NumlockLed == 1 )
 		{	
 		//NUMLED_ON();
-			}
+		}
 		else
-			{
-			//NUMLED_OFF();
-			}
+		{
+		//NUMLED_OFF();
+		}
 	}
 
 	if( cOsLed1Ctrl.fbit.cOL1_CapslockLed == 1 )
@@ -586,112 +361,18 @@ void MFG_LED(void)
 		CAPLED_OFF();
 
 	if( cOsLed1Ctrl.fbit.cOL1_KBBacklight == 1 )
-		DCR3 = 0x00; //MEILING001:remove.//72JERRY022: Modify GPIO setting follow SIT.
-		//EC_BKL_EN_HI(); //MEILING001:add.
+		DCR3 = 0x00; //Modify GPIO setting follow SIT.
 	else
-		DCR3 = 0XFF; //MEILING001:remove.//72JERRY022: Modify GPIO setting follow SIT.
-		//EC_BKL_EN_LOW(); //MEILING001:add.
-
-	#if Support_TPLED
-	if( cOsLedCtrl.fbit.cOL_TPActLed == 1 )
-		//TPLED_ON();
-	else
-		//TPLED_OFF();
-	#endif	// Support_TPLED
+		DCR3 = 0XFF; //Modify GPIO setting follow SIT.
 }
 
-/*void SetKeyboardLED(void)
-{
-	BYTE BKBMax,BKBHalf;
-	
-	if ( (SystemNotS0) || (cOsLedCtrl.fbit.cOL_CtrlRight ==1) || (!Read_LID_SW_IN()) )
-	{
-		//DCR3 = 0;  //MEILING001:remove.
-		EC_BKL_EN_LOW(); //MEILING001:add.
-		return;
-	}
-
-	//if ( uMBID & 0x40 )
-	//{	// QIQY6.
-	//	BKBMax = 0x4B;
-	//	BKBHalf = 0x33;
-	//}
-	//else
-	//{	// QIQY5.
-		BKBMax = 0xFF;
-		BKBHalf = 0x4D;
-	//}
-
-	if ( IS_MASK_SET(EMStatusBit, b0SetKBLEDON) )
-	{
-		LED_KB_PWM_Step = ((LED_KB_PWM_Step&0xFC) | 0x02);
-		SET_MASK(EMStatusBit, b2KBLEDChk);
-	}
-	else
-	{
-		if ( IS_MASK_SET(EMStatusBit, b2KBLEDChk) )
-		{
-			LED_KB_PWM_Step &= 0xFC;
-			CLR_MASK(EMStatusBit, b2KBLEDChk);
-		}
-	}
-
-	switch (LED_KB_PWM_Step)
-	{
-	case 0:
-		//DCR3 = 0;  //MEILING001:remove.
-		EC_BKL_EN_LOW(); //MEILING001:add.
-		CLR_MASK(EMStatusBit, b5RdKBLEDOn);
-		CLR_MASK(EMStatusBit, b2KBLEDChk);
-		CLR_MASK(EMStatusBit, b0SetKBLEDON);
-		break;
-	case 1:
-		//DCR3 = BKBHalf;  //MEILING001:remove.
-		//SET_MASK(EMStatusBit, b5RdKBLEDOn);
-		break;
-	case 2:
-		//DCR3 = BKBMax;  //MEILING001:remove.
-		EC_BKL_EN_HI(); //MEILING001:add.
-		SET_MASK(EMStatusBit, b5RdKBLEDOn);
-		SET_MASK(EMStatusBit, b2KBLEDChk);
-		SET_MASK(EMStatusBit, b0SetKBLEDON);
-		break;
-	default:
-		//DCR3 = 0;  //MEILING001:remove.
-		EC_BKL_EN_LOW(); //MEILING001:add.
-		LED_KB_PWM_Step = 0;
-		break;
-	}
-
-	if ( (LED_KB_PWM_Count & 0x7F) != 0 )
-	{
-		//if ( DCR3 == 0 )  //MEILING001:remove.
-		if(!Read_EC_BKL_EN()) //MEILING001:add.
-		{
-			//DCR3 = BKBMax; //MEILING001:remove.
-			EC_BKL_EN_HI(); //MEILING001:add.
-			LED_KB_PWM_Count |= 0x80;
-		}
-		LED_KB_PWM_Count--;
-	}
-	else
-	{
-		if ( IS_MASK_SET(LED_KB_PWM_Count, BIT7) )
-		{
-			//DCR3 = 0;  //MEILING001:remove.
-			EC_BKL_EN_LOW(); //MEILING001:add.
-			LED_KB_PWM_Count = 0;
-		}
-	}
-	//Chk_KB_Backlight();	// Update KB backlight EEPROM. //MEILING001:remove.  //MEILING011:add.  //LMLKBL0005:remove.
-}*///72JERRY022:- Modify GPIO setting follow SIT.
-//72JERRY022: S+Modify GPIO setting follow SIT.
+//Modify GPIO setting follow SIT.
 void SetKeyboardLED(void)
 {
 	BYTE BKBMax,BKBHalf;
 	if ( (SystemNotS0) || (cOsLedCtrl.fbit.cOL_CtrlRight ==1) || (!Read_LID_SW_IN()) )
 	{
-		//DCR3 = 0; //REJERRY037:remove.//72JERRY039:-Modify KB backlight setting follow UI SPEC.
+		//DCR3 = 0; //Modify KB backlight setting follow UI SPEC.
 		return;
 	}
 	if (IS_MASK_SET(pDevStatus1,b2DisableKB))//HEGANGS039:Disable KB backlight when KB is disabled by YMC
@@ -726,35 +407,20 @@ void SetKeyboardLED(void)
 		{
 			LED_KB_PWM_Step=0;
 		}
-	}
-	
-	/*if ( (LED_KB_PWM_Count & 0x7ff) != 0 ) //REJERRY007:modify backlight control.
-	{
-		if ( DCR3 == 0 )
-		{
-		DCR3 = BKBMax;
-		LED_KB_PWM_Count |= 0x800; //REJERRY007:modify backlight control.
-			
-		}
-		
-		LED_KB_PWM_Count--;
-			
-	}*/
+	}	
 
 	if ( (LED_KB_PWM_Count & 0x7F) != 0 )
 	{
-		if ( DCR3 == 0 )  //MEILING001:remove.
-		//if(!Read_EC_BKL_EN()) //MEILING001:add.
+		if ( DCR3 == 0 )  
 		{
-			DCR3 = BKBMax; //MEILING001:remove.
-			//EC_BKL_EN_HI(); //MEILING001:add.
+			DCR3 = BKBMax; 
 			LED_KB_PWM_Count |= 0x80;
 		}
 		LED_KB_PWM_Count--;
 	}
 	else
 	{
-		if ( IS_MASK_SET(LED_KB_PWM_Count, BIT7) ) //REJERRY007:modify backlight control.
+		if ( IS_MASK_SET(LED_KB_PWM_Count, BIT7) ) //modify backlight control.
 		{
 			if(LED_KB_PWM_Step==0)
 			{
@@ -768,22 +434,22 @@ void SetKeyboardLED(void)
 			{
 				
 				DCR3 = 0;
-				SET_MASK(EMStatusBit, b2KBLEDChk);//72JERRY036: Modify KB backlight control for lenovo app setting.
+				SET_MASK(EMStatusBit, b2KBLEDChk);//Modify KB backlight control for lenovo app setting.
 			}
 			else if(LED_KB_PWM_Step==1)
 			{
 			
 				DCR3=BKBHalf;
-				CLEAR_MASK(EMStatusBit, b2KBLEDChk);//72JERRY036: Modify KB backlight control for lenovo app setting.
+				CLEAR_MASK(EMStatusBit, b2KBLEDChk);//Modify KB backlight control for lenovo app setting.
 			}
 			else if(LED_KB_PWM_Step==2)
 			{
 			
 				DCR3 = BKBMax;
-			CLEAR_MASK(EMStatusBit, b2KBLEDChk);//72JERRY036: Modify KB backlight control for lenovo app setting.
+			CLEAR_MASK(EMStatusBit, b2KBLEDChk);//Modify KB backlight control for lenovo app setting.
 			}
 		}
 	}
 
 }
-//72JERRY022:E+ Modify GPIO setting follow SIT.
+//Modify GPIO setting follow SIT.

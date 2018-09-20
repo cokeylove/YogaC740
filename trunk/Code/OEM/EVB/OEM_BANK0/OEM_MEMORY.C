@@ -305,7 +305,6 @@ XBYTE	pDevStus						_at_(OEMRAM2+0x03);
 //ANGELAS033:Add end
 //ANGELAS107:E-Add code for GBSI function.
 XBYTE  batteryChemistry[4]              _at_(OEMRAM2+0x06);//ANGELAS107:Add code for GBSI function.
-XBYTE	pOneKeyAPPStatus				_at_(OEMRAM2+0x0B);	// Lenovo_VGATurbo
 XBYTE 	pPROCHOT						_at_(OEMRAM2+0x0C);
 XBYTE	pProject4					    _at_(OEMRAM2+0x0D);//HEGANGS028:Disable POWERSW when flash bios
 XBYTE 	SMartNoise						_at_(OEMRAM2+0x11);

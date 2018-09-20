@@ -303,9 +303,9 @@ void AdapterIdentification(void)
         }
         else 
         {
-        	 #if SUPPORT_ADCID_ADAPTER
+            #if SUPPORT_ADCID_ADAPTER
                 SetPowerBatteryparameter(); 
-             #endif 
+            #endif 
             #if SUPPORT_NOID_ADAPTER
                 SetPowerBatteryparameter2(); 
             #endif

@@ -76,7 +76,6 @@ void Check_LPC_Reset(void)
 {
 	if(!Read_LPC_RST())
 	{
-		//GATEA20_HI();
    		CLEAR_MASK(KBHISR,SYSF);
 	    CLEAR_MASK(SYS_MISC1,ACPI_OS);
 		OEM_LPC_Reset();	// initial OEM status.
@@ -137,97 +136,12 @@ for( EVENT_BUFFER_CNT=0; EVENT_BUFFER_CNT<=EVENT_BUFFER_SIZE; EVENT_BUFFER_CNT++
 //ANGELAG008: add end
 }
 
-
-void CHK_SUSACK(void)
-{
-#if 0
-	if(!Read_SUSWARN())
-	{
-		if (Read_SUSACK())
-		{
-			if (SUSACK_LOW_CNT > 500)  //for DS3 test
-			{
-				SUSACK_LOW();
-			}
-			else
-			{
-				SUSACK_LOW_CNT++;
-			}
-		}
-		else
-		{	SUSACK_LOW_CNT = 0;	}
-	}
-	else
-	{
-		if (!Read_SUSACK())
-		{
-			if (SUSACK_HI_CNT > 20)
-			{
-				SUSACK_HI();
-			}
-			else
-			{
-				SUSACK_HI_CNT++;
-			}
-		}
-		else
-		{	SUSACK_HI_CNT = 0;		}
-	}
-#endif
-}
-
-#if 0
-void CHK_DRAMRST_CNTRL(void)
-{
-	if (Read_VR_ON())
-	{
-		if (!Read_DRAMRST_CNTRL_EC())
-		{
-			if (DRAMRST_CNTRL_CNT > 200)
-			{
-				DRAMRST_CNTRL_EC_HI();
-			}
-			else
-			{
-				DRAMRST_CNTRL_CNT++;
-			}
-		}
-	}
-	else
-	{ DRAMRST_CNTRL_CNT = 0; }
-
-	if (!Read_SLPS3())
-	{
-		if ( SysPowState != SYSTEM_S5_S0 )
-		{
-			DRAMRST_CNTRL_EC_LOW();
-			DRAMRST_CNTRL_CNT = 0;
-		}
-/*
-		if (DRAMRST_CNTRL_LOW_CNT > 20)
-		{
-			DRAMRST_CNTRL_EC_LOW();
-		}
-		else
-		{
-			DRAMRST_CNTRL_LOW_CNT++;
-		}
-*/
-	}
-	else
-	{ DRAMRST_CNTRL_LOW_CNT = 0; }
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Handle System Power Control
 // Called by service_1mS -> Timer1msEvent -> Hook_Timer1msEvent
 //-----------------------------------------------------------------------------
 void Oem_SysPowerContrl(void)
 {
-	//CHK_SUSACK();
-	//CHK_DRAMRST_CNTRL();
-
     // Check current System PowerState to see what should we do.
     switch (SysPowState)
     {
@@ -241,7 +155,6 @@ void Oem_SysPowerContrl(void)
 				PowSeqDelay = 00;
                 RamDebug(0xD0);        
               	SysPowState=SYSTEM_S0_S3;
-				//S0S3_VR_ON(); // include SYS_PWROK, PCH_PWROK,VR_ON enable orderly.
 				if (!Read_SLPS4())
 				{
 					PWSeqStep = 1;
@@ -251,7 +164,6 @@ void Oem_SysPowerContrl(void)
 				}
 				else if (IS_MASK_SET(SysStatus,CloseLid))
 				{
-					//CLEAR_MASK(SysStatus,CloseLid);
 					SET_MASK(SysStatus,EnterS3Lid);
 				}
 			}
@@ -279,9 +191,8 @@ void Oem_SysPowerContrl(void)
 		// for EM9 adapter detection and protection       
         if(IS_MASK_SET(SYS_STATUS,b4IllegalAdp)&&Read_AC_IN())
         {
-   		    SET_MASK(SYS_STATUS,AC_ADP);	//set AC in  flag
-		    //ACOFF_LOW();
-			BATT_LEN_OFF();//JERRYCRZ030¡êo
+   		    SET_MASK(SYS_STATUS,AC_ADP);	//set AC in flag
+			BATT_LEN_OFF();
         }
 		//for EM9 adapter detection and protection 
         break;
@@ -296,67 +207,64 @@ void Oem_SysPowerContrl(void)
 			SysPowState=SYSTEM_S5_S0;
 		}
 		CheckAutoPowerOn();
-  		// (remove to avoid turn off EC_ON)          		Check_EC_ON();
-  		//ANGELAS031 Check_EC_ON(); //martin0313C+
-  		//ANGELAS032:add start
+
   		if((ShipModeEn==0xA5)||IS_MASK_SET(EMStatusBit2,b0SetBatteryShipMode))
   		{
   			CLEAR_MASK(ACPI_HOTKEY, b7BIOS_NoShut);
 			CLEAR_MASK(ACPI_HOTKEY, b6Cmd_NoShut);
   		}
-		//ANGELAS032:add end
-		 if(( IS_MASK_CLEAR(ACPI_HOTKEY, b7BIOS_NoShut))&& (IS_MASK_CLEAR(ACPI_HOTKEY, b6Cmd_NoShut))&&(LOWBATT_3TIMES==0)) 
-		  { 
-		     //S34toDSx(); 
-		      if ((!Read_AC_IN())&&IS_MASK_CLEAR(cCmd, bPCHPWR_Keep)) {
-			  	 PWSeqStep = 1;
-			     PowSeqDelay = 0x00;
-			  	   SysPowState=SYSTEM_S5_DSX;
-		      	}
-		  }	
+
+        if(( IS_MASK_CLEAR(ACPI_HOTKEY, b7BIOS_NoShut))&& (IS_MASK_CLEAR(ACPI_HOTKEY, b6Cmd_NoShut))&&(LOWBATT_3TIMES==0)) 
+        { 
+            if ((!Read_AC_IN())&&IS_MASK_CLEAR(cCmd, bPCHPWR_Keep)) 
+            {
+                PWSeqStep = 1;
+                PowSeqDelay = 0x00;
+                SysPowState=SYSTEM_S5_DSX;
+            }
+        }	
+        
 #if SUPPORT_PMIC
-		//MEILING002: S+
 		if(PowerOTP_REG)
 		{
-			if ( IS_MASK_CLEAR(SysStatus, ERR_ShuntDownFlag) ) //ANGELAG007: add
-			{ ProcessSID(PMIC_Shutdown_ID); } //ANGELAG007: add
+			if ( IS_MASK_CLEAR(SysStatus, ERR_ShuntDownFlag) ) 
+			{ 
+			    ProcessSID(PMIC_Shutdown_ID); 
+			}
 			OTP_TEMP = PowerOTP_REG;
 			PowerOTP_REG = 0;
 			RSMRST_LOW();
 			Delay1MS(12);
 			EC_ON_LOW();
 			PowerInitOK = 0;
-			if(Read_AC_IN())
-			{
-				//DSxPowState = SYSTEM_DSxOK;
-			}
 		}
 #endif
   		//for EM9 adapter detection and protection       
         if(IS_MASK_SET(SYS_STATUS,b4IllegalAdp)&&Read_AC_IN())
         {
-   		    SET_MASK(SYS_STATUS,AC_ADP);	//set AC in  flag
-		    //   ACOFF_LOW();
-			BATT_LEN_OFF();//JERRYCRZ030
+   		    SET_MASK(SYS_STATUS,AC_ADP);	//set AC in flag
+			BATT_LEN_OFF();
         }
 		//for EM9 adapter detection and protection 
         break;
 
-		case SYSTEM_DSX:
+	case SYSTEM_DSX:
 			CheckAutoPowerOn(); 
 			if(nBattGasgauge<=10)
-			EC_ON_5V_LOW();
-		 if((Read_AC_IN())||(LOWBATT_3TIMES!=0)){   //JERRYBR012:Fixed Power led will not flick 3 times when power on after discharged battery to 0% till system shut down.TDMS#110153 
-		 	PWSeqStep = 1;
-			PowSeqDelay = 0x00;
-		    SysPowState=SYSTEM_DSX_S5;
+			    EC_ON_5V_LOW();
+		    if((Read_AC_IN())||(LOWBATT_3TIMES!=0))
+		    {   //Fixed Power led will not flick 3 times when power on after discharged battery to 0% till system shut down.
+    		 	PWSeqStep = 1;
+    			PowSeqDelay = 0x00;
+    		    SysPowState=SYSTEM_DSX_S5;
 		 	}
 		break;
 		
 
-	 case SYSTEM_DSX_S5:
+	case SYSTEM_DSX_S5:
 		    Oem_DSXS5Sequence();
 	    break;
+	    
     case SYSTEM_S5_S0:
 		Oem_S5S0Sequence();
 		break;
@@ -367,14 +275,6 @@ void Oem_SysPowerContrl(void)
 
     case SYSTEM_S0_S3:
 		Oem_S0S3Sequence();
-		/*                       
-		if (!Read_SLPS4())
-		{
-			PWSeqStep = 1;
-			PowSeqDelay = 0x00;
-    			SysPowState=SYSTEM_S0_S5;
-		}
-		*/
         break;
 
     case SYSTEM_S0_S4:
@@ -383,26 +283,28 @@ void Oem_SysPowerContrl(void)
     case SYSTEM_S0_S5:
 		Oem_S0S5Sequence();
         break;
+        
 	 case SYSTEM_S5_DSX:
-		 Oem_S5DSXSequence();
+		Oem_S5DSXSequence();
 		break;
+		
 	case SYSTEM_EC_WDTRST:
 		break;
 
    	default:
-         SysPowState=SYSTEM_DSX; 
-			if(!Read_AC_IN())
-      {   
-             PWSeqStep = 1;
-			 PowSeqDelay = 0x00;
-			  SysPowState = SYSTEM_S5_DSX;
-      }
-      else
-      {
-             PWSeqStep = 1;
+        SysPowState=SYSTEM_DSX; 
+        if(!Read_AC_IN())
+        {   
+            PWSeqStep = 1;
 			PowSeqDelay = 0x00;
-			  SysPowState = SYSTEM_DSX_S5;
-      }
+            SysPowState = SYSTEM_S5_DSX;
+        }
+        else
+        {
+            PWSeqStep = 1;
+			PowSeqDelay = 0x00;
+			SysPowState = SYSTEM_DSX_S5;
+        }
          	break;
     }
 }
@@ -449,22 +351,6 @@ void SetS0GPIO(void)
 	PECIDelayCnt = 0x04;
 
 	Fan_Init();
-	//pDevStus=Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03|0x07),0xE1);
-
-#if UCS1022_Support
-	USB_CH_OUTPUT;
-	//if ( IS_MASK_CLEAR(USB_Charger, b0USB_EN) )
-	if ( IS_MASK_CLEAR(EMStatusBit, b1SetUSBChgEn) )
-	{ USB_CH_LOW(); }
-	CLR_MASK(USB_Charger, b1USB_initOK);
-#endif	// UCS1022_Support
-
-	if ( IS_MASK_SET(SYS_MISC1, b1Num_LED) )
-	{ //NUMLED_ON(); 
-	}
-	else
-	{ //NUMLED_OFF(); 
-	}
 }
 
 void SetS5GPIO(void)
@@ -479,44 +365,8 @@ void SetS5GPIO(void)
 	FAN1_SPEED_INDW;//72JERRY001: Modify GPIO setting and fan1 setting.
 
 	CAPLED_OFF();		// Turn off Cap LED.
-	/*
-	if(IS_MASK_CLEAR(EMStatusBit,b1SetUSBChgEn))
-	//USB_ON_INPUT;
-	if(IS_MASK_CLEAR(EMStatusBit,b6RdUSBChgS45))
-	//USB_ON_INPUT;
-	if ( SysPowState == SYSTEM_S0_S5 ) //ANGELAS063:add
-	{
-		USB_ON_INPUT;	// Disable USB wake.
-
-	}
-	else
-	{
-		if ( IS_MASK_CLEAR(SYS_STATUS,AC_ADP) )
-		{ 
-			 
-        }	// turn off LAN power.
-		else
-		{ 
-			
-        }	// Turn on LAN power.
-		
-		{
-			USB_ON_OUTPUT;
-			USB_ON_LOW();	// Turn on USB power.
-		}
-	}*/
 	AC_IN_INPUT;
 
-#if UCS1022_Support
-	//if ( IS_MASK_SET(USB_Charger, b0USB_EN) )
-	if ( IS_MASK_SET(EMStatusBit, b1SetUSBChgEn) )
-	{ UCS1002HCACharger_Init(); }
-	else 
-	{
-		if ( SysPowState != SYSTEM_S0_S5 )
-		{ UCS1002HCACharger_Init(); }	// Entry S3 status.
-	}
-#endif	// UCS1022_Support
 	CLR_MASK(SYS_MISC1,b5Crisis_LED);	// Clear Crisis LED.
 }
 
@@ -850,10 +700,10 @@ void S5S0_EC_VCCIO_EN(void)
 
 void S5S0_NVDD_PWR(void)
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     NVDD_PWR_EN_HI();
 	S_NVDD_PWR_EN_HI();
-	#endif	// Support_External_IO
+#endif
 }
 
 void S5S0_USBON(void)
@@ -921,15 +771,6 @@ void S5S0_SYS_PWROK(void)
 {
 	SYS_PWROK_HI();
 }
-
-void LPC_RST(void)
-{
-	#if	Support_External_IO
-	DGPU_HOLD_RST_HI();
-	S_DGPU_RST_HI();
-	#endif	// Support_External_IO
-}
-
 
 void S5S0_Init_Status(void)
 {
@@ -1104,10 +945,10 @@ void S0S5_VR_ON(void)
 	EC_VCCST_PWRGD_LOW();
 //	USB_ON_INPUT; //ANGELAS031: add
 	EC_VCCIO_EN_LOW();
-	#if	Support_External_IO
+#if	Support_External_IO
 	DGPU_HOLD_RST_LOW();
 	S_DGPU_RST_LOW();
-	#endif	// Support_External_IO
+#endif
 }
 
 void S0S5_NVDD_OFF(void)
@@ -1657,7 +1498,6 @@ void Check_EC_ON()
 		if ( IS_MASK_CLEAR(ACPI_HOTKEY, b6Cmd_NoShut) )	// Not cut power in the battery mode for command used.
 		{
             //if (!Read_AC_IN())   
-            //if (!Read_AC_IN()&& (DSxPowState == SYSTEM_DSxOK))//SysPowState
             if (!Read_AC_IN()&& (SysPowState == SYSTEM_S5))
             {
 			    //T31- EC_ON_LOW();

@@ -704,8 +704,6 @@ void VPC_interface(void)
 			break;
 
 		case VPCcmdRdOnekeyStatus:			//0x31 Read OneKey theater
-		//	nVPC_DATA = pOneKeyAPPStatus; 	//Bit0: onekey recovery Bit1:theater Bit2: security Bit3:PwrSaving
-		//	pOneKeyAPPStatus = 0;
 			nVPC_DATA = 0x40;
 			break;
 
@@ -732,20 +730,6 @@ void VPC_interface(void)
                	CLR_MASK(EM9_NEWFUN,b1_FnMinus);
                	nVPC_DATA = 0x20; 
             }                                                       
-			#if Support_CPU_Auto
-            if( IS_MASK_SET(LENOVOPMFW_Temp,Auto_Mode_Change))
-            {
-            	CLEAR_MASK(LENOVOPMFW_Temp,Auto_Mode_Change);
-                if(IS_MASK_SET(LENOVOPMFW_Temp,Auto_Mode_Off))
-                {
-                   	nVPC_DATA = 0x02;
-                }
-                else // Auto_Mode_OFF
-                {
-                   	nVPC_DATA = 0x00;
-                }
-            }
-			#endif	// Support_CPU_Auto
 			break;
 
 		case VPCcmdWrQuietStatus:			//0x32 Write Quiet Status
@@ -1024,10 +1008,6 @@ void DiagSMBusOperation(void)
 			else if( IS_MASK_SET(HOSTx_x_State,BIT5) ) { SMB_STS_Diag = 0x10; }
 			else if( IS_MASK_SET(HOSTx_x_State,BIT6) ) { SMB_STS_Diag = 0x18; }
 		}
-		//RamDebug(0x88);
-		//RamDebug(0xAA);
-		//RamDebug(result);
-		//RamDebug(HOSTx_x_State);
 	#endif
 			
 		SMB_PRTC_Diag = 0x00;

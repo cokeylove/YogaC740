@@ -99,9 +99,7 @@ ITEEC.ABS:KeilMisc\Obj\CORE_IRQ.OBJ\
             KeilMisc\Obj\OEM_UCSI_CYP_CCG4.OBJ\
 	    KeilMisc\Obj\OEM_AOU.OBJ\
             KeilMisc\Obj\OEM_BANK1_Func.OBJ\
-            KeilMisc\Obj\SMSc_UCS1002.OBJ\
             KeilMisc\Obj\OEM_BANK2_Func.OBJ\
-            KeilMisc\Obj\UCS1002_Profiles.OBJ\
             KeilMisc\Obj\OEM_BANK3_Func.OBJ
 	$(Linker) @ITEEC.lin
 
@@ -417,10 +415,6 @@ KeilMisc\Obj\OEM_BANK1_Func.OBJ:Code\Oem\OEM_BANK1_Func.C $(COREInclude) $(OEMIn
 	move Code\Oem\OEM_BANK1_Func.OBJ KeilMisc\Obj
 	move Code\Oem\OEM_BANK1_Func.LST KeilMisc\Lst
 
-KeilMisc\Obj\SMSc_UCS1002.OBJ:Code\Oem\SMSc_UCS1002.C $(COREInclude) $(OEMInclude) $(CHIPInclude)
-	$(CC) Code\Oem\SMSc_UCS1002.C $(CDirectives)
-	move Code\Oem\SMSc_UCS1002.OBJ KeilMisc\Obj
-	move Code\Oem\SMSc_UCS1002.LST KeilMisc\Lst
 #------------------------------------------------------------------
 # Compile oem bank2 file
 #=-----------------------------------------------------------------
@@ -428,11 +422,6 @@ KeilMisc\Obj\OEM_BANK2_Func.OBJ:Code\Oem\OEM_BANK2_Func.C $(COREInclude) $(OEMIn
 	$(CC) Code\Oem\OEM_BANK2_Func.C $(CDirectives)
 	move Code\Oem\OEM_BANK2_Func.OBJ KeilMisc\Obj
 	move Code\Oem\OEM_BANK2_Func.LST KeilMisc\Lst
-
-KeilMisc\Obj\UCS1002_Profiles.OBJ:Code\Oem\UCS1002_Profiles.C $(COREInclude) $(OEMInclude) $(CHIPInclude)
-	$(CC) Code\Oem\UCS1002_Profiles.C $(CDirectives)
-	move Code\Oem\UCS1002_Profiles.OBJ KeilMisc\Obj
-	move Code\Oem\UCS1002_Profiles.LST KeilMisc\Lst
 
 #------------------------------------------------------------------
 # Compile oem bank3 file

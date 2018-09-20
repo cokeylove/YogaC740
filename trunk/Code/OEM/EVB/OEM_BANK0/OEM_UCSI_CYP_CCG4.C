@@ -694,5 +694,5 @@ void TypecAdapterDetection(void)
 	    SET_MASK(SYS_STATUS,b4IllegalAdp);
 	}
 }
-//72JERRY081: Dsable UCSI function.
+//Dsable UCSI function.
 #endif

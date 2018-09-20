@@ -42,8 +42,8 @@ void Hook_Timer1msEvent(IBYTE EventId)
             	USB_ON_OUTPUT;
                 USB_ON_LOW();
 			}
-       }
-   }  
+        }
+    }  
 	
     PollingBIOS80Port();
     EventManager(EventId);      // Polling system event
@@ -77,6 +77,7 @@ void Hook_Timer5msEvent(void)
 {
 
 }
+
 //Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
 //------------------------------------------------------------
 // Hook 2ms events
@@ -106,10 +107,11 @@ void Hook_Timer20msEventA(void)
 {
 
 	#if SUPPORT_UCSI
-		ucsi_run();//72JERRY060: UCSI feature
+		ucsi_run();//UCSI feature
 	#endif
 }
 // Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+
 /*
 *******************************************************************************
 * Function name: Hook_Timer10msEventA       
@@ -128,8 +130,6 @@ void Hook_Timer20msEventA(void)
 void Hook_Timer10msEventA(void)
 {
 	ScanADCFixChannel();
-
-
 	Backlight_Control();
 	EscScanCode(); 
 #if !EN_PwrSeqTest
@@ -144,14 +144,14 @@ void Hook_Timer10msEventA(void)
 	
     AdapterIdentification(); //support identify adapter ID 
 #endif
-	//change deep sleep From 1ms hook to 1s hook start
+	//change deep sleep From 1ms hook to 10ms hook start
 #if	Support_EC_Sleep
 	if( CheckCanEnterDeepSleep() )
 	{
 		InitEnterDeepSleep();
 		EnableAllInterrupt();	// enable global interrupt
-		PLLCTRL = 0x01;
-		PCON	= 0x02; 		/* Enter Deep Sleep mode.  */
+		PLLCTRL = 0x01;         //PLL(Phase Locked Loop) will be powered down after setting PD bit in PCON and enter an EC power-down mode.
+		PCON	= 0x02; 		/* Enter Deep Sleep mode.  */ //Power Down Mode  Set bit1 to ¡°1¡± to enter a Sleep (a.k.a. power-down) or Doze mode immediately.
 		_nop_();				/* Wake-up delay.  */
 		_nop_();
 		_nop_();
@@ -171,7 +171,7 @@ void Hook_Timer10msEventA(void)
 #else
 	PCON=1;	// Enter idle mode
 #endif	// Support_EC_Sleep
-	//:change deep sleep From 1ms hook to 1s hook end
+	//change deep sleep From 1ms hook to 10ms hook end
 }
 
 
@@ -279,9 +279,6 @@ void Hook_Timer10msEventB(void)
 	
 #endif
 
-#if EC_Brightness_Ctrl
-	Brightness_Control(); // EC control brightness.
-#endif	// EC_Brightness_Ctrl
   	if( delayEDPTm > 0 )       // CMW Temp
   	{
         delayEDPTm--;
@@ -309,12 +306,6 @@ void Hook_Timer10msEventB(void)
 */
 void Hook_Timer50msEventA(void)
 {
-#if !EN_PwrSeqTest
-	#if UCS1022_Support
-	UCS1002_TimerX_FakeISR();
-	#endif
-#endif	// EN_PwrSeqTest
-
 	if (cOsLedCtrl.fbit.cOL_CtrlRight ==0 )
 		Lenovo_LED();
 	else
@@ -370,10 +361,10 @@ void Hook_Timer50msEventC(void)
 #endif
 	
 	if(SystemIsS0)
-		{
+	{
 		Chk_FAN_RPM_Control();	// Check FAN is AP control.
 		Chk_FAN1_RPM_Control();	// Check FAN1 is AP control.//72JERRY014¡êo Add the second fan method
-		}
+	}
 }
 
 /*
@@ -407,14 +398,9 @@ void Hook_Timer100msEventA(void)
   		OEM_PollingBatData_TASK(); 
     }
 	else
-	{ CLEAR_MASK(StatusKeeper, BatteryProtectCHG); }
-    #if Support_USB_Charge 
-		#if UCS1022_Support
-		UCS1002ID_Main();
-		#else
-		GL887_Main();
-		#endif
-    #endif                          
+	{ 
+	    CLEAR_MASK(StatusKeeper, BatteryProtectCHG); 
+	}                        
 #endif	// EN_PwrSeqTest
 	if (IS_MASK_SET(CMOS_TEST,b1_CMOS_delay1flag)&&IS_MASK_CLEAR(CMOS_TEST,BIT3))
 	{
@@ -438,14 +424,10 @@ void Hook_Timer100msEventA(void)
 * Return Values: NA
 *******************************************************************************
 */
-
 void Hook_Timer100msEventB(void)
 {
    VGA_Temperature();  // HEGANGS010:Enable GPU temperature and remove read remote temp
 #if !EN_PwrSeqTest
-	#if Support_WebCam
-	CameraProcess();
-	#endif	// Support_WebCam
 	WirelessProcess();		// Control WLAN and BT.
 	IFFSProcess();
 #endif
@@ -590,12 +572,7 @@ void Hook_Timer500msEventB(void)
 	Voicewakeup_MFG_Process();//Add CMD 0x59 test voice wake up for MFG.
 	#if SW_ISCT
 	ISCT_Process();
-	#endif	// SW_ISCT
-
-	#if UCS1022_Support
-	Ck_UpdateProfiles();
-	#endif	// UCS1022_Support
-
+	#endif	
 
 	if(cGPUACtoBattTime!=0)
 	{
@@ -880,7 +857,7 @@ void Hook_Timer1MinEvent(void)
 
 	#if SW_ISCT
 	ISCT_TimerCnt();
-	#endif	// SW_ISCT
+	#endif
 #endif
 }
 
@@ -1084,24 +1061,20 @@ void Dark7SegLed(void)
 void P80LedOut(BYTE bData)
 {
 	BYTE code * data_pntr;
+	// out upper byte
+	data_pntr = SEG7_Table;					// get 7-seg table
+	data_pntr +=((bData & 0xF0) >> 4);		// mask upper byte and shit 4 bytes	then get data of table
 
-	//if(FgDebugCarIn)							// if card dose not exist, return
-	{
-		// out upper byte
-		data_pntr = SEG7_Table;					// get 7-seg table
-		data_pntr +=((bData & 0xF0) >> 4);		// mask upper byte and shit 4 bytes	then get data of table
+	BRAM3A = *data_pntr;
+	Out7SegLED(*data_pntr);					// display upper value.
 
-		BRAM3A = *data_pntr;
-		Out7SegLED(*data_pntr);					// display upper value.
+	// out lower byte
+	data_pntr = SEG7_Table;					// get 7-seg table
+	data_pntr += (bData & 0x0F);	 		// mask lower byte then get data of table.
 
-		// out lower byte
-		data_pntr = SEG7_Table;					// get 7-seg table
-		data_pntr += (bData & 0x0F);	 		// mask lower byte then get data of table.
+	BRAM3B = *data_pntr;
 
-		BRAM3B = *data_pntr;
-
-		Out7SegLED(*data_pntr);					// dispaly lower value.
-	}
+	Out7SegLED(*data_pntr);					// dispaly lower value.
 }
 
 /*
@@ -1119,7 +1092,6 @@ void P80LedOut(BYTE bData)
 * Return Values: NA
 *******************************************************************************
 */
-
 void PollingBIOS80Port(void)
 {
 	if ( SystemNotS0 )
@@ -1132,10 +1104,10 @@ void PollingBIOS80Port(void)
 	
 	if((IS_MASK_CLEAR(UART_DB_RAM,BIT7))&&(IS_MASK_CLEAR(UART_DB_RAM,BIT3))) 
 	{
-		if(Read_EC_TX())     // EC_TX for detect debug card plug in Dont hot plug
+		if(Read_EC_TX())     // EC_TX for detect debug card plug in //Don't hot plug
 		{
-			GPCRE6 = OUTPUT;
-	    	GPCRC7 = OUTPUT; //EC_RX and BT_DIS common used WLAN/BT Module
+			EC_TX_OUTPUT;
+	    	EC_RX_OUTPUT; 
 			UART_DB_RAM = UART_DB_RAM|0x80;
 		}
 
@@ -1392,6 +1364,6 @@ void GPUProchotOnControl(void)
 void CPUThrottlingDelay(void)
 {
 	if(CPUThrottlingDelayTime > 0)
-		CPUThrottlingDelayTime--;
+        CPUThrottlingDelayTime--;
 }
 

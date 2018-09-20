@@ -17,13 +17,11 @@
 /*****************************************************************************/
 void MuteProcess(void)
 {
-	//ANGELAG010: add start
 	if(!Read_SLPS3()) 
-    	{
+    {
 		EC_MUTE_ACT();
 		return;
 	}
-	//ANGELAG010: add end
 	if ( SystemIsS0 )
 	{	// Check ISCT and command 94 status.
 		if( MuteCount == 0 )
@@ -43,36 +41,6 @@ void MuteProcess(void)
 }
 
 /*****************************************************************************/
-// Procedure: CameraProcess									TimeDiv: 100mSec
-// Description:
-// GPIO: GPIOG7
-// Referrals:
-/*****************************************************************************/
-void CameraProcess(void)
-{
-#if Support_WebCam
-	if ( SystemIsS0 )
-	{
-		if ( IS_MASK_SET(SYS_MISC1,ACPI_OS) )
-		{
-			if( nCameraExistGET && (IS_MASK_SET(pDevStus, pCamera)) && (IS_MASK_CLEAR(uISCT_2, b4ISCT_Camera)) )
-			{
-				SET_MASK(LENOVODEVICE,Camera_PwrOn);	// Set Camera power enable bit.
-				CMOS_Cam_ON();
-			}
-			else
-			{
-				CLR_MASK(LENOVODEVICE,Camera_PwrOn);	// Set Camera power disable bit.
-				CMOS_Cam_OFF();
-			}
-		}
-	}
-	//else if ( SystemIsS5 || SystemIsS3 )
-	//{ CMOS_Cam_ON(); }
-#endif	// Support_WebCam
-}
-
-/*****************************************************************************/
 // Procedure: WirelessProcess									TimeDiv: 100mSec
 // Description:
 // GPIO: GPIOG7
@@ -80,94 +48,15 @@ void CameraProcess(void)
 /*****************************************************************************/
 void WirelessProcess(void)
 {
-#if Havekillswitch
-	/*if( pDevStus.bit.pKillSwitch != nKillSwitchGET )
-	{
-		if( IS_MASK_SET(cCmd, b6TestBtnEn) )
-			StringToHost1( sKillSW_scan_codes );
-		pDevStus.bit.pKillSwitch = nKillSwitchGET;
-
-		pSmiTrigSource4.bit.STS4_WLSwitch = 1;
-		if( pDevStus.bit.pKillSwitch )
-		{ SET_MASK(DEVICEMODULE,b4KILL_STATUS); }
-		else
-		{ CLR_MASK(DEVICEMODULE,b4KILL_STATUS); }
-
-		if ( cSysStus.bit.cSS_S0 && !cSysStus.bit.cSS_S3
-			&& !pwrSUSPactive && cSysStus.bit.cSS_Acpi )
-		{
-			uVPCeventSource = 0x00;
-			uVPCeventSource2 = VPCeventAllRF;
-			pSmiTrigSource4.bit.STS4_VPC = 1;
-		}
-	}
-	*/
-#else
-	SET_MASK(DEVICEMODULE,b4KILL_STATUS);  // workaround for no killswitch
-#endif
+	SET_MASK(DEVICEMODULE,b4KILL_STATUS); 
 
 	if ( SystemIsS0 && (IS_MASK_SET(SYS_MISC1,ACPI_OS)) )
 	{
-		#if Havekillswitch
-		if( nKillSwitchGET )
-		{
-			if ( uWLBTLanTemp != DEVICEMODULE )
-			{
-				uWLBTLanTemp = DEVICEMODULE;
-				ECQEvent(WLAN_BTN_EVENT_65);	// 0x65 WLAN status notify.
-			}
-		}
-		#else
-		//Add sent Qevent 0x42 for WLAN&BT on/off under win7.
-		/*if ( IS_MASK_SET(DEVICEMODULE,WIRELESS_EXIST) )	// Check WLAN exist.
-		{
-			if ( IS_MASK_SET(pDevStus, pWireless) )
-			{
-				SET_MASK(DEVICEMODULE,WIRELESS);	// Eanble WLAN.
-				//if ( WLAN_OFF_Cnt == 0 )
-				//{ WL_OFF_ON(); }
-				//{ WLAN_OFF_Cnt--; }
-				//WL_OFF_ON();
-			}
-			else
-			{
-				//WL_OFF_OFF();
-				//if ( WLAN_OFF_Cnt == 0 )
-				//{ CLR_MASK(DEVICEMODULE,WIRELESS);  }	// Disable WLAN.
-				//else
-				//{ WLAN_OFF_Cnt--; }
-				CLR_MASK(DEVICEMODULE,WIRELESS);// Disable WLAN.
-			}
-		}
-		else
-		{
-			//WL_OFF_OFF();
-			CLR_MASK(DEVICEMODULE,WIRELESS);	// Disable WLAN.
-		}
-
-		if ( IS_MASK_SET(DEVICEMODULE,BLUETOOTH_EXIST) )	// Check BT exist.
-		{
-			if ( IS_MASK_SET(pDevStus, pBluetooth) )
-			{ 
-			        nBlueToothEN; 
-                     }
-			else
-			{ 
-			        nBlueToothDIS; 
-                      }
-		}
-		else
-		{ 
-		        nBlueToothDIS; 
-             }*/
-		// Add sent Qevent 0x42 for WLAN&BT on/off under win7.
-
 		if ( uWLBTLanTemp != DEVICEMODULE )
 		{
 			uWLBTLanTemp = DEVICEMODULE;
 			ECQEvent(WLAN_BTN_EVENT_65);	// 0x65 WLAN status notify.
 		}
-		#endif
 	}
 }
 
@@ -431,17 +320,13 @@ void SetVGA_AC_DET(void)
 		if (!Read_AC_IN())
 		{
 			AC_PRESENT_LOW();
-		//	VGA_AC_DET_LO();
 		}
 		else
 		{
 			AC_PRESENT_HI();
-           // if(SystemIsS0)
-           // { VGA_AC_DET_HI(); }
-           // else
-           // { VGA_AC_DET_LO(); }
 		}
 	}
+	
 	if(SystemIsDSX)
 	{
 		TYPE_C_M0_LOW();
@@ -453,6 +338,7 @@ void SetVGA_AC_DET(void)
 		TYPE_C_M1_HI();
 	}
 }
+
 void SetAOU_DET_Int(void)//WU71 External Source from GPE1 WKO[71], to INT73 //HEGANGS021:one key wake
 {
     SET_MASK(WUEMR7, BIT(1));//  Either-edge (rising-edge or falling-edge) triggered is selected.
@@ -464,13 +350,8 @@ void SetAOU_DET_Int(void)//WU71 External Source from GPE1 WKO[71], to INT73 //HE
 
 void WakeUp_DO_Function(void)
 {
-#if UCS1022_Support
-    UCS1002_TimerX_FakeISR();
-#endif	// UCS1022_Support
-
     if(ExtTimeCnt == 1)
     {
-        UCS1002ID_Main();
         ExtTimeCnt=0;
     }
     else
@@ -479,20 +360,6 @@ void WakeUp_DO_Function(void)
     }
 
     ChkBattery_Percl();
-	//Check_EC_ON();
-	/*//ANGELAS007:Optimize power on sequence.
-	//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-	if(NTC_V1>682)
-	{
-		GPCRF0 = OUTPUT;
-		SET_MASK(GPDRF,BIT(0));
-	}
-	else
-	//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
-	*///ANGELAS007:Optimize power on sequence.
-    //EC_ON_HI(); //ANGELAS038:remove  
-	//	EC_ON2_HI();
-    //EC_MainPwr_ON(); //ANGELAS044:remove
 
 	if( Read_EC_NOVO() )
 	{ uNovoVPCCount = 1; }
@@ -562,7 +429,7 @@ void ISCT_Process(void)
 		AOAC_STATUS = 0xC0;		// Clear ISCT status.
 		ISCT_Behavior();
 	}
-#endif	// SW_ISCT
+#endif	
 }
 
 /*****************************************************************************/
@@ -588,7 +455,7 @@ void ISCT_Behavior(void)
 		uISCT_2 |= 0xC7;					// bit3:Disable Mute, bit4:Enable Camera, bit5:Enable Power LED.
 		CLR_MASK(pPROCHOT, b1ISCT_PROCHOTon);	// Clear CPU Prochot function.
 	}
-	#endif	// SW_ISCT
+	#endif
 }
 
 /*****************************************************************************/
@@ -611,41 +478,6 @@ void ISCT_TimerCnt(void)
 		    ISCT_Timer--; 
         }
 	}
-	#endif	// SW_ISCT
-}
-
-/*****************************************************************************/
-// Procedure: GL887_Main									TimeDiv: 100mSec
-// Description: Check USB charger of device.
-// GPIO:
-// Referrals: Genesys GL887 IC.
-/*****************************************************************************/
-#if Support_USB_Charge 
-    #if UCS1022_Support
-    #else
-void GL887_Main(void)
-{
-	if( SystemIsS3 || SystemIsS5 )
-	{
-		if ( (IS_MASK_SET(SYS_STATUS,AC_ADP) || (nBattGasgauge > USB_BAT_LOW)) && (IS_MASK_CLEAR(USB_Charger, b2USB_TmlDis)) )
-	 	{
-			if ( (IS_MASK_SET(EMStatusBit, b1SetUSBChgEn)) || (SystemIsS3) )	// check to always charger.
-	  		{
-				USB_CHG_MOD_HI();	// Genesys Auto mode(DCP and Apple 2A).
-				USB_CH_INPUT;		// Turn on USB charger port.
-				return;
-			}
-		}
-		USB_CHG_MOD_LOW();		// Genesys CDP Mode
-		USB_CH_OUTPUT;			// Turn off USB charger port.
-		USB_CH_LOW();
-	}
-	else
-	{
-		USB_CHG_MOD_LOW();		// Genesys CDP Mode
-		USB_CH_INPUT;			// Turn on USB charger port.
-	}
-}
-    #endif
-#endif                     
+	#endif	
+}                     
 

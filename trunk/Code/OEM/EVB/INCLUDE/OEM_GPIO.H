@@ -27,18 +27,17 @@
 //                   [10] LPCRST# in GPIOD2
 //                   [11] LPCRST# is dsiabled
 #define GCR_Init		0x06    //
-#define GCR2_Init		0x20	// Turn on SMBus4 function.
-//#define GCR3_Init       0X41   //enable clkrun 72JERRY021: Modify clkrun signal setting follow quiet mode.//72JERRY022¡êoPECI VCC power down gate
-#define GPOTH_Init      0X20   //72JERRY037: Modify power sequence and GPIO setting follow EE.H5 OD
-#define GCR10_Init      0x01 	//ANGELAS014: Modify EC reset time to 8s. 00 to 01
-//#define GPOTA_Init      0x08    // GPA3 is OpenDrain//72JERRY037: Modify power sequence and GPIO setting follow EE.
+#define GCR2_Init		0x20	//Turn on SMBus4 function.
+#define GPOTH_Init      0X20     
+#define GCR10_Init      0x01 	//Modify EC reset time to 8s. 
+
 
 
 
 //-----------------------------------------------------------------
 // GPIO Port A Registers define
 //-----------------------------------------------------------------
-#define PortA_Init		0x07            // PORT Data //ANGELAS040:0x06 to 0x07
+#define PortA_Init		0x07            // PORT Data 
 
 #define PortA0_Ctrl		OUTPUT			//O   24      PWR_LED#
 #define PortA1_Ctrl		OUTPUT			//O   25      BATT_CHG_LED#
@@ -47,54 +46,47 @@
 #define PortA4_Ctrl		OUTPUT          //O   30      EC_FAN_PWM1         	
 #define PortA5_Ctrl		OUTPUT       	//O   31      EC_FAN_PWM
 #define PortA6_Ctrl		INPUT+PULL_DW	//O   32      BEEP#
-#define PortA7_Ctrl		OUTPUT	        //O   34   	EC_VCCST_EN
+#define PortA7_Ctrl		OUTPUT	        //O   34   	  EC_VCCST_EN
 
-#define PWR_WHITELED_ON()				CLEAR_MASK(GPDRA,BIT(0)) //ANGELAS023:Modify UMA LED function.//HEGANGS042:Modify the led behavior follow new spec
-#define PWR_WHITELED_OFF()				SET_MASK(GPDRA,BIT(0)) //ANGELAS023:Modify UMA LED function.
-#define PWR_WHITELED_ALT                 GPCRA0 = ALT  //MEILING030:add.
-#define PWR_WHITELED_OUTPUT		  		GPCRA0 = OUTPUT	//MEILING030:add.
-#define PWR_WHITELED_INPUT		    	GPCRA0= INPUT   //MEILING030:add.
+#define PWR_WHITELED_ON()				CLEAR_MASK(GPDRA,BIT(0))
+#define PWR_WHITELED_OFF()				SET_MASK(GPDRA,BIT(0)) 
+#define PWR_WHITELED_ALT                GPCRA0 = ALT  
+#define PWR_WHITELED_OUTPUT		  		GPCRA0 = OUTPUT	
+#define PWR_WHITELED_INPUT		    	GPCRA0= INPUT   
 
-/*ANGELAS038:remove start
-#define EC_ON_HI()  				SET_MASK(GPDRA,BIT(0))
-#define EC_ON_LOW() 				CLEAR_MASK(GPDRA,BIT(0))
-#define Read_EC_ON()				IS_MASK_SET(GPDRA,BIT(0))
-*///ANGELAS038:remove end
-#define BAT_LOW_LED_ON()			CLEAR_MASK(GPDRA,BIT(2)) //HEGANGS042:Modify the led behavior follow new spec
-#define BAT_LOW_LED_OFF()			SET_MASK(GPDRA,BIT(2))
+#define BAT_LOW_LED_ON()			    CLEAR_MASK(GPDRA,BIT(2))
+#define BAT_LOW_LED_OFF()			    SET_MASK(GPDRA,BIT(2))
 
-#define PWR_AMBERLED_ON()				CLEAR_MASK(GPDRA,BIT(1)) //HEGANGS042:Modify the led behavior follow new spec
+#define PWR_AMBERLED_ON()				CLEAR_MASK(GPDRA,BIT(1))
 #define PWR_AMBERLED_OFF()				SET_MASK(GPDRA,BIT(1)) 
-#define PWR_AMBERLED_ALT                 GPCRA1 = ALT  
+#define PWR_AMBERLED_ALT                GPCRA1 = ALT  
 #define PWR_AMBERLED_OUTPUT		  		GPCRA1 = OUTPUT	
 #define PWR_AMBERLED_INPUT		    	GPCRA1= INPUT   
 
-//#define EC_VCCST_PWRGD_HI() 		SET_MASK(GPDRA,BIT(3))//72JERRY022: Modify GPIO setting follow SIT.
-//#define EC_VCCST_PWRGD_LOW()	 	CLEAR_MASK(GPDRA,BIT(3))//72JERRY022: Modify GPIO setting follow SIT.
 
-#define FAN1_PWM					DCR4
-#define FAN1_PWM_INDW				GPCRA4 = INPUT+PULL_DW	// Set FAN1_PWM input+pull down.
-#define FAN1_PWM_ALT				GPCRA4 = ALT			// Set FAN1_PWM Alt.
-#define FAN1_PWM_OUT				GPCRA4 = OUTPUT			// Set FAN1_PWM OUTPUT.
-#define EC_FAN1_PWM_HI()			SET_MASK(GPDRA,BIT(4))
+#define FAN1_PWM					    DCR4
+#define FAN1_PWM_INDW				    GPCRA4 = INPUT+PULL_DW	// Set FAN1_PWM input+pull down.
+#define FAN1_PWM_ALT				    GPCRA4 = ALT			// Set FAN1_PWM Alt.
+#define FAN1_PWM_OUT				    GPCRA4 = OUTPUT			// Set FAN1_PWM OUTPUT.
+#define EC_FAN1_PWM_HI()			    SET_MASK(GPDRA,BIT(4))
 
-#define FAN_PWM						DCR5
-#define FAN_PWM_INDW				GPCRA5 = INPUT+PULL_DW	// Set FAN_PWM input+pull down.
-#define FAN_PWM_ALT					GPCRA5 = ALT			// Set FAN_PWM Alt.
-#define FAN_PWM_OUT					GPCRA5 = OUTPUT			// Set FAN_PWM OUTPUT.
-#define EC_FAN_PWM_HI()				SET_MASK(GPDRA,BIT(5))
+#define FAN_PWM						    DCR5
+#define FAN_PWM_INDW				    GPCRA5 = INPUT+PULL_DW	// Set FAN_PWM input+pull down.
+#define FAN_PWM_ALT					    GPCRA5 = ALT			// Set FAN_PWM Alt.
+#define FAN_PWM_OUT					    GPCRA5 = OUTPUT			// Set FAN_PWM OUTPUT.
+#define EC_FAN_PWM_HI()				    SET_MASK(GPDRA,BIT(5))
 
-#define PWM_BEEP					DCR6
-#define BEEP_INIT					GPCRA6 = PortA6_Ctrl	// init PWM Beep.
-#define BEEP_ALT					GPCRA6 = ALT			// Set PWM BEEP ALT.
+#define PWM_BEEP					    DCR6
+#define BEEP_INIT					    GPCRA6 = PortA6_Ctrl	// init PWM Beep.
+#define BEEP_ALT					    GPCRA6 = ALT			// Set PWM BEEP ALT.
 
-#define EC_VCCST_EN_HI()			SET_MASK(GPDRA,BIT(7))
-#define EC_VCCST_EN_LOW()			CLEAR_MASK(GPDRA,BIT(7))
+#define EC_VCCST_EN_HI()			    SET_MASK(GPDRA,BIT(7))
+#define EC_VCCST_EN_LOW()			    CLEAR_MASK(GPDRA,BIT(7))
 
 //-----------------------------------------------------------------
 // GPIO Port B Registers define
 //-----------------------------------------------------------------
-#define PortB_Init		0x00            // PORT Data //martin0313 set EC_ON to high, or EC will loss power.
+#define PortB_Init		0x00            // PORT Data 
 
 #define PortB0_Ctrl		INPUT			//O    	108 	   ACIN(G_Skylake)
 #define PortB1_Ctrl		INPUT			//O    	109 	   LID_SW#
@@ -115,19 +107,6 @@
 #define EC_VCCIO_EN_LOW()	CLEAR_MASK(GPDRB,BIT(2))
 
 #define Read_EC_PWRBTN() 	IS_MASK_CLEAR(GPDRB,BIT(3))
-
-//no function
-//#define EC_ON_LOW()		CLEAR_MASK(GPDRB,BIT(4))
-//#define EC_ON_HI()  		SET_MASK(GPDRB,BIT(4))
-//#define Read_EC_ON()		IS_MASK_SET(GPDRB,BIT(4))
-
-//MEILING001:S-
-/*//no function
-#define GATEA20_ON()		SET_MASK(GPDRB,BIT(5))
-#define GATEA20_OFF()		CLEAR_MASK(GPDRB,BIT(5))
-#define GATEA20_HI()		SET_MASK(GPDRB,BIT(5))
-#define GATEA20_LOW()		CLEAR_MASK(GPDRB,BIT(5))*/
-//MEILING001:E-
 
 #define RTCRST_ON_HI()		SET_MASK(GPDRB,BIT(5))
 #define RTCRST_ON_LOW()		CLEAR_MASK(GPDRB,BIT(5))
@@ -366,8 +345,8 @@
 #define EC_ON_1_8V_HI()    SET_MASK(GPDRH,BIT(4))
 #define EC_ON_1_8V_LOW()   CLEAR_MASK(GPDRH,BIT(4))
 
-#define EC_VCCST_PWRGD_HI() 		SET_MASK(GPDRH,BIT(5))//72JERRY022: Modify GPIO setting follow SIT.
-#define EC_VCCST_PWRGD_LOW()	 	CLEAR_MASK(GPDRH,BIT(5))//72JERRY022: Modify GPIO setting follow SIT.
+#define EC_VCCST_PWRGD_HI() 		SET_MASK(GPDRH,BIT(5))
+#define EC_VCCST_PWRGD_LOW()	 	CLEAR_MASK(GPDRH,BIT(5))
 
 #define PCH_PWROK_LOW()		CLEAR_MASK(GPDRH,BIT(6))
 #define PCH_PWROK_HI() 		SET_MASK(GPDRH,BIT(6))
@@ -408,8 +387,8 @@
 
 #define PortJ0_Ctrl		INPUT			//I    	76 	 NOVO#
 #define PortJ1_Ctrl		OUTPUT			//O    	77 	 EC_MUTE#(720S)EC_SLP_S5#(reserved)
-#define PortJ2_Ctrl		OUTPUT			//O    	78 	 SUSWARN#(reserved)(EC_TS_ON)//72JERRY049:Add enable/disable touch panel pin.
-#define PortJ3_Ctrl		OUTPUT			//O    	79 	 EC_STATUS#(reserved)(720S)//72JERRY056:Add enable/disable TP function by HW pin.
+#define PortJ2_Ctrl		OUTPUT			//O    	78 	 SUSWARN#(reserved)(EC_TS_ON)//Add enable/disable touch panel pin.
+#define PortJ3_Ctrl		OUTPUT			//O    	79 	 EC_STATUS#(reserved)(720S)//Add enable/disable TP function by HW pin.
 #define PortJ4_Ctrl		OUTPUT       	//O    	80 	 H_PROCHOT#_EC
 #define PortJ5_Ctrl		INPUT			//O    	81 	 ENBKL
 #define PortJ6_Ctrl		OUTPUT			//O    	128   AC_PRESENT_R
@@ -420,13 +399,13 @@
 #define EC_MUTE_ACT()		CLEAR_MASK(GPDRJ,BIT(1))
 #define EC_MUTE_INACT()		SET_MASK(GPDRJ,BIT(1))
 
-#define EC_TS_ON_HI()           SET_MASK(GPDRJ,BIT(2)) //72JERRY049:Add enable/disable touch panel pin.
-#define EC_TS_ON_LOW()          CLEAR_MASK(GPDRJ,BIT(2)) //72JERRY049:Add enable/disable touch panel pin.
-#define READ_EC_TS_ON()         IS_MASK_SET(GPDRJ,BIT(2))//72JERRY049:Add enable/disable touch panel pin.
+#define EC_TS_ON_HI()           SET_MASK(GPDRJ,BIT(2)) //Add enable/disable touch panel pin.
+#define EC_TS_ON_LOW()          CLEAR_MASK(GPDRJ,BIT(2)) //Add enable/disable touch panel pin.
+#define READ_EC_TS_ON()         IS_MASK_SET(GPDRJ,BIT(2))//Add enable/disable touch panel pin.
 
-#define EC_TP_ON_HI()           SET_MASK(GPDRJ,BIT(3)) //72JERRY056:Add enable/disable TP function by HW pin.
-#define EC_TP_ON_LOW()          CLEAR_MASK(GPDRJ,BIT(3)) //72JERRY056:Add enable/disable TP function by HW pin.
-#define READ_EC_TP_ON()         IS_MASK_SET(GPDRJ,BIT(3))//72JERRY056:Add enable/disable TP function by HW pin.
+#define EC_TP_ON_HI()           SET_MASK(GPDRJ,BIT(3)) //Add enable/disable TP function by HW pin.
+#define EC_TP_ON_LOW()          CLEAR_MASK(GPDRJ,BIT(3)) //Add enable/disable TP function by HW pin.
+#define READ_EC_TP_ON()         IS_MASK_SET(GPDRJ,BIT(3))//Add enable/disable TP function by HW pin.
 
 #define H_PROCHOT_ON()			SET_MASK(GPDRJ,BIT(4))  
 #define H_PROCHOT_OFF()			CLEAR_MASK(GPDRJ,BIT(4))     

@@ -804,7 +804,6 @@ void service_scan(void)
 		//if (SystemIsS3)//72JERRY067:Add judge LID state when KB wake up system in S3
 		if (SystemIsS3&&(Read_LID_SW_IN())&&(Read_LID_PAD()))//72JERRY067:Add judge LID state when KB wake up system in S3
 		{
-			//if ( DSxPowState != SYSTEM_DSxOK )
 			//{
 			//	if(!Read_YOGA_ID())
 				{

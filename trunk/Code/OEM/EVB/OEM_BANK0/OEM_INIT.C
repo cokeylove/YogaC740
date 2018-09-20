@@ -163,53 +163,8 @@ void Oem_Initialization(void)
 	}
 	else
 	{ CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }	// Disable Charger in S4/S5.
-	#endif   ////72JERRY008:
-#if Support_USB_Charge  //T19+
-    #if UCS1022_Support
-	//UCS1002ID = ReadUCS1022ID();
-	UCS1002ID = SMSC_UCS1002ID;
-	//SET_MASK(EMStatusBit, b1SetUSBChgEn);
-	if (IS_MASK_SET(eEEPROMData,b1SetUSBChgEn))
-	{
-		SET_MASK(EMStatusBit,b1SetUSBChgEn);	// Enable Charger in S4/S5.
-		/*//ANGELAS007:Optimize power on sequence.
-		//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-		if(NTC_V1>682)
-		{
-			GPCRF0 = OUTPUT;
-			SET_MASK(GPDRF,BIT(0));
-		}
-		else
-		//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
-		*///ANGELAS007:Optimize power on sequence.
-		//EC_ON_HI(); //ANGELAS038:remove 
-		//EC_ON2_HI();
-		CLR_MASK(LENOVOPMFW_Temp,b5EC_ON_EN);	// EC not turn off USB.
-	}
-	else
-	{ CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }	// Disable Charger in S4/S5.
-    #else
-	if (IS_MASK_SET(eEEPROMData,b1SetUSBChgEn))	// Check S4/S5 feature.
-	{
-		SET_MASK(EMStatusBit,b1SetUSBChgEn);	// Enable Charger in S4/S5.
-		/*//ANGELAS007:Optimize power on sequence.
-		//ANGELAS005:s+ Support UMA SKU EC_ON pin design.
-		if(NTC_V1>682)
-		{
-			GPCRF0 = OUTPUT;
-			SET_MASK(GPDRF,BIT(0));
-		}
-		else
-		//ANGELAS005:e+ Support UMA SKU EC_ON pin design.
-		*///ANGELAS007:Optimize power on sequence.
-		//EC_ON_HI(); //ANGELAS038:remove 
-		//EC_ON2_HI();
-		CLR_MASK(LENOVOPMFW_Temp,b5EC_ON_EN);	// EC not turn off USB.
-	}
-	else
-	{ CLEAR_MASK(EMStatusBit,b1SetUSBChgEn); }	// Disable Charger in S4/S5.
-    #endif	// UCS1022_Support
-#endif                           // Support_USB_Charge      
+#endif   
+   
 	CheckECCHIPVer();
 	NOVO_COUNTER = T_PSWOFF;//Hang check
 }

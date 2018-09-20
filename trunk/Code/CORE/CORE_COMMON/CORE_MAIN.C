@@ -59,10 +59,6 @@ void main(void)
 	else
 	{
 		ECSleepCount = 3;
-		//ProcessSID(COLDBOOT_ID);
-		//pLastSID  = COLDBOOT_ID; //ANGELAS089: remove
-        //uMBID = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07) ,0xE0);
-
 		EEPROM_PwrSts = Read_Eflash_Byte(EEPROMA2,(EEPROMA1_B03 | 0x07),0xDF);
 		if( (EEPROM_PwrSts & 0x10) != 0 )
 		{
@@ -100,20 +96,17 @@ void main(void)
     #if Support_Mirror_Code
     if(!((WinFlashMark == 0xFC)&&(WinFlashMark2 == 0x00)&&(WinFlashMark1==0x55))) //Add WinFlashMark1 check
     {
-    	RamDebug(0x88);
        	Check_Mirror_Occurs(); 
        	if(Read_Eflash_Byte(0x00, 0x00, 0x4D) != 00)
        	{
            	Do_Eflash_Write_1Byte(0x00, 0x00, 0x00, 0x4D);            
-           	RamDebug(0x66);
 	    	FLHCTRL3R |= 0x80;	
-	     	HINSTC1 |= 0x40;           
-            RamDebug(0x77);               
+	     	HINSTC1 |= 0x40;                       
        	}
     }    
     #endif
-	ProcessSID(ShutDnCause); //ANGELAS089:add
-	//T11N + e
+	ProcessSID(ShutDnCause); 
+
 	while(1)
    	{
         if(OEM_SkipMainServiceFunc()==Normal_MainService)
@@ -404,7 +397,7 @@ void service_1mS(void)
     {
         return;
     }
-	//72JERRY076: S+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+	//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
     if((Timer1msCnt%2)==0x00)
     {
       Timer2msEvent();
@@ -439,7 +432,7 @@ void service_1mS(void)
         }
       }
     }
-	//72JERRY076: E+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+	//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
     if((Timer1msCnt%5)==0x00)
     {
 	    Timer5msEvent();
@@ -543,7 +536,7 @@ void Timer1msEvent(void)
     ReSendPS2PendingData();
     Hook_Timer1msEvent(Timer1msCnt);
 }
-//72JERRY076:S+ Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
 //------------------------------------------------------------
 // 2ms events
 //------------------------------------------------------------
@@ -573,7 +566,7 @@ void Timer20msEventA(void)
     Hook_Timer20msEventA();
 }
 
-//72JERRY076: E+Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
 //------------------------------------------------------------
 // 5ms events
 //------------------------------------------------------------
@@ -756,22 +749,11 @@ bit CheckCanEnterDeepSleep()
 		resault=0x01;
 	}
     //ANGELAS044:add end
-   	//ANGELAS081:remove start
-   	//if(Read_LID_SW_IN()&& IS_MASK_SET(SysStatus,CloseLid))//G83:Fixed cannot resume from S3 by open lid after enter S3 via close lid on DC mode.
-    //{
-    //	resault = 0x01;
-    //}
-    //ANGELAS081:remove end
 	if(IS_MASK_SET(POWER_FLAG1, wait_PSW_off))	// power switch pressed
 	{
 		resault = 0x01;
 	}
-	 /*ANGELAS057:remove start
-	if(SystemIsS3) //ANGELAS044:s5 to s3
-	{
-		resault = 0x01;
-	}
-	*///ANGELAS057:remove end
+	
 	if((SysPowState==SYSTEM_S5_S0)||(SysPowState==SYSTEM_S4_S0)||(SysPowState==SYSTEM_S3_S0)||(SysPowState==SYSTEM_S0_S5)||(SysPowState==SYSTEM_S0_S4)||(SysPowState==SYSTEM_S0_S3)||(SysPowState == SYSTEM_S5_DSX)||(SysPowState == SYSTEM_DSX_S5))//72JERRY020: Modify enter EC sleep setting.
 	{
 		resault = 0x01;
@@ -840,37 +822,22 @@ void InitEnterDeepSleep(void)
 	KSOH1	= 0x00;
 	KSOH2	= 0x00;
 	KSICTRL = 0x00;
-
-	//MEILING030:S-remove change LED control mode.
-	/*if(SystemIsS3)
-	{
-		GPCRA0 = ALT; 
-		DCR0 = 0x7F; 
-	}*/
-	//MEILING030:S-remove change LED control mode.
-	
-	
+		
 	if(SystemIsDSX)
 	{
-	//	BAT_LOW_LED_ON();
-	//	BAT_CHG_LED_ON(); //HEGANGS009:Enable ec sleep and modify DC-S5 gpio setting
 		PWR_WHITELED_ON(); //HEGANGS042:Modify the led behavior follow new spec
 		PWR_AMBERLED_ON();
-		//NUMLED_ON();
 		CAPLED_ON();
-		//GPCRA0=INPUT;//72JERRY035: Modify EC sleep GPIO setting.
-		//GPCRA1=INPUT;	//72JERRY035: Modify EC sleep GPIO setting.	
-		//GPCRA2=INPUT;//72JERRY035: Modify EC sleep GPIO setting.
 	}
 	
 	FPCFG&=0xBF;
 	ADCCFG &= 0xFE; 
 	CGCTRL2R = 0x70;
 	CGCTRL3R = 0x2F; 
-	
-	//if(!(SystemIsS5||SystemIsDSX)) //72JERRY020: Modify enter EC sleep setting.
-      	ECPowerDownEnableExternalTimer2(); 
-		//72JERRY020:s+ Modify enter EC sleep setting.
+	        
+
+  	ECPowerDownEnableExternalTimer2(); 
+	//Modify enter EC sleep setting.
 	if(IS_MASK_SET(BT1_STATUS1, bat_in))	// battery Present
 	{
 		BatteryOutWakeEnable();
@@ -879,13 +846,12 @@ void InitEnterDeepSleep(void)
 	{
 		BatteryINWakeEnable();
 	}
-	//72JERRY020:e+ Modify enter EC sleep setting.
-	//SetACIN_Int();
+	//Modify enter EC sleep setting.    
 	ACInOutIntEnable();
     Setlanwake_Int();//Modify sometimes will wake up from S3 when plug AC adaptor after sending magic-package under DC mode.
 	SetPWRSW_Int();
     SetNovo_Int();
-	SetWOV_Int();//72JERRY028: Modify Voice Wake signal status in deep sleep.
+	SetWOV_Int();//Modify Voice Wake signal status in deep sleep.
     MXLID_Wake_En();
     SlpS3_Wake_En();
 	InterKBDWakeEnable();
@@ -895,27 +861,18 @@ void InitEnterDeepSleep(void)
 	DACPWRDN = 0xFF;
     CGCTRL1R = 0x0F;
 
-	if(SystemIsDSX||SystemIsS5)//72JERRY020: Modify enter EC sleep setting.
-	{ 
-		//LMLKBL0015:add start.
+	if(SystemIsDSX||SystemIsS5)// Modify enter EC sleep setting.
+	{         
 		SMBUS_CK1_HIGH;
 		SMBUS_DA1_HIGH;
 		SMBUS_CK1_IN;
-		SMBUS_DA1_IN;
-		//LMLKBL0015:add end.
-
-		//PM_PWRBTN_LOW(); //72JERRY035: Modify EC sleep GPIO setting.
+		SMBUS_DA1_IN;               
 		
-		GPCRA5=INPUT; 
-		//GPCRB6=INPUT;		//72JERRY035: Modify EC sleep GPIO setting.
-		//GPCRC0=INPUT;			
-		GPCRC7=INPUT;		
-		//GPCRD3=INPUT;		
-		//GPCRE3=INPUT;		
-		//GPCRE7=INPUT; //LMLNANO013:remove.	
-		GPCRG6=INPUT;	
-		//GPCRH3=INPUT; //LMLNANO013:remove.
-		//GPCRJ3=INPUT;
+		GPCRA5=INPUT;  	
+		GPCRC7=INPUT;		        
+
+		GPCRG6=INPUT;	        
+
 		GPCRJ4=INPUT;
 		GPCRJ6=INPUT;
 	} 
@@ -935,9 +892,9 @@ void InitEnterDeepSleep(void)
 	ISR3 = 0xFF;
 	ISR4 = 0xFF;
 	ISR13= 0xFF; // AC in
-	ISR14= 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+	ISR14= 0xFF;// Modify Voice Wake signal status in deep sleep.
 	ISR16= 0xFF; // Novo
-	ISR15= 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+	ISR15= 0xFF; //Modify enter EC sleep setting.
 	
 }
 
@@ -957,8 +914,8 @@ void InitWakeFromDeepSleep(void)
     IER9    = 0x00;
 	IER13	= 0x00; // AC in
 	IER16   = 0x00; // Novo
-	IER14   = 0x00;//72JERRY028: Modify Voice Wake signal status in deep sleep.
-	IER15   = 0x00; // battery//72JERRY020: Modify enter EC sleep setting.
+	IER14   = 0x00;// Modify Voice Wake signal status in deep sleep.
+	IER15   = 0x00; // Modify enter EC sleep setting.
 
 
 
@@ -969,9 +926,9 @@ void InitWakeFromDeepSleep(void)
 	ISR4	= 0xFF;
     ISR9    = 0xFF;
     ISR13   = 0xFF; // AC in
-    ISR14   = 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+    ISR14   = 0xFF;// Modify Voice Wake signal status in deep sleep.
     ISR16   = 0xFF; // Novo
-    ISR15= 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+    ISR15= 0xFF; // Modify enter EC sleep setting.
 
 
 	WUESR1	= 0xFF;
@@ -980,9 +937,9 @@ void InitWakeFromDeepSleep(void)
 	WUESR4	= 0xFF;
 	WUESR7	= 0xFF;
 	WUESR10	= 0xFF; // AC in
-	WUESR11	= 0xFF;//72JERRY028: Modify Voice Wake signal status in deep sleep.
+	WUESR11	= 0xFF;// Modify Voice Wake signal status in deep sleep.
 	WUESR14	= 0xFF; // Novo
-	WUESR13	= 0xFF; // battery//72JERRY020: Modify enter EC sleep setting.
+	WUESR13	= 0xFF; //odify enter EC sleep setting.
 
     ADCSTS = EC_DeepSleep_Temp0;
     ADCCFG = EC_DeepSleep_Temp1;
@@ -994,49 +951,35 @@ void InitWakeFromDeepSleep(void)
 	Init_Regs();
 	Enable_Any_Key_Irq();	//msmart
 
-	//MEILING030:S- remove change power led control.
-	/*if(SystemIsS3)
-	{
-		GPCRA0 = OUTPUT; 
-	}*/
-	//MEILING030:E-
 	
-	if(SystemIsDSX||SystemIsS5)//72JERRY020: Modify enter EC sleep setting.
-	{
-		//LMLKBL0015:add start.
+	if(SystemIsDSX||SystemIsS5)// Modify enter EC sleep setting.
+	{        
+
 		SMBUS_CK1_ALT;
-		SMBUS_DA1_ALT;
-		//LMLKBL0015:add end.
+		SMBUS_DA1_ALT;        
 		
 		GPCRA0=OUTPUT;
-		GPCRA1=OUTPUT; //MEILING030:add.
+		GPCRA1=OUTPUT;  
 		GPCRA2=OUTPUT;
 		BAT_LOW_LED_OFF();
 		PWR_WHITELED_OFF();//HEGANGS042:Modify the led behavior follow new spec
-		PWR_AMBERLED_OFF();
-		//NUMLED_OFF();
+		PWR_AMBERLED_OFF();        
 		CAPLED_OFF();
-		BAT_CHG_LED_OFF();
-		//PM_PWRBTN_HI(); //72JERRY020: Modify enter EC sleep setting.//72JERRY041:Modify PWRBT signal in DC mode setting to low.
-	
-		//GPCRA3=OUTPUT;		//72JERRY027: Modify KB backlight signal in deep sleep.
+		BAT_CHG_LED_OFF();                
+
 		GPCRA4=OUTPUT;	
 		GPCRA5=OUTPUT;
 		GPCRA7=OUTPUT;		
-		GPCRB2=OUTPUT;		
-		//GPCRB6=OUTPUT;	//72JERRY035: Modify EC sleep GPIO setting.	
+		GPCRB2=OUTPUT;		        
+
 		GPCRC0=OUTPUT;		
 		GPCRC6=OUTPUT;		
 		GPCRC7=OUTPUT;		
 		GPCRD3=OUTPUT;		
 		GPCRE3=OUTPUT;		
 		GPCRE4=OUTPUT;
-		VR_ON_OFF();
-		//GPCRE7=OUTPUT;	//LMLNANO013:remove.	
-		GPCRF1=OUTPUT;	
-		//GPCRG0=OUTPUT;		 //ANGELAN007 remove
-		//GPCRG6=OUTPUT;	
-		//GPCRH3=OUTPUT;	//LMLNANO013:remove.
+		VR_ON_OFF(); 	
+		GPCRF1=OUTPUT;	        
 		GPCRH6=OUTPUT;	
 		GPCRJ3=OUTPUT;
 		GPCRJ4=OUTPUT;

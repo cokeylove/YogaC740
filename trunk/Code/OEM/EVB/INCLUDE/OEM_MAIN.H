@@ -7,10 +7,10 @@
 //-----------------------------------------------------------------------------
 extern void Hook_Timer1msEvent(IBYTE EventId);
 extern void Hook_Timer5msEvent(void);
-extern void Hook_Timer2msEvent(void);//72JERRY076: Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
-extern void Hook_Timer4msEventA(void);//72JERRY076: Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
-extern void Hook_Timer4msEventB(void);//72JERRY076: Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
-extern void Hook_Timer20msEventA(void);//72JERRY076: Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+extern void Hook_Timer2msEvent(void);//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+extern void Hook_Timer4msEventA(void);//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+extern void Hook_Timer4msEventB(void);//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
+extern void Hook_Timer20msEventA(void);//Optimize ucsi function to handle OPM,EC notify OS every 2S by Q_20.
 
 extern void Hook_Timer10msEventA(void);
 extern void Hook_Timer10msEventB(void);

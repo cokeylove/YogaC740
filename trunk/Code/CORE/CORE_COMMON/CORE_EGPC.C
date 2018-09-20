@@ -17,13 +17,11 @@
 //-----------------------------------------------------------------------------
 bit EGPC_Read( BYTE Addr )
 {
-	#if	Support_External_IO
+#if Support_External_IO
     EADDR = Addr;
-
     if( (EDAT >> 5) & 0x01 )
         return  TRUE;
-
-	#endif	// Support_External_IO
+#endif	
     return  FALSE;
 }
 
@@ -32,7 +30,7 @@ bit EGPC_Read( BYTE Addr )
 //-----------------------------------------------------------------------------
 void EGPC_Write( BYTE Addr, BYTE Data )
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     BYTE EGPC_TimeOut;
 
     EADDR = Addr;
@@ -43,9 +41,11 @@ void EGPC_Write( BYTE Addr, BYTE Data )
     {
         EGPC_TimeOut--;
         if( EGPC_TimeOut == 0 )
-		{ break; }
+		{ 
+		    break; 
+		}
     }   // Check transfer cycle done
-    #endif	// Support_External_IO
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ void EGPC_Write( BYTE Addr, BYTE Data )
 //-----------------------------------------------------------------------------
 void Set_EGPC( BYTE Addr )
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     BYTE EGPC_TimeOut;
 
     EADDR = Addr;
@@ -63,9 +63,10 @@ void Set_EGPC( BYTE Addr )
     while( (ESTS & 0x01) == 0 )
     {
         EGPC_TimeOut--;
-        if( EGPC_TimeOut == 0 )     break;
+        if( EGPC_TimeOut == 0 )     
+            break;
     }   // Check transfer cycle done
-	#endif	// Support_External_IO
+#endif
 }
 
 
@@ -74,7 +75,7 @@ void Set_EGPC( BYTE Addr )
 //-----------------------------------------------------------------------------
 void Clr_EGPC(BYTE Addr)
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     BYTE EGPC_TimeOut;
 
     EADDR = Addr;           // Address
@@ -84,15 +85,16 @@ void Clr_EGPC(BYTE Addr)
     while( (ESTS & 0x01) == 0 )
     {
         EGPC_TimeOut--;
-        if( EGPC_TimeOut == 0 )     break;
+        if( EGPC_TimeOut == 0 )     
+            break;
     }   // Check transfer cycle done
-    #endif	// Support_External_IO
+#endif	
 }
 
 //-----------------------------------------------------------------------------
 void Init_IT8302(void)
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     EGPC_Write(EG_FB_CLAMP,     EX_INPUT);	// 000100 00 GPIO4   FB_CLAMP
     EGPC_Write(EG_GC6_EVENT,    EX_INPUT);	// 000101 00 GPIO5   GC6_EVENT#
     EGPC_Write(EG_DGPU_PWROK,   EX_INPUT);	// 000111 00 GPIO7   DGPU_PWROK
@@ -110,12 +112,12 @@ void Init_IT8302(void)
     EGPC_Write(EG_S_DGPU_PWROK, EX_INPUT);	// 011111 00 GPIO31  S_DGPU_PWROK
     EGPC_Write(EG_S_GC6_EVENT,  EX_INPUT);	// 100001 00 GPIO33  S_GC6_EVENT#
     EGPC_Write(EG_S_GC6_EN,     EX_INPUT);	// 100011 00 GPIO35  S_GC6_EN
-    #endif	// Support_External_IO
+#endif	
 }
 
 void Init_IT8302_ControlPin(void) // Control Pin Default Output Low
 {
-	#if	Support_External_IO
+#if	Support_External_IO
     DGPU_PWR_EN_LOW();
     DGPU_HOLD_RST_LOW();
     DGPU_GC6_EN_LOW();
@@ -124,7 +126,7 @@ void Init_IT8302_ControlPin(void) // Control Pin Default Output Low
     S_DGPU_RST_LOW();
     S_DGPU_PWR_EN_LOW();
 	DGPU_FB_CLAMP_LOW();
-	#endif	// Support_External_IO
+#endif
 }
 
 

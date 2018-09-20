@@ -1,5 +1,17 @@
----- SUPPORT_UCSI Matches (4 in 4 files) ----
-Core_Initialization in CORE_INIT.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\CORE\CORE_COMMON) : 	#if SUPPORT_UCSI
-Hook_Timer20msEventA in OEM_MAIN.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 	#if SUPPORT_UCSI
-OEM_Project.H (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\INCLUDE) line 30 : #define SUPPORT_UCSI                FALSE //72JERRY060： UCSI feature//72JERRY083//72JERRY084: Disable UCSI feature.
-OEM_UCSI_CYP_CCG4.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) line 17 : #if SUPPORT_UCSI
+---- BatteryProtectCHG Matches (16 in 3 files) ----
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :     	if (IS_MASK_SET(StatusKeeper, BatteryProtectCHG))
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :             	CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :             	if (IS_MASK_CLEAR(StatusKeeper, BatteryProtectCHG))
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 								CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :             	SET_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :         	CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :             	if (IS_MASK_CLEAR(StatusKeeper, BatteryProtectCHG))
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 								CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :             	SET_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :     		CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :         	if (IS_MASK_CLEAR(StatusKeeper, BatteryProtectCHG))
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 							CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :         	SET_MASK(StatusKeeper, BatteryProtectCHG);
+UpdateNameSpace in OEM_BATTERY.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) :     	CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
+Hook_Timer100msEventA in OEM_MAIN.C (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\OEM_BANK0) : 	    CLEAR_MASK(StatusKeeper, BatteryProtectCHG); 
+OEM_MEMORY.H (D:\code\othermodels\YOGA C740\YogaC740\trunk\Code\OEM\EVB\INCLUDE) line 1832 : #define BatteryProtectCHG	BIT1

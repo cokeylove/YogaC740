@@ -65,7 +65,7 @@ void ThmIC_Temperature(void)
 {
 	BYTE BsData,BTmlCmd;
 
-	if( SystemNotS0 || (PwrOnDly5Sec!=0) )	 //T089: add PwrOnDly5Sec judge.
+	if( SystemNotS0 || (PwrOnDly5Sec!=0) )	 //add PwrOnDly5Sec judge.
 	{ 
 		return;
 	}
@@ -98,12 +98,7 @@ void ThmIC_Temperature(void)
 		{
 			if ( TMErrCnt > 68 )	// 30 Sec.
 			{
-				//	ProcessSID(THERMALCOMMFAIL_ID);	// 0x0B shutdown ID.
 				TMErrCnt = 0;					// Clear error count.
-				//RSMRST_LOW();  
-				//Delay1MS(1); //ANGELAS050:remove
-				//RSMRST_HI();   
-				//TmlICStep++;
 			}
 		}
 		ResetSMBus(SMbusCh4);
@@ -127,10 +122,6 @@ void ThmIC_Temperature(void)
 				{
 					ProcessSID(THERMALCOMMFAIL_ID);	// 0x0B shutdown ID.
 					TMErrCnt = 0;					// Clear error count.
-				    //RSMRST_LOW(); 
-				    //Delay1MS(1); //ANGELAS050:remove
-				    //RSMRST_HI();  
-				    //TmlICStep++;
 				}
 			}
 		}
@@ -139,14 +130,13 @@ void ThmIC_Temperature(void)
 			switch( TmlICStep & 0x03 )
 			{
 				case 0:
-					nRamTemp = BsData;	// Save VRAM temperature. //Q16
+					nRamTemp = BsData;	// Save VRAM temperature. 
 					TMErrCnt = 00;		// Clear error count.
 					CLEAR_MASK(ERR_THMSTS,b0ThmICError);	// Clear bit0.
 					TmlICStep++;		// next step 1.
 					break;
 				case 1:
-					nVramTemp = BsData;	// Save SSD temperature. //U1
-				//	EXTVGA_TEMP=nNBTemp; //T034+
+					nVramTemp = BsData;	// Save SSD temperature. 
 					TMErrCnt = 00;		// Clear error count.
 					CLEAR_MASK(ERR_THMSTS,b0ThmICError);	// Clear bit0.
 					TmlICStep++;		// next step 2.
@@ -1663,7 +1653,7 @@ void Thro_Std_Mode(BYTE BMBStep)
 		// Check CPU Turbo function.
 		Thro_Turbo(CPUTHRTable[(0+BMBStep)].Turbo_Rem,CPUTHRTable[(0+BMBStep)].Turbo_Off,TEMP_TYPE_CPU); //:8 to 0 
 		break;
-	#endif	// Support_TJ100
+	#endif
 
 	default:	// Tj90 Step4 and VGA Step16 Default.
 		THRTab_ToRAM((0+BMBStep));//T14H:4 to 2	// Throttle Standard table save to RAM.
@@ -1686,138 +1676,6 @@ void Thro_Std_Mode(BYTE BMBStep)
 
 }
 
-/* //ANGELAS050:remove start
-//-----------------------------------------------------------------------------
-// Throttling: DOS Mode.
-//-----------------------------------------------------------------------------
-void Thro_DOS_Mode(BYTE BMBStep)
-{
-	switch( (CPU_TYPE & 0x03) )
-	{
-	#if Support_TJ100
-	case 2:		// Tj100 Step10.
-		THRTab_ToRAM((1+BMBStep));//T14H:10 to 1	// Throttle Standard table save to RAM.
-		Thro_Shut_Status((1+BMBStep),TEMP_TYPE_CPU);  //T14H:10 to 1	
-		break;
-	#endif		// Support_TJ100
-
-	default:	// Tj90 Step6 Default.
-		THRTab_ToRAM((3+BMBStep));//:6 to 3	 // Throttle Standard table save to RAM.
-		Thro_Shut_Status((3+BMBStep),TEMP_TYPE_CPU);  //:6 to 3
-		break;
-	}
-	VTHRTab_ToRAM((5+BMBStep)); //:18 to 5	// VGA Throttle Standard table save to RAM.
-	Thro_Shut_Status((5+BMBStep),TEMP_TYPE_VGA);//:18 to 5	// Check Throttle and Shutdown status.
-
-}
-//-----------------------------------------------------------------------------
-// Throttling: Quite Mode.
-//-----------------------------------------------------------------------------
-void Thro_Quite_Mode(BYTE BMBStep)
-{
-	VTHRTab_ToRAM((17+BMBStep));	// VGA Throttle Standard table save to RAM.
-	switch( (CPU_TYPE & 0x03) )
-	{
-	case 3:		// Tj105 Step13 and VGA Step 17.
-		THRTab_ToRAM((13+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((13+BMBStep),TEMP_TYPE_CPU); 	// Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(13+BMBStep)].Turbo_Rem,CPUTHRTable[(13+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-
-	#if Support_TJ100
-	case 2:		// Tj100 Step9 and VGA Step 17.
-		THRTab_ToRAM((9+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((9+BMBStep),TEMP_TYPE_CPU); 		// Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(9+BMBStep)].Turbo_Rem,CPUTHRTable[(9+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-	#endif		// Support_TJ100
-
-	case 1:		// Tj90 Step5 and VGA Step 17.
-	#if Support_TJ85
-	#else
-	default:	// Tj90 Step5 and VGA Step 17 Default.
-	#endif		// Support_TJ85
-		THRTab_ToRAM((5+BMBStep));	// Throttle Standard table save to RAM.
-		Thro_Shut_Status((5+BMBStep),TEMP_TYPE_CPU); 		// Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(5+BMBStep)].Turbo_Rem,CPUTHRTable[(5+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-
-	#if Support_TJ85
-	default:	// Tj85 Step1 and VGA Step 17 Default.
-		THRTab_ToRAM((1+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((1+BMBStep),TEMP_TYPE_CPU); 		// Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(1+BMBStep)].Turbo_Rem,CPUTHRTable[(1+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-		#endif	// Support_TJ85
-	}
-	Thro_Shut_Status((17+BMBStep),TEMP_TYPE_VGA);	// Check Throttle and Shutdown status.
-	// Check GPU Turbo function.
-	Thro_Turbo(CPUTHRTable[(17+BMBStep)].Turbo_Rem,CPUTHRTable[(17+BMBStep)].Turbo_Off,TEMP_TYPE_VGA);
-}
-
-
-
-//-----------------------------------------------------------------------------
-// Throttling: Super performance Mode.
-//-----------------------------------------------------------------------------
-void Thro_Super_Mode(BYTE BMBStep)
-{
-	switch( (CPU_TYPE & 0x03) )
-	{
-	case 3:	// Tj105 Step15 and VGA Step18.
-
-		THRTab_ToRAM((15+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((15+BMBStep),TEMP_TYPE_CPU);		// Check Throttle and Shutdown status.
-		Thro_Street((15+BMBStep),TEMP_TYPE_CPU);		// Check VGA Street status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(15+BMBStep)].Turbo_Rem,CPUTHRTable[(15+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-
-	#if Support_TJ100
-	case 2:		// Tj100 Step11 and VGA Step18.
-		THRTab_ToRAM((11+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((11+BMBStep),TEMP_TYPE_CPU);		// Check Throttle and Shutdown status.
-		Thro_Street((11+BMBStep),TEMP_TYPE_CPU);		// Check VGA Street status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(11+BMBStep)].Turbo_Rem,CPUTHRTable[(11+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-	#endif		// Support_TJ100
-
-	case 1:		// Tj90 Step7 and VGA Step18.
-	#if Support_TJ85
-	#else
-	default:	// Tj90 Step7 and VGA Step18 Default.
-	#endif		// Support_TJ85
-
-		THRTab_ToRAM((7+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((7+BMBStep),TEMP_TYPE_CPU);		// Check Throttle and Shutdown status.
-		Thro_Street((7+BMBStep),TEMP_TYPE_CPU);		// Check VGA Street status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(7+BMBStep)].Turbo_Rem,CPUTHRTable[(7+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-
-	#if Support_TJ85
-	default:	// Tj85 Step3 and VGA Step18 Default.
-		THRTab_ToRAM((3+BMBStep));			// Throttle Standard table save to RAM.
-		Thro_Shut_Status((3+BMBStep),TEMP_TYPE_CPU);		// Check Throttle and Shutdown status.
-		Thro_Street((3+BMBStep),TEMP_TYPE_CPU);		// Check VGA Street status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(3+BMBStep)].Turbo_Rem,CPUTHRTable[(3+BMBStep)].Turbo_Off,TEMP_TYPE_CPU);
-		break;
-		#endif	// Support_TJ85
-	 }
-
-	VTHRTab_ToRAM((19+BMBStep)); 	// VGA Throttle Standard table save to RAM.
-	Thro_Shut_Status((19+BMBStep),TEMP_TYPE_VGA);	// Check Throttle and Shutdown status.
-	Thro_Street((19+BMBStep),TEMP_TYPE_VGA);		// Check VGA Street status.
-	// Check GPU Turbo function.
-	Thro_Turbo(CPUTHRTable[(19+BMBStep)].Turbo_Rem,CPUTHRTable[(19+BMBStep)].Turbo_Off,TEMP_TYPE_VGA);
-}
-*///ANGELAS050:remove end
 //-----------------------------------------------------------------------------
 // Throttling: Check throttling and Shutdown status.
 //-----------------------------------------------------------------------------
@@ -2169,71 +2027,6 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 }
 
 //-----------------------------------------------------------------------------
-// Throttling: Check VGA Street status.
-//-----------------------------------------------------------------------------
-/* //ANGELAS050:remove start
-void Thro_Street(BYTE BStep, BYTE BTType)
-{
-	#if Support_Steering_Fun
-	BYTE BAvgTemp;
-
-	if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) ) { return; }
-
-	if ( BTType == 2 )
-	{
-		if ( EXT_VGA_Buff3 <= VGA_Steer_On )				// Check VGA steering On.
-		{ CLR_MASK(Thro_Status2, b2Steer_EXTVGA); }
-		else if ( EXT_VGA_Buff3 >= VGA_Steer_Off )			// Check VGA steering Off.
-		{ SET_MASK(Thro_Status2, b2Steer_EXTVGA); }
-	}
-	else if ( BTType == 1 )
-	{
-		 if ( VGA_TBuff3 <= VGA_Steer_On )				// Check VGA steering On.
-		{ CLR_MASK(Thro_Status2, b1Steer_VGA); }
-		else if ( VGA_TBuff3 >= VGA_Steer_Off )
-		{ SET_MASK(Thro_Status2, b1Steer_VGA); }	// Check VGA steering Off.
-	}
-	else
-	{	// CPU Type.
-		switch( (CPU_TYPE & 0x03) )
-		{
-		case 3:		// Tj105
-		case 2:		// Tj100
-			if ( TEMP_Buff_3 <= VGA_Steer_On )		// Check VGA steering On.
-			{ CLR_MASK(Thro_Status2, b0Steer_CPU); }
-			else if ( TEMP_Buff_3 >= VGA_Steer_Off )// Check VGA steering Off.
-			{ SET_MASK(Thro_Status2, b0Steer_CPU); }
-			break;
-		case 1:		// Tj90
-		default:	// Tj85 Default.
-			if ( TEMP_Buff_3 <= VGA_Steer85_On )	// Check VGA steering On.
-			{ CLR_MASK(Thro_Status2, b0Steer_CPU); }
-			else if ( TEMP_Buff_3 >= VGA_Steer_Off )// Check VGA steering Off.
-			{ SET_MASK(Thro_Status2, b0Steer_CPU); }
-			break;
-		}
-	}
-
-	if ( IS_MASK_CLEAR(Thro_Status2, (b0Steer_CPU+b1Steer_VGA+b2Steer_EXTVGA)) )
-	{
-		if ( IS_MASK_SET(uVGATurboFun,uDisPowerSteeringOK) )	// bit1.
-		{
-			CLR_MASK(uVGATurboFun, uDisPowerSteeringOK);		// Clear bit1.
-			//ECQEvent(DIS_TURBO_63); 	// 0x63 Disable VGA Steering. G24:remove GPU turbo Q event
-		}
-	}
-	else
-	{
-	 	if ( IS_MASK_CLEAR(uVGATurboFun,uDisPowerSteeringOK) )	// bit1.
-		{
-			SET_MASK(uVGATurboFun, uDisPowerSteeringOK);		// Set bit1.
-	 		ECQEvent(EN_PWRSTEER_64); // 0x64 Enable VGA Steering.
-	 	}
-	}
-	#endif	// Support_Steering_Fun
-}
-*/ //ANGELAS050:remove end
-//-----------------------------------------------------------------------------
 // Throttling: Shutdown count used.
 //-----------------------------------------------------------------------------
 void Thro_Count_Shut(XBYTE *BShut_Cnt, BYTE TempType)
@@ -2303,150 +2096,6 @@ void VTHRTab_ToRAM(BYTE BStep)
 	VTHR_Tab_Shut	= CPUTHRTable[BStep].Thr_Shut;
 }
 
-/*****************************************************************************/
-// Procedure: ODDPowerSaving									TimeDiv: 50mSec
-// Description: ODD zero power control.
-// GPIO: GPIOA4, GPIOD7
-// Referrals:
-/*****************************************************************************/
-/*//ANGELAS050:remove start
-void ODDPowerSaving(void)
-{
-	#if Support_ODDZeroPower
-	// Check S0 status and ODD and ACPI Mode.
-	if(IS_MASK_CLEAR(SYS_MISC1, ACPI_OS))
-	{ return; }
-
-	if( IS_MASK_SET(LENOVODEVICE, ODDPWRON) )	// Check bit6: ODD power on.
-	{
-		uVPCeventSource = 0x00;					// for Levono AP used.
-		uVPCeventSource2 = VPCeventODD;			// for Levono AP used.
-		ECQEvent(SDV_VPC_notify);				// 0x44 for Levono used.
-		SET_MASK(uODDPWRsaving, uODD_PWRon);	// Set bit0: uODD_PWRon.
-		CLEAR_MASK(LENOVODEVICE, ODDPWRON);		// Clear bit6: ODD power on.
-	}
-
-	if( SystemIsS0 )	// Check S0 status.
-	{
-		// Power off
-		//if( IS_MASK_SET(LENOVODEVICE,ODDPWROFF) )
-		//{
-		//	uVPCeventSource = 0x00;					// for Levono AP used.
-		//	uVPCeventSource2 = VPCeventODD;			// for Levono AP used.
-		//	ECQEvent(SDV_VPC_notify);				// 0x44 for Levono used.
-		//	SET_MASK(uODDPWRsaving, uODD_PWRoff1);	// Set bit2: uODD_PWRoff1.
-		//	CLEAR_MASK(LENOVODEVICE, ODDPWROFF);	// Clear bit0: ODD power off.
-		//	}
-
-		// Power on by hotkey
-		if( IS_MASK_SET(LENOVODEVICE, ODDPWRKEYON) )// Check bit2: ODD hotkey.
-		{
-			uVPCeventSource = 0x00;
-			uVPCeventSource2 = VPCeventODDEject;
-			ECQEvent(SDV_VPC_notify);				// 0x44 for Levono used.
-			CLEAR_MASK(LENOVODEVICE, ODDPWRKEYON);	// Clear bit2: ODD hotkey status.
-		}
-
-		// Power on by button
-		if( (ODD_DA()) && (IS_MASK_CLEAR(uODDPWRsaving, uODD_ejectbtn)) )	// open   // bit6: ODD button.
-		{
-		  	if (IS_MASK_CLEAR(SysStatus,FnF3PKeyUp))
-		  	{
-				uODDtimeCnt++;
-				if( uODDtimeCnt >= 3)
-				{
-					SET_MASK(SysStatus,FnF3PKeyUp);
-					uODDtimeCnt = 0;
-				}
-		  	}
-		}
-		else if ((!ODD_DA())&& (IS_MASK_CLEAR(uODDPWRsaving, uODD_ejectbtn)))
-		{  
-			if (IS_MASK_SET(SysStatus,FnF3PKeyUp))
-		  	{
-				uODDtimeCnt++;
-				if( uODDtimeCnt >= 3 )
-				{
-					CLEAR_MASK(uODDPWRsaving, uODD_BtnLowPluse);	// Clear bit1: ODD button low pulse.
-					CLEAR_MASK(uODDPWRsaving, uODD_low100ms);		// Clear bit4: ODD 100mSec.
-					SET_MASK(uODDPWRsaving, uODD_PWRon);			// Set bit0: ODD power on.
-					SET_MASK(uODDPWRsaving, uODD_ejectbtn);			// Set bit5: ODD eject button.
-					ECQEvent(ODD_BTN_EVENT);						// 0x53 for Levono used.
-					uODDtimeCnt = 0;
-					CLEAR_MASK(SysStatus, FnF3PKeyUp);   
-				}                                                               
-		    	}
-		}
-		else
-		{ uODDtimeCnt = 0; }
-
-		if( IS_MASK_SET(LENOVODEVICE, ODDPWRStatus) )	// Check bit7: ODD Status.
-		{
-			CLEAR_MASK(uODDPWRsaving, uODD_ejectbtn);	// Set bit5: ODD eject button.
-			CLEAR_MASK(LENOVODEVICE, ODDPWRStatus);		// Clear bit7: ODD Status.
-		}
-
-		if ( IS_MASK_SET(LENOVODEVICE, ODDPWRBTNON) )	// Check bit1: ODD power button.
-		{
-			if( IS_MASK_CLEAR(uODDPWRsaving, uODD_BtnLowPluse))	// Check bit1:ODD low pulse.
-			{
-				uVPCeventSource = 0x00;
-				uVPCeventSource2 = VPCeventODD;
-				ECQEvent(SDV_VPC_notify);	// 0x44 for Levono used.
-				SET_MASK(uODDPWRsaving, uODD_BtnLowPluse);	// Set bit1: ODD button low pulse.
-
-				ODD_DAOUT;                                                    
-				ODD_DA_HI();         
-				
-			}
-			else
-			{
-				if( IS_MASK_CLEAR(uODDPWRsaving, uODD_low100ms) )	// Check bit4:ODD 100mSec low pulse.
-				{
-					switch( uODDdelaytimeStep )
-					{
-					case 0:
-						if( ChkTimeScale(&uODDlowCnt, (Timer_10 +Timer_1)) )	// Delay 830mSec. //:change Timer_7 to Timer_1
-					       {
-							ODD_DAOUT;              
-							//ODD_DA_HI();
-							ODD_DA_LOW();    
-							uODDdelaytimeStep++;
-						}
-						break;
-					case 1:
-						if( ChkTimeScale(&uODDlowCnt, Timer_1) )	// Delay 100mSec.  // change Timer_3 to Timer_1
-						{
-							ODD_DAOUT;              
-							//ODD_DA_LOW();
-							ODD_DA_HI();      
-							SET_MASK(uODDPWRsaving, uODD_low100ms);	// Set bit4: ODD 100mSec.
-							uODDdelaytimeStep++;
-						}
-						break;
-					default:
-				 		break;
-					}
-				}
-				else
-				{
-					uVPCeventSource = 0x00;
-					uVPCeventSource2 = VPCeventODD;
-					ECQEvent(SDV_VPC_notify);	// 0x44 for Levono used.
-					ODD_DA_INPUT;    //T038 open 
-					SET_MASK(uODDPWRsaving, uODD_InitEnd);		// Set bit6: ODD initial End.
-					CLEAR_MASK(uODDPWRsaving, uODD_ejectbtn);	// Clear bit5: ODD eject button.
-					CLEAR_MASK(LENOVODEVICE, ODDPWRBTNON);		// Clear bit1: ODD power button.
-					uODDdelaytimeStep = 0;
-				}
-			}
-		}
-	}
-	#endif	// Support_ODDZeroPower.
-}
-
-
-*/ //ANGELAS050:remove end
 /*****************************************************************************/
 // Procedure: ThrottlingControl								TimeDiv: 100mSec
 // Description: Chekc all throttling status.
@@ -2591,10 +2240,9 @@ void GPUThrottlingControl(void)
 void Chk_FAN_RPM_Control(void)
 {
 	BYTE BRPM_Manual;
-	//if (uReserve07.fbit.nFanManual == 1)
-	if(ManualFanPRM !=0)//72JERRY014¡êo Add the second fan method
+	if(ManualFanPRM !=0)//Add the second fan method
 	{
-		FAN_PWM_ALT; //ANGELAS018:Open fan control function.
+		FAN_PWM_ALT; //Open fan control function.
 		if ( (FAN_PWM != FAN_PWM_Max) && (nAtmFanSpeed != ManualFanPRM) )
 		{
 			if( nAtmFanSpeed > ManualFanPRM )
@@ -2610,15 +2258,15 @@ void Chk_FAN_RPM_Control(void)
 				{ FAN_PWM = FAN_PWM_Max; }
 			}
 		}
-		//ANGELAS017:S+Open fan control function.
+		//Open fan control function.
 		if ( (FAN_PWM == FAN_PWM_Max) && (nAtmFanSpeed > ManualFanPRM) )
 		{
 			if( FAN_PWM > 0 )
 			{ FAN_PWM--; }
 		}
-		//ANGELAS017:E+Open fan control function.
+		//Open fan control function.
 	}
-	//ANGELAS018:S+Open fan control function.
+	//Open fan control function.
 	else
 	{
 		#if !FAN_TABLE_Already
@@ -2626,16 +2274,15 @@ void Chk_FAN_RPM_Control(void)
 		EC_FAN_PWM_HI();
 		#endif	// FAN_TABLE_Already
 	}
-	//ANGELAS018:E+Open fan control function.
+	//Open fan control function.
 }
-//72JERRY014¡êo s+Add the second fan method
+//Add the second fan method
 void Chk_FAN1_RPM_Control(void)
 {
 	BYTE BRPM_Manual;
-	//if (uReserve07.fbit.nFanManual == 1)
 	if(ManualFan2PRM!=0)
 	{
-		FAN1_PWM_ALT; //ANGELAS018:Open fan control function.
+		FAN1_PWM_ALT; //Open fan control function.
 		if ( (FAN1_PWM != FAN1_PWM_Max) && (nAtmFan1Speed != ManualFan2PRM) )
 		{
 			if( nAtmFan1Speed > ManualFan2PRM )
@@ -2651,15 +2298,15 @@ void Chk_FAN1_RPM_Control(void)
 				{ FAN1_PWM = FAN1_PWM_Max; }
 			}
 		}
-		//ANGELAS017:S+Open fan control function.
+		//Open fan control function.
 		if ( (FAN1_PWM == FAN1_PWM_Max) && (nAtmFan1Speed > ManualFan2PRM) )
 		{
 			if( FAN1_PWM > 0 )
 			{ FAN1_PWM--; }
 		}
-		//ANGELAS017:E+Open fan control function.
+		//Open fan control function.
 	}
-	//ANGELAS018:S+Open fan control function.
+	//Open fan control function.
 	else
 	{
 		#if !FAN_TABLE_Already
@@ -2667,9 +2314,9 @@ void Chk_FAN1_RPM_Control(void)
 		EC_FAN1_PWM_HI();
 		#endif	// FAN_TABLE_Already
 	}
-	//ANGELAS018:E+Open fan control function.
+	//Open fan control function.
 }
-//72JERRY014¡êo e+Add the second fan method
+//Add the second fan method
 /*****************************************************************************/
 // Procedure: FAN_Dust_Mode										TimeDiv: 1 Sec
 // Description: EM8.0 Dust function
@@ -2687,7 +2334,6 @@ void FAN_Dust_Mode(void)
 			StartFanClean = 120;
 			CLR_MASK(SMartNoise, b5DedustingMode);
 			CLR_MASK(SMartNoise, b2StopReason);		// Dust mode by Completed.
-			//EC_FAN_ANTI_OUTPUT;//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
 			Fan_Offset_Chk(FAN_Std_Max,&FAN_PWM);//
 		}
 
@@ -2697,8 +2343,7 @@ void FAN_Dust_Mode(void)
 			{	// dust mode end
 				CLR_MASK(THERMAL_STATUS, INITOK);	// turn back fan control right to EC.
 				FAN_PWM = FAN_PWM_Min;				// PWM minimum.
-				//EC_FAN_ANTI_OFF();//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
-				//EC_FAN_ANTI_INPUT;//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
+
 				SMartNoise &= 0xEC;					// Clear bit0,1,4.
 				FanCleanFull = 0;
 				FanCleanHalt = 0;
@@ -2709,33 +2354,31 @@ void FAN_Dust_Mode(void)
 				StartFanClean--;
 				if ( IS_MASK_CLEAR(SMartNoise, b0FanCleanOn))
 				{
-					if( !ChkTimeScale( &FanCleanFull,Timer_50 ) )  //MEILING035:modify to 50S.
+					if( !ChkTimeScale( &FanCleanFull,Timer_50 ) )  //modify to 50S.
 					{
-						//SET_MASK(THERMAL_STATUS, INITOK);
-						//EC_FAN_ANTI_OFF();//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
-						FAN_PWM = CTR2;//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
+						FAN_PWM = CTR2;//Add fan can be reversed in dust removal mode.
 					}
 					else
-					{ SET_MASK(SMartNoise, b0FanCleanOn); }
+					{ 
+					    SET_MASK(SMartNoise, b0FanCleanOn); 
+					}
 				}
 				else
 				{
-					if( !ChkTimeScale( &FanCleanHalt,Timer_40 ) ) //MEILING035:modify to 40S.
+					if( !ChkTimeScale( &FanCleanHalt,Timer_40 ) ) //modify to 40S.
 					{
-						//SET_MASK(THERMAL_STATUS, INITOK);
-						//FAN_PWM = 0;//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
-						//EC_FAN_ANTI_ON();//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
+
 					}
 					else
-					{ CLR_MASK(SMartNoise, b0FanCleanOn); }
+					{ 
+					    CLR_MASK(SMartNoise, b0FanCleanOn); 
+					}
 				}
 			}
 		}
 	}
 	else
 	{
-		//EC_FAN_ANTI_OFF();//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
-		//EC_FAN_ANTI_INPUT;//JERRYCRZ014:Add fan can be reversed  in dust removal mode.
 		CLR_MASK(THERMAL_STATUS, INITOK);	// turn back fan control right to EC.
 		FanCleanFull = 0;
 		FanCleanHalt = 0;

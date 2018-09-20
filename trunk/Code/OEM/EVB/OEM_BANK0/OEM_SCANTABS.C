@@ -906,19 +906,7 @@ void HotKey_Fn_Minus(BYTE event)
 //----------------------------------------------------------------------------
 void HotKey_Fn_ESC(BYTE event)
 {
-	#if HotKey_WebCam
-    if(event == MAKE_EVENT)
-    {
-		if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
-		{
-	        nCameraPwrCHG;
-		    uVPCeventSource = VPCeventCamera;
-		    uVPCeventSource2 = 0;
-			ECSMI_SCIEvent(SDV_VPC_notify);
-			CPL_MASK(pDevStus, pCamera);
-		}
-    }
-	#endif	// HotKey_WebCam
+
 }
 
 //----------------------------------------------------------------------------

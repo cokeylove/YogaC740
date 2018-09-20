@@ -1340,93 +1340,17 @@ void Hook_IRQ_INT150_PMC5IBF(void)
 
 }
 
-// CMW 20121022 +
 //----------------------------------------------------------------------------
 // Hook Voltage comparator interrupt.
 //----------------------------------------------------------------------------
 void Hook_IRQ_INT151_VCI(void)
 {
 	IER18 &= 0x7F;	// disable VC Interrupt
-	/*//ANGELAS073:remove start
-	#if Support_VC0_Function
-	if( IS_MASK_SET(VCMPSTS,CMP0RTIS) )
-	{
-		VCMP0CTL &= 0x3F;
-		if( IS_MASK_SET(pVCompareFlag,VC0TriggerOn) )
-		{
-			RamDebug(0x78);
-			CLEAR_MASK(pVCompareFlag,VC0TriggerOn);
-			CMP0THRDATM = (VC0TriggerValue>>8);		// threshold value buffer
-			CMP0THRDATL = VC0TriggerValue;
-			VCMP0CTL &= 0xF8;	// Clear ADC Channel & set to Channel 0.
-			VCMP0CTL &= 0xDF;	// Set the Less Then Voltage trigger.
-			VCMP0CTL &= 0xF7;	// Set Active-Low.    //T18 change Active Low to Active high
-		}
-		else
-		{
-			RamDebug(0x79);
-			SET_MASK(pVCompareFlag,VC0TriggerOn);
-			CMP0THRDATM = (VC0RestoreValue>>8);		// threshold value buffer
-			CMP0THRDATL = VC0RestoreValue;
-			VCMP0CTL &= 0xF8;	// Clear ADC Channel & set to Channel 0.
-			VCMP0CTL |= 0x20;	// Set the Less Then Voltage trigger.
-			VCMP0CTL |= 0x08;	// Set Active-Hi.   //T18 change Active high to Active low
-		}
-		SET_MASK(VCMPSTS,CMP0RTIS);
-		VCMP0CTL |= 0x40;	// Enable VC1 Interrupt
-		VCMP0CTL |= 0x80;	// Enable VCompare
 
-	}
-	#endif	// Support_VC0_Function
-
-	if ( SystemIsS0 )
-	{
-		#if Support_VC1_Function
-		if( IS_MASK_SET(VCMPSTS,CMP1RTIS) )
-		{
-			VCMP1CTL &= 0x3F;	// Disable VCompare
-			if( IS_MASK_SET(pVCompareFlag,VC1TriggerOn) )
-			{
-				//RamDebug(0x7A);
-				CLEAR_MASK(pVCompareFlag,VC1TriggerOn);
-				//CMP1THRDATM = (VC1TriggerValue>>8);		// threshold value buffer
-				//CMP1THRDATL = VC1TriggerValue;
-				SetTurbo_V_Thro();	// Set Turbo_V trigger point.
-				VCMP1CTL |= 0x20;	// Set the Over Voltage trigger.
-				VCMP1CTL &= 0xF7;	// open // Set Active-High.
-				SET_MASK(Thro_Status, b6ProCH_TURBO);
-			}
-			else
-			{
-				//RamDebug(0x7B);
-				SET_MASK(pVCompareFlag,VC1TriggerOn);
-				// CMP1THRDATM = (VC1RestoreValue>>8);		// threshold value buffer
-				//  CMP1THRDATL = VC1RestoreValue;
-                            RestoreTurbo_V_Thro();       
-				VCMP1CTL &= 0xDF;	// Set the Less Then Voltage trigger.
-				VCMP1CTL |= 0x08;	//T051C open // Set Active-Low.
-				CLR_MASK(Thro_Status, b6ProCH_TURBO);
-			}
-			SET_MASK(VCMPSTS,CMP1RTIS);
-			VCMP1CTL |= 0x40;	// Enable VC1 Interrupt
-			VCMP1CTL |= 0x80;	// Enable VCompare
-		}
-		#endif	// Support_VC1_Function
-
-		#if Support_VC2_Function
-		if( IS_MASK_SET(VCMPSTS,CMP2RTIS) )
-		{
-			//VCMP2CTL
-			if( IS_MASK_SET(pVCompareFlag,VC2TriggerOn) )
-			{
-			}
-		}
-		#endif	// Support_VC2_Function
-	} */ //ANGELAS073:remove end
 	ISR18 |= 0x80;		// Clear ISR Flag
 	IER18 |= 0x80;		// Enable VC Interrupt
 }
-// CMW 20121022 -
+
 
 //----------------------------------------------------------------------------
 // Hook function for INT1

@@ -151,7 +151,7 @@ void ACPI_Cmd_93(void)		// Oem function of writing EC external ram
 void ACPI_Cmd_DC(void)
 {
     #if WDT_Support
-    DisableInternalWDT();  //G64:Add disable watch dog when flash EC with CMD 0xDC.
+    DisableInternalWDT();  //Add disable watch dog when flash EC with CMD 0xDC.
     #endif
 	ITE_Flash_Utility();    // for 8500
 }

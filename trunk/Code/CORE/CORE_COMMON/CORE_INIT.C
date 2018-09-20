@@ -76,14 +76,12 @@ void Core_Initialization(void)
 	CLEAR_MASK(RAM_16FF,BIT0);		// for AX
 	Init_GPIO();
 
-	#if	Support_External_IO
+#if	Support_External_IO
     Init_IT8302();
-	#endif	// Support_External_IO
+#endif	
 
-    Core_Init_SMBus();		//
-    //EC_MainPwr_ON(); //ANGELAS044:remove
-	//CHK_BATT_5PERCL();		// 2012.03.01 update by AC
-	check8sreset(); //ANGELAS041:add
+    Core_Init_SMBus();		
+	check8sreset(); 
 
     Init_Kbd();
 	cold_reset();
@@ -92,13 +90,10 @@ void Core_Initialization(void)
 	Init_Timers();
     Core_Init_Regs();
 	#if SUPPORT_UCSI
-    ucsi_reset();//72JERRY083:Change MMIO to mailbox for accessing UCSI registers.
+    ucsi_reset();//Change MMIO to mailbox for accessing UCSI registers.
     #endif
-	//CGCTRL2R = 0x00; //ANGELAS065:add //ANGELAS069:remove
-	//CGCTRL3R = 0x51; //ANGELAS065:add //ANGELAS069:remove
-	//Core_Init_SMBus();
 
-	//MEILING009:S+ Add 8 sec reset test function.
+	//Add 8 sec reset test function.
 	if(IS_MASK_CLEAR(SysStatus2, b3EC8S_Reset) && (ShutDnCause == SC_ECColdBoot))
 	{
 		BRAMBK0[126] = 0x00;
@@ -192,7 +187,7 @@ const sREG_INIT code Core_reg_init_table[] =
         { &PSCTL1 		,PS2_InhibitMode    }, 	// Enable Debounce,Receive mode, Inhibit CLK
         { &PSCTL2 		,PS2_InhibitMode    }, 	// Enable Debounce,Receive mode, Inhibit CLK
         { &PSCTL3 		,PS2_InhibitMode    }, 	// Enable Debounce,Receive mode, Inhibit CLK
-        #if TouchPad_only//G79:Update PS2 code base.
+        #if TouchPad_only    //Update PS2 code base.
         { &PSINT1		,0x04				}, 	// Transation Done,Start Clock Interrupt
         { &PSINT2		,0x04				},	// Transation Done,Start Clock Interrupt
         { &PSINT3		,0x04				},	// Transation Done,Start Clock Interrupt

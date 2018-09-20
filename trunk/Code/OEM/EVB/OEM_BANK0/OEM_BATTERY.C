@@ -13,9 +13,6 @@
 void UpdateNameSpace(void)
 {
 	nBattGasgauge=BAT1PERCL;
-
-//	Bat0x0FTempL=(((WORD)(nRemainingCapH << 8) + nRemainingCapL)/10);
-//	Bat0x0FTempH=(((WORD)(nRemainingCapH << 8) + nRemainingCapL)/10)>>8;
 	
     if((BAT1PERCL<=0x06)&&IS_MASK_CLEAR(SYS_STATUS,AC_ADP))
     {
@@ -26,7 +23,7 @@ void UpdateNameSpace(void)
        CLR_MASK(Thro_Status2, b5Bat_5PProtect);
     }
        
-	nCycleCounter=EC_oCCBQl;
+	nCycleCounter = EC_oCCBQl;
 	EC_BatteryStatusL = nBattery0x16L;
 	EC_BatteryStatusH = nBattery0x16H;
 
@@ -34,7 +31,7 @@ void UpdateNameSpace(void)
     {
 		SET_MASK(nBatteryStatus1,ENFULL);
 
-        if(nBattGasgauge == 100) // 100%
+        if(nBattGasgauge == 100) 
         {
             if(IS_MASK_CLEAR(LENOVOPMFW_Temp,BATTERY_FULLED_100))
             {
@@ -50,15 +47,7 @@ void UpdateNameSpace(void)
 	}
 
 	Lenovo_Battery_EM80();
-
-    //Mos: Reset Battery Protection Status when AC off or battery plugout
-	/* 
-    	if (IS_MASK_SET(StatusKeeper, BatteryProtectCHG))
-    	{
-        	if (!Read_AC_IN())
-            	CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
-    	}
-	*/  
+	
 #if turboboostandstorage //storage mode action with support turbo boost charger
 
 	if(testtoolflag==0)//Add flag for test tool to keep the battery RSOC at 60%
@@ -77,8 +66,8 @@ void UpdateNameSpace(void)
 			    	ECSMI_SCIEvent(ACPI_BAT1IN_SCI); 
             	}
 				CLEAR_MASK(ACOFF_SOURCE, BATTLEARN);
-				BATT_LEN_OFF(); //Mos //add battery learn mode
-				//Mos: Change Status bit to avoid bit has been reset
+				BATT_LEN_OFF();
+				//Change Status bit to avoid bit has been reset
             	if (IS_MASK_CLEAR(StatusKeeper, BatteryProtectCHG))
             	{
                 	SET_MASK(nStopChgStat3H, EmStopChgarg);
@@ -94,10 +83,9 @@ void UpdateNameSpace(void)
                     	}
 						else
 						{
-							CalcBatRCC =(nFullChgCapH<<8)+nFullChgCapL;//ANGELAS101:Modify battery discharge when battery RSOC is 59% in storage mode.
-							//Mos: Avoid that stop charger but OS show god damn 59%...
-							//if (((WORD)(nRemainingCapH << 8) + nRemainingCapL) > (KeepBattRemineCap + 10))//ANGELAS101:-Modify battery discharge when battery RSOC is 59% in storage mode.
-							if(((WORD)(nRemainingCapH << 8) + nRemainingCapL) > (KeepBattRemineCap + (CalcBatRCC/200)))//ANGELAS101:+Modify battery discharge when battery RSOC is 59% in storage mode.
+							CalcBatRCC =(nFullChgCapH<<8)+nFullChgCapL;//Modify battery discharge when battery RSOC is 59% in storage mode.
+							//Avoid that stop charger but OS show 59%
+							if(((WORD)(nRemainingCapH << 8) + nRemainingCapL) > (KeepBattRemineCap + (CalcBatRCC/200)))//Modify battery discharge when battery RSOC is 59% in storage mode.
 							{
 								KeepBattRemineCap = 0;
 								CLEAR_MASK(StatusKeeper, BatteryProtectCHG);
@@ -624,17 +612,13 @@ void DownACtoBatteryGPUState()
 		}
 	}
 }
-//MEILING055:E+.
 
-//MEILING033:add start CPU prochot control function.
+
+//add start CPU prochot control function.
 void CPUProchotCtrl()
 {
-if(IS_MASK_CLEAR(Thro_Status, b0ProCH_CPU)&&IS_MASK_CLEAR(Thro_Status2, b3Batt_OTP+b7ProCH_Psys)&&(CPUProchotONCnt == 0))
-	//if ( IS_MASK_CLEAR(Thro_Status, (b0ProCH_CPU+b1ProCH_VGA+b2ProCH_EXTVGA+b6ProCH_TURBO+b7ProCH_BATT))
-		//&&IS_MASK_CLEAR(Thro_Status2, (b3Batt_OTP+b5Bat_5PProtect+b6BattRSOC_Low+b7ProCH_ADP))
-		//&&IS_MASK_CLEAR(LENOVOBATT2, (BATTERY_OCP))  //ANGELAG017: add
-		//&&IS_MASK_CLEAR(nBatteryStatH, CMBS_CRITICALLOW)&&(CPUProchotONCnt == 0)) //MEILING055:modify ProchotONCnt name.//72JERRY048:Remove throttling prochot.
-	{	// turn off prochot.  //MEILING033:add prochot on 2S when AC out and battery over temperatrue and battery RSOC low.
+    if(IS_MASK_CLEAR(Thro_Status, b0ProCH_CPU)&&IS_MASK_CLEAR(Thro_Status2, b3Batt_OTP+b7ProCH_Psys)&&(CPUProchotONCnt == 0))
+	{	// turn off prochot.  //add prochot on 2S when AC out and battery over temperatrue and battery RSOC low.
 	    H_PROCHOT_OFF(); 
 	    nRealThermalPinDIS;
 	    CLR_MASK(pPROCHOT, b0Thermal_PRCOHOTon);	// for AP display.
@@ -646,7 +630,6 @@ if(IS_MASK_CLEAR(Thro_Status, b0ProCH_CPU)&&IS_MASK_CLEAR(Thro_Status2, b3Batt_O
 		SET_MASK(pPROCHOT, b0Thermal_PRCOHOTon);	// for AP display.
 	}     
 }
-//MEILING033:add end.
 
 void ChkBattery_OTP()
 {
@@ -1045,18 +1028,19 @@ void ChkPsys(void) // HEGANGS006£ºModify protect setting
 	if(Read_AC_IN()) // HEGANGS032:Modify power setting 
 	{
 		if(nBattGasgauge>=5)
-		cGPUBattThrottling = 0;
+		    cGPUBattThrottling = 0;
 		else
-		cGPUBattThrottling = 2;
+		    cGPUBattThrottling = 2;
 		return;
 	}
+	
 	if(Proch_Delay1>0)
-	Proch_Delay1--;
+	    Proch_Delay1--;
 	if(Proch_Delay1>10)
-	Proch_Delay1=10;	
+	    Proch_Delay1=10;	
+	    
 	if ((SystemIsS0) && (!Read_AC_IN()) && (cGPUACtoBattTime == 0))		//DC Mode
 	{
-		//if(uMBGPU&0x02)//DIS
 		if(CellCount==2)
 		{
 			if (nBattGasgauge > 20)
@@ -1114,7 +1098,6 @@ void ChkPsys(void) // HEGANGS006£ºModify protect setting
 				}
 			}
 		}
-		//else if(uMBGPU&0x01)//UMA
 		else if(CellCount==3)
 		{
 			if (Psys_AvgData >= 314)    //0.96v 48w //0.9=307 //314 0.92 46w
@@ -1668,11 +1651,11 @@ void OEM_PollingBatData_TASK(void)
     			Batpollstep1=9;
 			}
     	}
-		UpdateNameSpace();//:optimize .
+		UpdateNameSpace();
 		ChkLENOVOPMFW();
 		ChkGoTarget();
 	  	Chk_Battery_Full();
-		if(GPUProchotONCnt == 0) //ANGELAG033: add
+		if(GPUProchotONCnt == 0) 
 		{ //ANGELAG033: add
 			ChkBattery_OTP();
 			//ChkBattery_OCP();  //MEILING046:remove.//MEILING051:-Add cpu P_STATE function.
@@ -2243,11 +2226,11 @@ void Lenovo_Battery_EM80(void)
     }
 }
 
-//JERRYCRZ010:+S Through the charger IC option control battery learn mode.
+//Through the charger IC option control battery learn mode.
 void BATT_LEN_OFF(void)
 {
-	CLEAR_MASK(CHGIC_WriteCmd0x12L,BatLearnEnable); //ANGELAS016:Change charge IC option setting. read to write
-    if (!bRWSMBus(SMbusChB, SMbusWW, Charger_Addr, C_ChargerMode, &CHGIC_WriteCmd0x12L,SMBus_NoPEC)) //ANGELAS016:Change charge IC option setting. read to write
+	CLEAR_MASK(CHGIC_WriteCmd0x12L,BatLearnEnable); //Change charge IC option setting. read to write
+    if (!bRWSMBus(SMbusChB, SMbusWW, Charger_Addr, C_ChargerMode, &CHGIC_WriteCmd0x12L,SMBus_NoPEC)) //Change charge IC option setting. read to write
     {
 		CHGIC_SMbusFailCnt++;
 		RamDebug(0x13);
@@ -2255,15 +2238,15 @@ void BATT_LEN_OFF(void)
 }
 void BATT_LEN_ON(void)
 {
- 	SET_MASK(CHGIC_WriteCmd0x12L,BatLearnEnable); //ANGELAS016:Change charge IC option setting. read to write
-	if (!bRWSMBus(SMbusChB, SMbusWW, Charger_Addr, C_ChargerMode, &CHGIC_WriteCmd0x12L,SMBus_NoPEC)) //ANGELAS016:Change charge IC option setting. read to write
+ 	SET_MASK(CHGIC_WriteCmd0x12L,BatLearnEnable); //Change charge IC option setting. read to write
+	if (!bRWSMBus(SMbusChB, SMbusWW, Charger_Addr, C_ChargerMode, &CHGIC_WriteCmd0x12L,SMBus_NoPEC)) //Change charge IC option setting. read to write
     {
 		CHGIC_SMbusFailCnt++;
 		RamDebug(0x12);
     }
 }
-//JERRYCRZ010:E+Through the charger IC option control battery learn mode.
-//ANGELAS070:add start
+//Through the charger IC option control battery learn mode.
+
 const SRTVTstruct code RTVTTable [] =
 {
 	{20,0x040E},
@@ -2369,7 +2352,7 @@ void PollingCPURT(void)
 		}
 		else if(NTC_V2>=RTVTTable[j].VOL)
 		{
-			ThermistorCPU_TEMP=RTVTTable[j].TEM;//JERRYCRZ024:Change fan table follow thermal team.
+			ThermistorCPU_TEMP=RTVTTable[j].TEM;//Change fan table follow thermal team.
 			return;
 		}	
 	}
@@ -2389,14 +2372,12 @@ void PollingGPURT(void)
 		}
 		else if(NTC_V1>=RTVTTable[j].VOL)
 		{
-			EXTVGA_TEMP=RTVTTable[j].TEM;//JERRYCRZ024:Change fan table follow thermal team.
+			EXTVGA_TEMP=RTVTTable[j].TEM;//Change fan table follow thermal team.
 			return;
 		}		
 	}
 }
-//ANGELAS070:add end
 
-//ANGELAG015: add start
 void Clear_Batt_First_Used_Date(void)
 {
 	if(IS_MASK_SET(SEL_STATE0,PRESENT_A)) 
@@ -2426,8 +2407,8 @@ void Clear_Batt_First_Used_Date(void)
 
 	  }
 }
-//ANGELAG015: add end
-// 72JERRY013: Start Support fast charging and modify charger IC setting
+
+//Start Support fast charging and modify charger IC setting
 /* **************************************************************************************
 * Battery_Expresscharge():
 * 1. Battery Support Express charging
@@ -2462,4 +2443,3 @@ void Battery_Expresscharge(void)
 		}
 	}
 }
-// 72JERRY013: End

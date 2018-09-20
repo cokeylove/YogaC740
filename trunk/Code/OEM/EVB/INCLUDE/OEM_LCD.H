@@ -23,15 +23,12 @@
 
 
 extern BYTE Cal_PWM_Duty(BYTE BCalDuty, BYTE BPWMBase);	// Calculate PWM duty.
-extern void Init_LCD_Freq(void);	// PWM frequency.
 /* ========================================================================
  * Brightness table define here
  * ======================================================================== */
 extern BYTE code Bri_Table[BriTable_MAX][BRIGHT_MAX_STEP+4];
 extern BYTE code WIN8_Bri_Tab[BriTable_MAX][WIN8_BRI_MAX_STEP+4];
-extern void Brightness_Control(void);
 extern void Backlight_Control(void);
-//extern void Lid_Process(void);
 extern void Lid_Process(void); //ANGELAG008: ADD 
 extern void Voicewakeup_MFG_Process(void);//72JERRY065:Add CMD 0x59 test voice wake up for MFG.
 #endif
