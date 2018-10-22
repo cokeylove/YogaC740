@@ -71,7 +71,7 @@ void AdapterIn(void)
     }    
 	if(SystemIsS4||SystemIsS5||SystemIsDSX)
 	{
-		S4S5_KeyWake(2);//HEGANGS021:one key wake
+		S4S5_KeyWake(2);//one key wake
 	}
 }
 
@@ -180,78 +180,78 @@ void PSWPressed(void)
 	
     switch (SysPowState)
     {
-    case SYSTEM_S4 :
-    	break;
-        
-    case SYSTEM_DSX:
-    case SYSTEM_S5 :
-		//S+Modify code for befor power on check Battery RSOC in DC mode.
-		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
-		{			 	
-			BatSMbusFailCount = 0;
-			if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
-			{
-				BatSMbusFailCount++;	
-				while((BatSMbusFailCount<=4)) 
-				{		
-					if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
-					{
-						BatSMbusFailCount++;
-					}
-					else
-			 		{
-						BatSMbusFailCount=0;
-			            break; 
-					}
-				}
-			 				  			 			 
-			}
-			if(BatSMbusFailCount>=4) 
-				break;
-			
-			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
-			{
-				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
-				LOWBATT_3TIMES = 100;		// set 5 sec
-				break;
-			}
-		}
+        case SYSTEM_S4 :
+        	break;
+            
+        case SYSTEM_DSX:
+        case SYSTEM_S5 :
+    		//Modify code for befor power on check Battery RSOC in DC mode.
+    		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
+    		{			 	
+    			BatSMbusFailCount = 0;
+    			if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
+    			{
+    				BatSMbusFailCount++;	
+    				while((BatSMbusFailCount<=4)) 
+    				{		
+    					if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
+    					{
+    						BatSMbusFailCount++;
+    					}
+    					else
+    			 		{
+    						BatSMbusFailCount=0;
+    			            break; 
+    					}
+    				}
+    			 				  			 			 
+    			}
+    			if(BatSMbusFailCount>=4) 
+    				break;
+    			
+    			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
+    			{
+    				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
+    				LOWBATT_3TIMES = 100;		// set 5 sec
+    				break;
+    			}
+    		}
 
-		if ((!Read_AC_IN()))			// if DC mode
-		{
-			BatSMbusFailCount = 0;
-			nBattErrorCnt = 0;
-			if (IS_MASK_SET(LENOVOBATT,BATTERY_LEGAL))	//SHA1 fail
-			{
-				Service_Auth_Step = 1;				// start SHA1 again
-				SHA1failCnt = 1;
-			}
-		}
-        if(IS_MASK_SET(SysStatus2, b3EC8S_Reset))
-        {
-            break;
-        }
-		uNovoVPCCount = 0;
-		ONEKEY_FLAG = 0;//HEGANGS021:one key wake
-		PWSeqStep = 1;
-        PowSeqDelay = 0x00;
-        RamDebug(0x51);
-		SysPowState=SYSTEM_S5_S0;
-		break;
+    		if ((!Read_AC_IN()))			// if DC mode
+    		{
+    			BatSMbusFailCount = 0;
+    			nBattErrorCnt = 0;
+    			if (IS_MASK_SET(LENOVOBATT,BATTERY_LEGAL))	//SHA1 fail
+    			{
+    				Service_Auth_Step = 1;				// start SHA1 again
+    				SHA1failCnt = 1;
+    			}
+    		}
+            if(IS_MASK_SET(SysStatus2, b3EC8S_Reset))
+            {
+                break;
+            }
+    		uNovoVPCCount = 0;
+    		ONEKEY_FLAG = 0;//one key wake
+    		PWSeqStep = 1;
+            PowSeqDelay = 0x00;
+            RamDebug(0x51);
+    		SysPowState=SYSTEM_S5_S0;
+    		break;
 
-    case SYSTEM_S3 :
-	case SYSTEM_S0 :
-		RamDebug(0xF4);
-		if (IS_MASK_CLEAR(pProject4,pPWSWdisable)) //HEGANGS028:Disable POWERSW when flash bios
-		{
-			PM_PWRBTN_LOW();
-		}   
-		SET_MASK(SysStatus2,PWRBTN_press_retry);//Modify press button 1s enter S3/S4/shutdown follow UI spec.
-		
-		break;
+        case SYSTEM_S3 :
+    	case SYSTEM_S0 :
+    		RamDebug(0xF4);
+    		if (IS_MASK_CLEAR(pProject4,pPWSWdisable)) //Disable POWERSW when flash bios
+    		{
+    			PM_PWRBTN_LOW();
+    		}   
+    		SET_MASK(SysStatus2,PWRBTN_press_retry);//Modify press button 1s enter S3/S4/shutdown follow UI spec.
+    		
+    		break;
 
-    default :
-       	break;
+        default :
+           	break;
     }
 }
 
@@ -272,10 +272,10 @@ void PSWPressed(void)
 */
 void PSWReleased(void)
 {
-	CLEAR_MASK(F2_Pressed, F12Flag);// HEGANGS034:Modify onekey battery function
+	CLEAR_MASK(F2_Pressed, F12Flag);//Modify onekey battery function
 	CLEAR_MASK(F2_Pressed, F2Flag); 
 	NOVO_COUNTER = T_PSWOFF;//Hang check
-	ONEKEY_FLAG=0;	//HEGANGS025: Modify onekey battery function
+	ONEKEY_FLAG=0;	//Modify onekey battery function
 	//ONEKEY_TEMP_FLAG = 0;
 	if(ONEKEY_TEMP_FLAG)
 	SET_MASK(OEMControl,b3ONEKEY_POWERUP);
@@ -303,20 +303,20 @@ void PSWReleased(void)
 	PSW_COUNTER = T_PSWOFF;	// initialize counter
 	switch (SysPowState)
 	{
-	case SYSTEM_S4 :
-		break; 
+    	case SYSTEM_S4 :
+    		break; 
 
-	case SYSTEM_S5 :
-		break;
+    	case SYSTEM_S5 :
+    		break;
 
-	case SYSTEM_S3 :
-	case SYSTEM_S0 :
-		PM_PWRBTN_HI();
-		//ECQEvent(ACPI_PWRBTN_SCI); //Send POWER Button Low Event when Release Power button
-		break;
+    	case SYSTEM_S3 :
+    	case SYSTEM_S0 :
+    		PM_PWRBTN_HI();
+    		//ECQEvent(ACPI_PWRBTN_SCI); //Send POWER Button Low Event when Release Power button
+    		break;
 
-	default :
-		break;
+    	default :
+    		break;
 	}
 }
 
@@ -338,7 +338,9 @@ void PSWReleased(void)
 void PSWOverrided(void)
 {
 	if(!Read_LID_SW_IN())
-	{ return; }
+	{ 
+	    return; 
+	}
     if (Read_EC_PWRBTN()&&Read_EC_NOVO())
     { 
 		return; 
@@ -376,80 +378,84 @@ void NOVOPressed(void)
 	CLEAR_MASK(SysStatus2,b1NOVOBTN_retry);
 
     if(!Read_LID_SW_IN())
-	{ return; }
+	{ 
+	    return; 
+	}
 
 	//Clear NOVOPressedCounter
 	CountSecAfterNOVOPressed = 0;
 
 	switch (SysPowState)
     {
-	case SYSTEM_S4 :
-    case SYSTEM_S5 :
-    case SYSTEM_DSX:
-		//Modify code for befor power on check Battery RSOC in DC mode.
-		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
-		{			 	
-			BatSMbusFailCount = 0;
-			if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
-			{
-				BatSMbusFailCount++;	
-				while(BatSMbusFailCount <=4) 
-				{		
-					if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
-					{
-						BatSMbusFailCount++;										 
-					}
-					else
-			 		{
-						BatSMbusFailCount=0;
-			 			break;
-					}
-				}
-			 				  			 			 
-			}
-			if(BatSMbusFailCount>=4) 
-			 	break;
-			
-			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
-			{
-				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
-				LOWBATT_3TIMES = 100;		// set 5 sec
-				break;
-			}
-		}
-		//Modify code for befor power on check Battery RSOC in DC mode.
-		if(LOWBATT_3TIMES == 0)
-        {
-          	// NOVO button should be no function when resuming from S4
-	        if( (EEPROM_PwrSts & 0x10) == 0 )
-	        {
-				if ( (EEPROM_PwrSts & 0x01) != 0 )
-				{ 
-				    break; 
-                }
-	        }
-			uNovoVPCCount = 1;
-			PWSeqStep = 1;
-			PowSeqDelay = 0x00;
-            RamDebug(0x52);
-			SysPowState=SYSTEM_S5_S0;
-		}
-        break;
+    	case SYSTEM_S4 :
+        case SYSTEM_S5 :
+        case SYSTEM_DSX:
+    		//Modify code for befor power on check Battery RSOC in DC mode.
+    		if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
+    		{			 	
+    			BatSMbusFailCount = 0;
+    			if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
+    			{
+    				BatSMbusFailCount++;	
+    				while(BatSMbusFailCount <=4) 
+    				{		
+    					if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
+    					{
+    						BatSMbusFailCount++;										 
+    					}
+    					else
+    			 		{
+    						BatSMbusFailCount=0;
+    			 			break;
+    					}
+    				}
+    			 				  			 			 
+    			}
+    			if(BatSMbusFailCount>=4) 
+    			 	break;
+    			
+    			if (BAT1PERCL < 0x02)  //modify battery capacity point from 0 to 1 for fliker.
+    			{   
+    				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
+    				LOWBATT_3TIMES = 100;		// set 5 sec
+    				break;
+    			}
+    		}
+    		//Modify code for befor power on check Battery RSOC in DC mode.
+    		if(LOWBATT_3TIMES == 0)
+            {
+              	// NOVO button should be no function when resuming from S4
+    	        if( (EEPROM_PwrSts & 0x10) == 0 )
+    	        {
+    				if ( (EEPROM_PwrSts & 0x01) != 0 )
+    				{ 
+    				    break; 
+                    }
+    	        }
+    			uNovoVPCCount = 1;
+    			PWSeqStep = 1;
+    			PowSeqDelay = 0x00;
+                RamDebug(0x52);
+    			SysPowState=SYSTEM_S5_S0;
+    		}
+            break;
 
-	case SYSTEM_S3 :
-      	break;
-	case SYSTEM_S0 :
-		// NOVO button should initialize ONEKEY Recovery Windows Module,
-		// or be no function if ONEKEY Recovery Windows Module hasn't been installed
-		if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
-		{
-			uNovoVPCCount++;
-			if( uNovoVPCCount > (10+1) )
-				{ uNovoVPCCount--; }
+    	case SYSTEM_S3 :
+          	break;
+    	case SYSTEM_S0 :
+    		// NOVO button should initialize ONEKEY Recovery Windows Module,
+    		// or be no function if ONEKEY Recovery Windows Module hasn't been installed
+    		if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
+    		{
+    			uNovoVPCCount++;
+    			if( uNovoVPCCount > (10+1) )
+    				{ 
+    				    uNovoVPCCount--; 
+    				}
 
-		}
-    default :
-        break;
+    		}
+        default :
+            break;
     }
 }
 
@@ -473,7 +479,7 @@ void NOVOReleased(void)
 {
 	NOVO_COUNTER = T_PSWOFF;//Hang check
 	ONEKEY_FLAG = 0;
-	ONEKEY_TEMP_FLAG = 0; //HEGANGS025: Modify onekey battery function
+	ONEKEY_TEMP_FLAG = 0; //Modify onekey battery function
 	if ( IS_MASK_SET(cCmd, b6TestBtnEn) )
 	{
 		Buffer_Key(0xE0);	//
@@ -483,29 +489,31 @@ void NOVOReleased(void)
 	}
 
     if(!Read_LID_SW_IN())
-	{ return; }
+	{ 
+	    return; 
+	}
 
 	switch (SysPowState)
 	{
-	case SYSTEM_S4 :
+	    case SYSTEM_S4 :
 
-	case SYSTEM_S5 :
+	    case SYSTEM_S5 :
 
-	case SYSTEM_S3 :
-		break;
-	case SYSTEM_S0 :
-		if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
-		{
-			if( uNovoVPCCount > 10 )		// Delay 100 mSec.
-		    { uNovoVPCCount = 1; }
-		    else
-			{ uNovoVPCCount = 0; }
-			uVPCeventSource = VPCeventNovo; // bit3:NOVO.
-		    uVPCeventSource2 = 0;
-			ECQEvent(SDV_VPC_notify);		// 0x44 for Levono used.
-		}
-	default :
-		break;
+	    case SYSTEM_S3 :
+		    break;
+	    case SYSTEM_S0 :
+		    if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )
+		    {
+    			if( uNovoVPCCount > 10 )		// Delay 100 mSec.
+    		    { uNovoVPCCount = 1; }
+    		    else
+    			{ uNovoVPCCount = 0; }
+    			uVPCeventSource = VPCeventNovo; // bit3:NOVO.
+    		    uVPCeventSource2 = 0;
+    			ECQEvent(SDV_VPC_notify);		// 0x44 for Levono used.
+    		}
+	    default :
+		    break;
 	}
 }
 
@@ -526,7 +534,7 @@ void NOVOReleased(void)
 */
 void NOVOOverrided(void)
 {
-	//HEGANGS022:Add SMI hang check function
+	//Add SMI hang check function
 	if (!Read_EC_NOVO())
 	{
 		return; 
@@ -538,7 +546,7 @@ void NOVOOverrided(void)
 	}
 	NOVO_COUNTER = T_PSWOFF;
 	ECSMIEvent();
-//HEGANGS022:Add SMI hang check function
+//Add SMI hang check function
 }
 
 /*
@@ -562,34 +570,34 @@ void LanWakeLow(void)
 
 	switch (SysPowState)
 	{
-	case SYSTEM_S4 :
-		break;
+    	case SYSTEM_S4 :
+    		break;
 
-	case SYSTEM_S5 :
-		break;
+    	case SYSTEM_S5 :
+    		break;
 
-	case SYSTEM_S3 :
-		if ( IS_MASK_SET(AOAC_STATUS, ISCT_Enable) )	// Check ISCT enable?
-		{
-			PM_PWRBTN_LOW();
-			AOAC_STATUS |= 0x80;	// Set PME(LAN) wake function.
-		}
-		else
-		{
-			if ( IS_MASK_SET(SYS_STATUS,AC_ADP) )
- 			{ 
- 				RamDebug(0x99);
-				//PCIE_WAKE_OUTPUT;
-				//PCIE_WAKE_LOW();
-            } // Set PME(LAN) wake function.
-		}
-		break;
+    	case SYSTEM_S3 :
+    		if ( IS_MASK_SET(AOAC_STATUS, ISCT_Enable) )	// Check ISCT enable?
+    		{
+    			PM_PWRBTN_LOW();
+    			AOAC_STATUS |= 0x80;	// Set PME(LAN) wake function.
+    		}
+    		else
+    		{
+    			if ( IS_MASK_SET(SYS_STATUS,AC_ADP) )
+     			{ 
+     				RamDebug(0x99);
+    				//PCIE_WAKE_OUTPUT;
+    				//PCIE_WAKE_LOW();
+                } // Set PME(LAN) wake function.
+    		}
+    		break;
 
-	case SYSTEM_S0 :
-		break;
+    	case SYSTEM_S0 :
+    		break;
 
-	default :
-		break;
+    	default :
+    		break;
 	}
 	#endif	// Support_EC_LANWake
 }
@@ -649,17 +657,17 @@ void LanWakeHi(void)
 //-----------------------------------------------------------------------------
 void VoiceWakeSystem(void)
 {
- if(cDev.fbit.cD_WovMFGtest==1)//enable wov MFG test
+    if(cDev.fbit.cD_WovMFGtest==1)//enable wov MFG test
  	{
 		return;
  	}
- 	//:Add CMD 0x59 test voice wake up for MFG.
+ 	//Add CMD 0x59 test voice wake up for MFG.
 	switch(SysPowState)
 	{
-	  case SYSTEM_S5:
-	  case SYSTEM_DSX:// Modify Voice Wake system method,Add DC S5 wake up status.
-	  //Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
-	  if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
+	    case SYSTEM_S5:
+	    case SYSTEM_DSX:// Modify Voice Wake system method,Add DC S5 wake up status.
+	    //Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
+	    if(!Read_AC_IN()||IS_MASK_SET(ACOFF_SOURCE, BATTLEARN))
 		{			 	
 			BatSMbusFailCount = 0;
 			if(!bRWSMBus(SMbusChB, SMbusRW, SmBat_Addr, C_RSOC, &BAT1PERCL,SMBus_NoPEC))
@@ -674,7 +682,7 @@ void VoiceWakeSystem(void)
 					else
 			 		{
 						BatSMbusFailCount=0;
-			            break; //JIMGBRW022
+			            break; 
 					}
 				}
 			 				  			 			 
@@ -682,28 +690,28 @@ void VoiceWakeSystem(void)
 			if(BatSMbusFailCount>=4) 
 				break;
 			
-			if (BAT1PERCL < 0x02)  //T064: change 0x05 to 0x00 G23:modify battery capacity point from 0 to 1 for fliker.
+			if (BAT1PERCL < 0x02)  //change 0x05 to 0x00 modify battery capacity point from 0 to 1 for fliker.
 			{
 				SET_MASK(nBatteryStatL,CMBS_LOWBATT);
 				LOWBATT_3TIMES = 100;		// set 5 sec
 				break;
 			}
 		}
-	  //72JERRY076:e+Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
-	   if(IS_MASK_SET(SysStatus2, b3EC8S_Reset))
+	    //Required to power on at battery RSOC below 2% in S5/S4 follow UI spec.
+	    if(IS_MASK_SET(SysStatus2, b3EC8S_Reset))
         {
             break;
-        }//72JERRY040:Modify press power button more than 8S can power on.
-	  	PWSeqStep = 1;
+        }//Modify press power button more than 8S can power on.
+	  	    PWSeqStep = 1;
 			PowSeqDelay = 0x00;
-			uWOVSTATUS=1;//72JERRY032: Add voice wake up cmd for BIOS.
+			uWOVSTATUS=1;//Add voice wake up cmd for BIOS.
             RamDebug(0x55);
 			SysPowState=SYSTEM_S5_S0;
 			break;
-	  case SYSTEM_S3:
+	    case SYSTEM_S3:
 	  	    PWSeqStep = 1;
 			PowSeqDelay = 0x00;
-			uWOVSTATUS=1;//72JERRY032: Add voice wake up cmd for BIOS.
+			uWOVSTATUS=1;//Add voice wake up cmd for BIOS.
             RamDebug(0x56);
 			SysPowState=SYSTEM_S3_S0;
 			break;
@@ -790,7 +798,7 @@ void Battery1Out(void)
 	SHA1failCnt = 0;
     SHA1FailRetry=0x00;
 	Bat1_FPChgFlag = 0;
-	CellCount=0; //MEILING017: add
+	CellCount=0; 
 	ECSMI_SCIEvent(ACPI_BAT1IN_SCI);
 }
 
@@ -852,83 +860,83 @@ void LID_Released(void)
 
 void LID_PAD_Pressed(void)
 {
-	 SET_MASK(SYS_STATUS2,PadLidClose);
-     RamDebug(0x93);
-	 if(SystemIsS0)
-     {	   
- 				if  (IS_MASK_SET(SYS_MISC1, ACPI_OS)) 
-				{
-					if(READ_EC_TP_ON())
-					{
-						EC_TP_ON_LOW();
-						SET_MASK(pDevStatus1, b7DisableTP);
-						uVPCeventSource = TouchPad;
-						uVPCeventSource2 = 0;
-						ECQEvent(SDV_VPC_notify);
-					}
-				}
+    SET_MASK(SYS_STATUS2,PadLidClose);
+    RamDebug(0x93);
+	if(SystemIsS0)
+    {	   
+        if(IS_MASK_SET(SYS_MISC1, ACPI_OS)) 
+		{
+			if(READ_EC_TP_ON())
+			{
+				EC_TP_ON_LOW();
+				SET_MASK(pDevStatus1, b7DisableTP);
+				uVPCeventSource = TouchPad;
+				uVPCeventSource2 = 0;
+				ECQEvent(SDV_VPC_notify);
+			}
+		}
 			    //PAD Cover Close (PAD LID Close)
-				if(IS_MASK_SET(SYS_MISC1,ACPI_OS))
-				{
-				  if((IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))&&(IS_MASK_SET(pDevStatus1,b5TPDRIVER_STATUS))
-					&&(IS_MASK_CLEAR(pDevStatus1, b7DisableTP)))
-				  {
-					ECQEvent(0x3F);	
+        if(IS_MASK_SET(SYS_MISC1,ACPI_OS))
+        {
+            if((IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))&&(IS_MASK_SET(pDevStatus1,b5TPDRIVER_STATUS))
+        	    &&(IS_MASK_CLEAR(pDevStatus1, b7DisableTP)))
+            {
+        	    ECQEvent(0x3F);	
 
-					SET_MASK(pDevStatus3,b6EnDisTPSend); 
-					if(IS_MASK_SET(pDevStatus1,b7DisableTP))
-					{
-					   SET_MASK(pDevStatus3,b7TPStateFormer);
-					}
-					else
-					{
-					   CLEAR_MASK(pDevStatus3,b7TPStateFormer);
-					}  
+        	    SET_MASK(pDevStatus3,b6EnDisTPSend); 
+        	    if(IS_MASK_SET(pDevStatus1,b7DisableTP))
+        	    {
+        	        SET_MASK(pDevStatus3,b7TPStateFormer);
+        	    }
+        	    else
+        	    {
+        	        CLEAR_MASK(pDevStatus3,b7TPStateFormer);
+        	    }  
 
-					RamDebug(0xBF);   
-				  }
-				}
+        	    RamDebug(0xBF);   
+            }
+		}
 				
-				SET_MASK(pDevStatus2,b2PadLid_Close);
-				
-				if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))	 
-				{
-				  SET_MASK(pDevStatus1,b2DisableKB);
-				  RamDebug(0xB4); 
+		SET_MASK(pDevStatus2,b2PadLid_Close);
+		
+		if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))	 
+		{
+		    SET_MASK(pDevStatus1,b2DisableKB);
+		    RamDebug(0xB4); 
 
-				  if(IS_MASK_SET(EM9_NEWFUN, b7_LShiftPress))  
-				  { 
-						simple_code(0x12,BREAK_EVENT);
-						CLEAR_MASK(EM9_NEWFUN,b7_LShiftPress);
-				  }
-				  if(IS_MASK_SET(EM9_NEWFUN,b6_RShiftPress))
-				  {
-						simple_code(0x59,BREAK_EVENT);
-						CLEAR_MASK(EM9_NEWFUN, b6_RShiftPress);
-				  }
-				  if(IS_MASK_SET(EM9_NEWFUN, b5_LAltPress)) 
-				  { 
-						simple_code(0x11,BREAK_EVENT);
-						CLEAR_MASK(EM9_NEWFUN,b5_LAltPress);
-				  }
-				  if(IS_MASK_SET(EM9_NEWFUN,b4_RAltPress))
-				  {
-						 e0_prefix_code(0x11,BREAK_EVENT);
-						 CLEAR_MASK(EM9_NEWFUN, b4_RAltPress);
-				  }
-				  if(IS_MASK_SET(EM9_NEWFUN, b3_LCtrlPress)) 
-				  { 
-						 simple_code(0x14,BREAK_EVENT);
-						 CLEAR_MASK(EM9_NEWFUN,b3_LCtrlPress);
-				  }
-				  if(IS_MASK_SET(EM9_NEWFUN,b2_RCtrlPress))
-				  {
-						 e0_prefix_code(0x14,BREAK_EVENT);
-						 CLEAR_MASK(EM9_NEWFUN, b2_RCtrlPress);
-				  } 
+		    if(IS_MASK_SET(EM9_NEWFUN, b7_LShiftPress))  
+		    { 
+				simple_code(0x12,BREAK_EVENT);
+				CLEAR_MASK(EM9_NEWFUN,b7_LShiftPress);
+		    }
+		    if(IS_MASK_SET(EM9_NEWFUN,b6_RShiftPress))
+		    {
+				simple_code(0x59,BREAK_EVENT);
+				CLEAR_MASK(EM9_NEWFUN, b6_RShiftPress);
+    		}
+    		if(IS_MASK_SET(EM9_NEWFUN, b5_LAltPress)) 
+		    { 
+				simple_code(0x11,BREAK_EVENT);
+				CLEAR_MASK(EM9_NEWFUN,b5_LAltPress);
+		    }
+		    if(IS_MASK_SET(EM9_NEWFUN,b4_RAltPress))
+		    {
+				 e0_prefix_code(0x11,BREAK_EVENT);
+				 CLEAR_MASK(EM9_NEWFUN, b4_RAltPress);
+		    }
+		    if(IS_MASK_SET(EM9_NEWFUN, b3_LCtrlPress)) 
+		    { 
+				 simple_code(0x14,BREAK_EVENT);
+				 CLEAR_MASK(EM9_NEWFUN,b3_LCtrlPress);
+		    }
+		    if(IS_MASK_SET(EM9_NEWFUN,b2_RCtrlPress))
+		    {
+				 e0_prefix_code(0x14,BREAK_EVENT);
+				 CLEAR_MASK(EM9_NEWFUN, b2_RCtrlPress);
+		    } 
 
-				}												
-		}	 	
+		}												
+	}	 	
 }
 
 void LID_PAD_Released(void)
@@ -937,57 +945,57 @@ void LID_PAD_Released(void)
 	RamDebug(0x94);
 	if(SystemIsS0)
     {
-    			 if  (IS_MASK_SET(SYS_MISC1, ACPI_OS))//HEGANGS027:Add the function of YMC control the TP
+    	if  (IS_MASK_SET(SYS_MISC1, ACPI_OS))//Add the function of YMC control the TP
+		{
+			if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))
+			{
+				if(!READ_EC_TP_ON())
 				{
-					if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))
-					{
-						if(!READ_EC_TP_ON())
-						{
-							EC_TP_ON_HI();
-							CLEAR_MASK(pDevStatus1, b7DisableTP);
-							uVPCeventSource = TouchPad;
-							uVPCeventSource2 = 0;
-							ECQEvent(SDV_VPC_notify);
-						}
-					}
+					EC_TP_ON_HI();
+					CLEAR_MASK(pDevStatus1, b7DisableTP);
+					uVPCeventSource = TouchPad;
+					uVPCeventSource2 = 0;
+					ECQEvent(SDV_VPC_notify);
 				}
-                   //PAD Cover Open (PAD LID OPEN)
-				 if(IS_MASK_SET(SYS_MISC1,ACPI_OS))
-				 {
-						if((IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))&&(IS_MASK_SET(pDevStatus1,b5TPDRIVER_STATUS))
-							&&(IS_MASK_SET(pDevStatus1, b7DisableTP)))  
-						{
-							ECQEvent(0x3E); 	
+			}
+		}
+         //PAD Cover Open (PAD LID OPEN)
+		if(IS_MASK_SET(SYS_MISC1,ACPI_OS))
+        {
+        	if((IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))&&(IS_MASK_SET(pDevStatus1,b5TPDRIVER_STATUS))
+        		&&(IS_MASK_SET(pDevStatus1, b7DisableTP)))  
+        	{
+                ECQEvent(0x3E); 	
 
-							SET_MASK(pDevStatus3,b6EnDisTPSend); 
-							if(IS_MASK_SET(pDevStatus1,b7DisableTP))
-							{
-							   SET_MASK(pDevStatus3,b7TPStateFormer);
-							}
-							else
-							{
-							   CLEAR_MASK(pDevStatus3,b7TPStateFormer);
-							}  
+        		SET_MASK(pDevStatus3,b6EnDisTPSend); 
+        		if(IS_MASK_SET(pDevStatus1,b7DisableTP))
+        		{
+        		   SET_MASK(pDevStatus3,b7TPStateFormer);
+        		}
+        		else
+        		{
+        		   CLEAR_MASK(pDevStatus3,b7TPStateFormer);
+        		}  
 
-						    RamDebug(0xBE);   
-						}
-				  }
+        	    RamDebug(0xBE);   
+        	}
+        }
 				  		
-				   CLEAR_MASK(pDevStatus2,b2PadLid_Close);
-					 
-				   if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))  
-				   {
-					 CLEAR_MASK(pDevStatus1,b2DisableKB);
-					 
-					 RamDebug(0xB5);
-					 
-					 Enable_Any_Key_Irq();
-					 if (SystemIsS3)
-					 {
-					 	InterKBDWakeEnable(); 
-					 }	
-				   }											 								
-		}		
+        CLEAR_MASK(pDevStatus2,b2PadLid_Close);
+         
+        if(IS_MASK_CLEAR(pDevStatus2,b1TransAP_CTRL))  
+        {
+            CLEAR_MASK(pDevStatus1,b2DisableKB);
+         
+            RamDebug(0xB5);
+         
+            Enable_Any_Key_Irq();
+            if (SystemIsS3)
+            {
+         	    InterKBDWakeEnable(); 
+            }	
+        }											 								
+	}		
 }
 
 // ----------------------------------------------------------------------------
@@ -1137,14 +1145,15 @@ void EventManager(BYTE device_id)
 //Modify press button 1s enter S3/S4/shutdown follow UI spec.
 void PowerBottonEvent(void)
 {
-		 if(IS_MASK_SET(SysStatus2, PWRBTN_press_retry))
-		 	{  PWRBTN_press_debounce++;
-		 	if(PWRBTN_press_debounce>=1)
-		 		{
-		 		PWRBTN_press_debounce=0;
-				CLEAR_MASK(SysStatus2,PWRBTN_press_retry);
-				ECQEvent(Powerbotton_SCI);
-		 		}
-		 	}
+    if(IS_MASK_SET(SysStatus2, PWRBTN_press_retry))
+    {  
+        PWRBTN_press_debounce++;
+    	if(PWRBTN_press_debounce>=1)
+    	{
+    		PWRBTN_press_debounce=0;
+    	    CLEAR_MASK(SysStatus2,PWRBTN_press_retry);
+    	    ECQEvent(Powerbotton_SCI);
+    	}
+    }
 }
 

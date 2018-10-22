@@ -14,8 +14,7 @@ void Fan_Init(void)
 {
 	nFanStatus1 = Fan_Num;
 	nFanStatus1 = (nFanStatus1 << 4) | Fan_Step;
-	//nFanStatus1 = ((Fan_Num << 4) &0xF0) | (Fan_Step & 0x0F);
-	nOSThrottlingTemp = 98; //MEILING024:change throttling temperatrue from 97 to 98.
+	nOSThrottlingTemp = 98; //change throttling temperatrue from 97 to 98.
 	nOSShutdownTemp = 100;
 	nShutDownTemp = 100;
 }
@@ -69,9 +68,9 @@ void ThmIC_Temperature(void)
 	{ 
 		return;
 	}
-	switch( TmlICStep & 0x03 )  //  Change TmlICStep from 7 to 3
+	switch( TmlICStep & 0x03 )  //Change TmlICStep from 7 to 3
 	{
-		case 0: // HEGANGS010:Enable GPU temperature and remove read remote temp
+		case 0: //Enable GPU temperature and remove read remote temp
 			BTmlCmd = Remote_Temp;
 			break;
 
@@ -84,7 +83,7 @@ void ThmIC_Temperature(void)
 			return;
 	}
 	if(!bRWSMBus(SMbusCh4, SMbusRB, TmlIC_Addr, BTmlCmd, &BsData, 0))  
-	{      //  1. SMBus fail; 2. MBID OK; 3.  no UMA 37W ; 4.  no UMA 47W VRAM sensor  
+	{   //  1. SMBus fail; 2. MBID OK; 3.  no UMA 37W ; 4.  no UMA 47W VRAM sensor  
 		TMErrCnt++;
 		TmlICStep++;
 		if( IS_MASK_CLEAR(ERR_THMSTS, b0ThmICError) )// Check bit0 is Error.
@@ -149,126 +148,7 @@ void ThmIC_Temperature(void)
 	}
 
 }
-//-----------------------------------------------------------------------------
-// Service short time PWM output, base on 50ms.
-//-----------------------------------------------------------------------------
-/* //ANGELAS050:remove start
-void Tml_SMLink(void)
-{
-	if( !bRSMBusBlock(SMbusCh4, SMbusRBK, 0x96, 0x40, &MaxCPU_MCHTemp))//, 0x14, TRUE))
-	{
-		TMErrCnt++;
-		if( IS_MASK_CLEAR(ERR_THMSTS, b0ThmICError) )// Check bit0 is Error.
-		{
-			if ( TMErrCnt > 35 )	//change 7 to 35	// 3 Sec.
-			{
-				SET_MASK(ERR_THMSTS, b0ThmICError);	// Set bit0 Thermal IC read temperature error.
-			}
-		}
-		else
-		{
-			if ( TMErrCnt > 254 ) //change 68 to 254   	// 30 Sec.
-			{
-				//ProcessSID(THERMALCOMMFAIL_ID);	// 0x0B shutdown ID.
-				TMErrCnt = 0;					// Clear error count.
-				//RSMRST_LOW();
-				//Delay1MS(1);
-				//RSMRST_HI();
-			}
-		}
-		ResetSMBus(SMbusCh4);
-	}
-	else
-	{
-		nOSShutdownTemp3 = MaxCPU_MCHTemp;		// Save PCH temperature.
-		CLEAR_MASK(ERR_THMSTS,b0ThmICError);	// Clear bit0.
-		TMErrCnt = 0;							// Clear error count.
-		TmlICStep = 0;							// Reset Step.
-	}
-}
-*///ANGELAS050:remove end
-/*****************************************************************************/
-// Procedure:  							TimeDiv: 500mSec
-// Description:  
-// GPIO:  
-// Referrals:
-/*****************************************************************************/
-/* ANGELAS050:remove start
-void TempProtect_VRAM(void)
-{
-		BYTE BsData,BTmlCmd;
-		BTmlCmd = SSD_Temp;//change SSD_Temp to SSD_Temp
-	
 
-
-		//if((!bRWSMBus(SMbusCh4, SMbusRB, TmlIC_Addr, BTmlCmd, &BsData, 0))&&MBID_READY&&(!(uMBID&0x20)))
-		if(!bRWSMBus(SMbusCh4, SMbusRB, TmlIC_Addr, BTmlCmd, &BsData, 0))// REMOVE MBID_READY judge
-		{	 
-			TMErrCnt++;
-			if( IS_MASK_CLEAR(ERR_THMSTS, b0ThmICError) )// Check bit0 is Error.
-			{
-				if ( TMErrCnt > 7 ) 	// 3 Sec.
-				{
-					SET_MASK(ERR_THMSTS, b0ThmICError); // Set bit0 Thermal IC read temperature error.
-				}
-			}
-			else
-			{
-				if ( TMErrCnt > 68 )	// 30 Sec.
-				{
-					//ProcessSID(THERMALCOMMFAIL_ID); // 0x0B shutdown ID.
-					TMErrCnt = 0;					// Clear error count.
-					//RSMRST_LOW();  
-					//Delay1MS(1);
-					//RSMRST_HI();
-				}
-			}
-			ResetSMBus(SMbusCh4);
-		}
-		else
-		{ 
-		if(BsData == 0x00)// REMOVE MBID_READY judge
-			//if((BsData == 0x00)&&MBID_READY&&(!(uMBID&0x20)))
-			{
-				TMErrCnt++;
-				if( IS_MASK_CLEAR(ERR_THMSTS, b0ThmICError) )// Check bit0 is Error.
-				{
-					if ( TMErrCnt > 7 ) 	// 3 Sec.
-					{
-						SET_MASK(ERR_THMSTS, b0ThmICError); // Set bit0 Thermal IC read temperature error.
-					}
-				}
-				else
-				{
-					if ( TMErrCnt > 68 )	// 30 Sec.
-					{
-						//ProcessSID(THERMALCOMMFAIL_ID); // 0x0B shutdown ID.
-						TMErrCnt = 0;					// Clear error count.
-						  // RSMRST_LOW(); 
-						 //  Delay1MS(1);
-						 //  RSMRST_HI();	
-					}
-				}
-			}
-			else
-			{
-
-						//nVramTemp = BsData; // Save VRAM temperature.  
-						nNBTemp=BsData;  
-						TMErrCnt = 00;		// Clear error count.
-						CLEAR_MASK(ERR_THMSTS,b0ThmICError);	// Clear bit0.
-						if(nNBTemp>=85) //change nVramTemp to nNBTemp
-						{
-						  // ProcessSID(ThermalICOVerTEPM_ID); // 0x0B shutdown ID.
-						   //RSMRST_LOW(); 
-						  // Delay1MS(1);
-						  // RSMRST_HI();		
-						}
-			}
-		  }
-}
-
-*///ANGELAS050:remove end
 /*****************************************************************************/
 // Procedure: VGA_Temperature								TimeDiv: 500mSec
 // Description: Read VGA temperature(M/B)
@@ -278,19 +158,19 @@ void TempProtect_VRAM(void)
 void VGA_Temperature(void)
 {
 	BYTE BsData;
-	//Add read AMD GPU thermal temperature  start
-//	BYTE INIT_GPU_REG2[4] = {0x0f, 0x00, 0x01, 0xC5}; //ANGELAG016: remove
-//ANGELAG016: add start
-	 BYTE INIT_GPU_REG2[4] = {0x0f, 0x00, 0x00, 0x8f};
+
+	BYTE INIT_GPU_REG2[4] = {0x0f, 0x00, 0x00, 0x8f};
   	BYTE INIT_GPU_REG1[4] = {0x0f, 0x00, 0x00, 0x8e};
 	BYTE INIT_GPU_REG0[4] = {0xc0, 0x30, 0x00, 0x14};
-//ANGELAG016: add end
-	if ( (CPU_TYPE & 0xC0) == 0x00 )	// Isn't check VGA support optimus?
-	{ nHybridGraphicsDIS;}				// No optimus status.
- 	else
- 	{ nHybridGraphicsEN; }				// optimus status.
 
-	//if( SystemNotS0 || (PwrOnDly5Sec!=0) )	 //T089: add PwrOnDly5Sec judge.
+	if ( (CPU_TYPE & 0xC0) == 0x00 )	// Isn't check VGA support optimus
+	{ 
+	    nHybridGraphicsDIS;
+	}				// No optimus status.
+ 	else
+ 	{ 
+ 	    nHybridGraphicsEN; 
+ 	}				// optimus status.
 
 	// Check S0 and  VGA into.
 	if( SystemNotS0 || !(nHybridGraphicsGET)|| (PwrOnDly5Sec!=0) ) //== to != // add PwrOnDly5Sec judge.modify nHybridGraphicsGET not take a reverse value 
@@ -304,29 +184,20 @@ void VGA_Temperature(void)
      
 	if((CPU_TYPE &0xc0)==0x40)
 	{
-//ANGELAG016: add start
-	if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x01,( BYTE* )&INIT_GPU_REG1,4,0))//load GPU register offset to SMB_ADDR
+	    if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x01,( BYTE* )&INIT_GPU_REG1,4,0))//load GPU register offset to SMB_ADDR
 		{
-		VGAErrCnt++;
+		    VGAErrCnt++;
 		}
- 	if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x02,( BYTE* )&INIT_GPU_REG0,4,0))//sent data to be written into the DGPU rgister
+		
+ 	    if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x02,( BYTE* )&INIT_GPU_REG0,4,0))//sent data to be written into the DGPU rgister
 		{
-		VGAErrCnt++;
+		    VGAErrCnt++;
 		}
 
-	if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x01,( BYTE* )&INIT_GPU_REG2,4,0))//load GPU register offset to SMB_ADDR
+	    if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x01,( BYTE* )&INIT_GPU_REG2,4,0))//load GPU register offset to SMB_ADDR
 		{
-		VGAErrCnt++;
+		    VGAErrCnt++;
 		}
-//ANGELAG016: add end
-//ANGELAG016: remove start
-	/*	if(!bWSMBusBlock(SMbusCh4, SMbusWBK, VGA_Addr, 0x01, &INIT_GPU_REG2, 4,0))
-		{
-			VGAErrCnt++;
-		}*/
-//ANGELAG016: remove end
-			
-		//vgaok=1;
 		
 		if(!bRSMBusBlock(SMbusCh4, SMbusRBK, VGA_Addr, 0x03, &sdAMDTH0))
 		{
@@ -352,7 +223,6 @@ void VGA_Temperature(void)
 			}
 			ResetSMBus(SMbusCh4);
 		}
-		//sdAMDTH0=sdAMDTH0<<24;
 		else
 		{
 			VGA_TEMP=sdAMDTH0&0xff;
@@ -361,7 +231,7 @@ void VGA_Temperature(void)
 
 			if ( IS_MASK_CLEAR(Fan_Debug_Temp,b1VGA_Temp) )	// Debug VGA Temperature, Engineer myself control.
 			{
-		    	if((VGA_TEMP&0x80)==0x80)//Filter the value of the GPU temperature greater than 128 // optimize G69.
+		    	if((VGA_TEMP&0x80)==0x80)//Filter the value of the GPU temperature greater than 128 
          		{
          			return;
          		}  
@@ -379,8 +249,6 @@ void VGA_Temperature(void)
 	if((CPU_TYPE &0xc0)==0x80)
 	{
 		if(!bRWSMBus(SMbusCh4, SMbusRB, EXTVGA_Addr, 0x00, &BsData, 0))// REMOVE MBID_READY judge
-
-		//if((!bRWSMBus(SMbusCh4, SMbusRB, VGA_Addr, TmlIC_Temp, &BsData, 0))&&MBID_READY&&(!(uMBID&0x20))) //add MBID judge.
 		{
         	VGAErrCnt++;
 			if( IS_MASK_CLEAR(ERR_THMSTS, b1VGATempEr) )// Check bit1 is Error.
@@ -506,7 +374,7 @@ void Oem_Fan_Speed(void)
 	{
 		if ( (F1TMRR == 0) && (F1TLRR == 0) )
 		{
-			nAtmFanSpeed = 0;
+		    nAtmFanSpeed = 0;
 		}
 		else
 		{
@@ -517,7 +385,7 @@ void Oem_Fan_Speed(void)
 		
 	}
 }
-//72JERRY014¡êoS+ Add the second fan method
+//Add the second fan method
 void Oem_Fan1_Speed(void)
 {
 	WORD Curr_Fan2Tachometer;
@@ -1283,25 +1151,25 @@ void Oem_Fan_Control(void)
 			Average_Temp = VGA_TBuff3;
 		}
 
-		if( Average_Temp <= Fan1Off_Step1)	//T105+
+		if( Average_Temp <= Fan1Off_Step1)	
 		{
 			FAN_PWM = Target_Duty = 0;	// Turn off FAN.
 			FAN1_RPM=0x00;
 			return;
 		}	
 
-		if ( Average_Temp >= Fan1Off_Step1)  //T105+
+		if ( Average_Temp >= Fan1Off_Step1)  
 		{
 			if ( Average_Temp < Fan1On_Step1)  // change 0 to BTStepTemp//4 to 0
 			{
 				if ( FAN_PWM != 0 )
 				{ 
-					FAN_PWM = Target_Duty = Fan1RPM_Step1; //LMLKBL0004:add.  
+					FAN_PWM = Target_Duty = Fan1RPM_Step1; 
 				}	// PWM min. 30%
 				else
 				{ 
 					FAN_PWM = Target_Duty = 0; // turn off fan.
-					FAN1_RPM=0x00; //ANGELAS076:add 
+					FAN1_RPM=0x00; 
 				}				
 				return;
 			}
@@ -1320,25 +1188,25 @@ void Oem_Fan_Control(void)
 			Average_Temp = VGA_TBuff3;
 		}
 		
-		if( Average_Temp <= Fan1Off_Step2)	//T105+
+		if( Average_Temp <= Fan1Off_Step2)	
 		{
 			FAN_PWM = Target_Duty = 0;	// Turn off FAN.
 			FAN1_RPM=0x00;
 			return;
 		}	
 
-		if ( Average_Temp >= Fan1Off_Step2)  //T105+
+		if ( Average_Temp >= Fan1Off_Step2) 
 		{
 			if ( Average_Temp < Fan1On_Step1)  // change 0 to BTStepTemp//4 to 0
 			{
 				if ( FAN_PWM != 0 )
 				{ 
-					FAN_PWM = Target_Duty = 0x2E; //LMLKBL0004:add.
+					FAN_PWM = Target_Duty = 0x2E; 
 				}	// PWM min. 30%
 				else
 				{ 
 					FAN_PWM = Target_Duty = 0; // turn off fan.
-					FAN1_RPM=0x00; //ANGELAS076:add 
+					FAN1_RPM=0x00; 
 				}				
 				return;
 			}
@@ -1351,9 +1219,7 @@ void Oem_Fan_Control(void)
 	
 	Fan1MainControl();                         
 }
-//72JERRY033: Modify fan table follow '720S_13IKB fan table_V01'.
-//72JERRY014¡êoS+ Add the second fan method
-//72JERRY078:Update fan table follow'720S_13IKB fan table_V07'. 
+
 void Oem_Fan1_Control(void)
 {
 	FAN1_PWM_ALT;		// Defind PWM is Alt.
@@ -1406,25 +1272,25 @@ void Oem_Fan1_Control(void)
 			Average_Temp = TEMP_Buff_3;
 		}
 
-		if( Average_Temp <= Fan2Off_Step1)	//T105+
+		if( Average_Temp <= Fan2Off_Step1)	
 		{
 			FAN1_PWM = Target_Duty = 0;	// Turn off FAN.
 			FAN2_RPM=0x00;
 			return;
 		}	
 
-		if ( Average_Temp >= Fan2Off_Step1)  //T105+
+		if ( Average_Temp >= Fan2Off_Step1) 
 		{
 			if ( Average_Temp < Fan2On_Step1)  // change 0 to BTStepTemp//4 to 0
 			{
 				if ( FAN1_PWM != 0 )
 				{ 
-					FAN1_PWM = Target_Duty = Fan2RPM_Step1; //LMLKBL0004:add.  
+					FAN1_PWM = Target_Duty = Fan2RPM_Step1;  
 				}	// PWM min. 30%
 				else
 				{ 
 					FAN1_PWM = Target_Duty = 0; // turn off fan.
-					FAN2_RPM=0x00; //ANGELAS076:add 
+					FAN2_RPM=0x00; 
 				}				
 				return;
 			}
@@ -1464,25 +1330,25 @@ void Oem_Fan1_Control(void)
 			}
 		}
 		
-		if( Average_Temp <= Fan2Off_Step2)	//T105+
+		if( Average_Temp <= Fan2Off_Step2)	
 		{
 			FAN1_PWM = Target_Duty = 0;	// Turn off FAN.
 			FAN2_RPM=0x00;
 			return;
 		}	
 
-		if ( Average_Temp >= Fan2Off_Step2)  //T105+
+		if ( Average_Temp >= Fan2Off_Step2) 
 		{
 			if ( Average_Temp < Fan2On_Step1)  // change 0 to BTStepTemp//4 to 0
 			{
 				if ( FAN1_PWM != 0 )
 				{ 
-					FAN1_PWM = Target_Duty = 0x2C; //LMLKBL0004:add.
+					FAN1_PWM = Target_Duty = 0x2C; 
 				}	// PWM min. 30%
 				else
 				{ 
 					FAN1_PWM = Target_Duty = 0; // turn off fan.
-					FAN2_RPM=0x00; //ANGELAS076:add 
+					FAN2_RPM=0x00; 
 				}				
 				return;
 			}
@@ -1495,35 +1361,44 @@ void Oem_Fan1_Control(void)
 	
 	Fan2MainControl();              
 }
+
 void Fan_Offset_Chk(BYTE Duty_Offset, XBYTE *BDCRx)
 {           
 	if(((Duty_Offset*100)-50)>FAN1_RPM)  //100 to 50
 	{		       
     	if(*BDCRx<FAN_PWM_Max)
-			{ *BDCRx += 1; /*RamDebug(0x71);*/}	// +1%
+		{ 
+		    *BDCRx += 1; /*RamDebug(0x71);*/
+		}	// +1%
 	}
     else if(((Duty_Offset*100)+50)<FAN1_RPM)   //100 to 50
     {
         if(*BDCRx>0x00)
-			{ *BDCRx -= 1; /*RamDebug(0x73);*/}	// -1%
+		{ 
+		    *BDCRx -= 1; /*RamDebug(0x73);*/
+		}	// -1%
     }       
-
 }
-//72JERRY014¡êoS+ Add the second fan method
+
 void Fan1_Offset_Chk(BYTE Duty_Offset, XBYTE *BDCRx)
 {           
 	if(((Duty_Offset*100)-50)>FAN2_RPM)  //100 to 50
 	{		       
     	if(*BDCRx<FAN_PWM_Max)
-			{ *BDCRx += 1; /*RamDebug(0x71);*/}	// +1%
+		{ 
+		    *BDCRx += 1; /*RamDebug(0x71);*/
+		}	// +1%
 	}
     else if(((Duty_Offset*100)+50)<FAN2_RPM)   //100 to 50
     {
         if(*BDCRx>0x00)
-			{ *BDCRx -= 1; /*RamDebug(0x73);*/}	// -1%
+		{ 
+		    *BDCRx -= 1; /*RamDebug(0x73);*/
+		}	// -1%
     }       
 
 }
+
 /*****************************************************************************/
 // Procedure: OEM_Throttling_Ctrl								TimeDiv: 1 Sec
 // Description: System CPU/GPU Throttling Data
@@ -1531,28 +1406,28 @@ void Fan1_Offset_Chk(BYTE Duty_Offset, XBYTE *BDCRx)
 // Referrals:  CPU/GPU Temperature
 /*****************************************************************************/
 //-----------------------------------------------------------------------------
-/*const CPUTHRstruct code CPUTHRTable[]= //ANGELAG006: remove start
+/*const CPUTHRstruct code CPUTHRTable[]= 
 { //      Thr_Off  Thr_On  Turbo_Rem   Turbo_Off    Thr_Shut	       Step  Tjxx  Throttling Table
 //-----------------------------------------------------------------------------
-	{	90, 	98, 		55, 	60, 		100 },	// 0 for DIS CPU 14'  //MEILING019:modify fan table start.  //MEILING024:change cpu turbo off from 70 to 65.  //MEILING040:modify turbo on/off start.
+	{	90, 	98, 		55, 	60, 		100 },	// 0 for DIS CPU 14'  
 	{	92, 	99, 		57, 	61, 		105 },	// 1 for DIS GPU 14'
 	
-	{	90, 	98, 		59, 	64, 		100 },	// 2 for UMA CPU 14'  //MEILING024:change cpu turbo on from 60 to 65. //MEILING033:modify turbo on/off.
+	{	90, 	98, 		59, 	64, 		100 },	// 2 for UMA CPU 14' 
 	{	100,	100,		100, 	100, 		100 },  // 3 for UMA GPU 14'
 
-	{	90, 	98, 		55, 	60, 		100 },	// 4 for DIS CPU 15'  //MEILING024:change cpu turbo off from 70 to 65.  //MEILING033:modify turbo on/off.
-	{	92, 	99, 		57, 	61, 		105 },	// 5 for DIS GPU 15'  //MEILING033:modify turbo on/off.
+	{	90, 	98, 		55, 	60, 		100 },	// 4 for DIS CPU 15' 
+	{	92, 	99, 		57, 	61, 		105 },	// 5 for DIS GPU 15' 
 	
-	{	90, 	98, 		58, 	62, 		100 },	// 6 for UMA CPU 15'  //MEILING024:change cpu turbo off from 60 to 65.  //MEILING033:modify turbo on/off.  //MEILING040:modify turbo on/off end.
+	{	90, 	98, 		58, 	62, 		100 },	// 6 for UMA CPU 15'  
 	{	100,	100,		100, 	100, 		100 },  // 7 for UMA GPU 15'
 
 	{	90,		98,			55,		60,			100	},  // 8 for DIS CPU 17'
 	{	92,	    99,	    	57,		61,			105	},  // 9 for DIS GPU 17'
 
 	{	90,		98,			58,		62,			100	},  // 10 for UMA CPU 17'
-	{	100,	100,		100,	100,		100	}   // 11 for UMA GPU 17'  //MEILING019:modify fan table end.
+	{	100,	100,		100,	100,		100	}   // 11 for UMA GPU 17'
 
-};*/ //ANGELAG006: remove end
+};*/
 
 void Clr_Thermal_Tab(void)
 {
@@ -1574,65 +1449,46 @@ void Clr_Thermal_Tab(void)
         Thermal_pntr++;
 	}
 }
-//ANGELAG006: add start
+
 const CPUTHRstruct code CPUTHRTable[]=
 { //      Thr_Off  Thr_On  Turbo_Rem   Turbo_Off    Thr_Shut	       Step  Tjxx  Throttling Table
 //-----------------------------------------------------------------------------
-	{	96, 	98, 		60, 		64, 		100 },	// 0 for DIS CPU 14'  //MEILING019:modify fan table start.  //MEILING024:change cpu turbo off from 70 to 65.  //MEILING040:modify turbo on/off start.
+	{	96, 	98, 		60, 		64, 		100 },	// 0 for DIS CPU 14'  //modify fan table start.  //change cpu turbo off from 70 to 65.  //modify turbo on/off start.
 	{	92, 	99, 		60, 		65, 		105 },	// 1 for DIS GPU 14'
 	
-	{	90, 	98, 		65, 		70, 		100 },	// 2 for UMA CPU 14'  //MEILING024:change cpu turbo on from 60 to 65. //MEILING033:modify turbo on/off.
-	{	100,	100,		100, 	100, 	100 },  // 3 for UMA GPU 14'
+	{	90, 	98, 		65, 		70, 		100 },	// 2 for UMA CPU 14'  //change cpu turbo on from 60 to 65. //modify turbo on/off.
+	{	100,	100,		100, 	    100, 	    100 },  // 3 for UMA GPU 14'
 
-	{	90, 	98, 		60, 		65, 		100 },	// 4 for DIS CPU 15'  //MEILING024:change cpu turbo off from 70 to 65.  //MEILING033:modify turbo on/off.
-	{	92, 	99, 		60, 		65, 		105 },	// 5 for DIS GPU 15'  //MEILING033:modify turbo on/off.
+	{	90, 	98, 		60, 		65, 		100 },	// 4 for DIS CPU 15'  //change cpu turbo off from 70 to 65.  //modify turbo on/off.
+	{	92, 	99, 		60, 		65, 		105 },	// 5 for DIS GPU 15'  //modify turbo on/off.
 	
-	{	90, 	98, 		65, 		70, 		100 },	// 6 for UMA CPU 15'  //MEILING024:change cpu turbo off from 60 to 65.  //MEILING033:modify turbo on/off.  //MEILING040:modify turbo on/off end.
-	{	100,	100,		100, 	100, 	100 },  // 7 for UMA GPU 15'
+	{	90, 	98, 		65, 		70, 		100 },	// 6 for UMA CPU 15'  //change cpu turbo off from 60 to 65.  //modify turbo on/off.  //modify turbo on/off end.
+	{	100,	100,		100, 	    100, 	    100 },  // 7 for UMA GPU 15'
 
-	{	90,	98,		60,		65,		100	},  // 8 for DIS CPU 17'
-	{	92,	99,	    	60,		65,		105	},  // 9 for DIS GPU 17'
+	{	90,	    98,		    60,		    65,		    100	},  // 8 for DIS CPU 17'
+	{	92,	    99,	    	60,		    65,	    	105	},  // 9 for DIS GPU 17'
 
-	{	90,	98,		65,		70,		100	},  // 10 for UMA CPU 17'
-	{	100,	100,		100,		100,		100	}   // 11 for UMA GPU 17'  //MEILING019:modify fan table end.
+	{	90, 	98,		    65,		    70,		    100	},  // 10 for UMA CPU 17'
+	{	100,	100,		100,		100,		100	}   // 11 for UMA GPU 17'  //modify fan table end.
 
 };
-//ANGELAG006: add end
-//72JERRY033: Modify fan table follow '720S_13IKB fan table_V01'.
-//72JERRY061:Update fan table follow'720S_13IKB fan table_V04'.
+
 
 void OEM_Throttling_Ctrl(void)
 {
 	BYTE BTemp_Type,BTbStep;
 	
-	BTbStep = 0;//MEILING023:add.
+	BTbStep = 0;
 
 	if( SystemNotS0 ) // modify cpu keep max p_state,when battery RSOC>5% under DC mode.
-	//if( (SystemNotS0&&IS_MASK_SET(SYS_STATUS,AC_ADP))|| ((BAT1PERCL>0x05)&&IS_MASK_CLEAR(SYS_STATUS,AC_ADP))) 
 	{
 	    H_PROCHOT_OFF();
 		return;
 	}
 #if FAN_TABLE_Already
-BTbStep = 0;
+    BTbStep = 0;
+	Thro_Std_Mode(BTbStep); 
 
-	
-	//if ( IS_MASK_CLEAR(SYS_MISC1, ACPI_OS) )
-	//{ Thro_DOS_Mode(BTbStep); }
-	//  always std mode.
-    // else
-    // { 
-		Thro_Std_Mode(BTbStep); 
-    // }  
-
- 	/*  
-	else if ( IS_MASK_SET(EM7FUNCTION, QIUETMODE) )			// bit5:QIUETMODE, Check Quite mode.
-	{ Thro_Quite_Mode(BTbStep); } 						// Quite
-	else if ( IS_MASK_SET(EM7FUNCTION, LSPRUNNING) )	// bit3:LSPRUNNING, Check Super performance mode.
-	{ Thro_Super_Mode(BTbStep); } 				// Super performance Mode.
-	else
-	{ Thro_Std_Mode(BTbStep); }
- 	*/  
 	nOSThrottlingTemp = THR_PRO_ON;	// For OS throttling temperature.
 	nOSShutdownTemp = THR_Tab_Shut;	// For OS Shutdown temperature.
 	nShutDownTemp = THR_Tab_Shut;	// Shutdown temperature.
@@ -1647,31 +1503,31 @@ void Thro_Std_Mode(BYTE BMBStep)
 	switch( (CPU_TYPE & 0x03) )
 	{
 	#if Support_TJ100
-	case 2:		// Tj100 Step8 and VGA Step16.
-		THRTab_ToRAM((0+BMBStep));	//:8 to 0  // Throttle Standard table save to RAM.
-		Thro_Shut_Status((0+BMBStep),TEMP_TYPE_CPU); //:8 to 0  // Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(0+BMBStep)].Turbo_Rem,CPUTHRTable[(0+BMBStep)].Turbo_Off,TEMP_TYPE_CPU); //:8 to 0 
-		break;
+    	case 2:		// Tj100 Step8 and VGA Step16.
+    		THRTab_ToRAM((0+BMBStep));	//8 to 0  // Throttle Standard table save to RAM.
+    		Thro_Shut_Status((0+BMBStep),TEMP_TYPE_CPU); //8 to 0  // Check Throttle and Shutdown status.
+    		// Check CPU Turbo function.
+    		Thro_Turbo(CPUTHRTable[(0+BMBStep)].Turbo_Rem,CPUTHRTable[(0+BMBStep)].Turbo_Off,TEMP_TYPE_CPU); //8 to 0 
+    		break;
 	#endif
 
-	default:	// Tj90 Step4 and VGA Step16 Default.
-		THRTab_ToRAM((0+BMBStep));//T14H:4 to 2	// Throttle Standard table save to RAM.
-		Thro_Shut_Status((0+BMBStep),TEMP_TYPE_CPU); 	//:4 to 2		// Check Throttle and Shutdown status.
-		// Check CPU Turbo function.
-		Thro_Turbo(CPUTHRTable[(0+BMBStep)].Turbo_Rem,CPUTHRTable[(0+BMBStep)].Turbo_Off,TEMP_TYPE_CPU); //:4 to 2	
-		break;
+    	default:	// Tj90 Step4 and VGA Step16 Default.
+    		THRTab_ToRAM((0+BMBStep));//4 to 2	// Throttle Standard table save to RAM.
+    		Thro_Shut_Status((0+BMBStep),TEMP_TYPE_CPU); 	//4 to 2		// Check Throttle and Shutdown status.
+    		// Check CPU Turbo function.
+    		Thro_Turbo(CPUTHRTable[(0+BMBStep)].Turbo_Rem,CPUTHRTable[(0+BMBStep)].Turbo_Off,TEMP_TYPE_CPU); //4 to 2	
+    		break;
 	}
 
-	VTHRTab_ToRAM((1+BMBStep));//:16 to 4	// VGA Throttle Standard table save to RAM.
-	Thro_Shut_Status((1+BMBStep),TEMP_TYPE_VGA); //:16 to 4  // Check Throttle and Shutdown status.
+	VTHRTab_ToRAM((1+BMBStep));//16 to 4	// VGA Throttle Standard table save to RAM.
+	Thro_Shut_Status((1+BMBStep),TEMP_TYPE_VGA); //16 to 4  // Check Throttle and Shutdown status.
 	// Check GPU Turbo function.
-	Thro_Turbo(CPUTHRTable[(1+BMBStep)].Turbo_Rem,CPUTHRTable[(1+BMBStep)].Turbo_Off,TEMP_TYPE_VGA);//:16 to 4
+	Thro_Turbo(CPUTHRTable[(1+BMBStep)].Turbo_Rem,CPUTHRTable[(1+BMBStep)].Turbo_Off,TEMP_TYPE_VGA);//16 to 4
 
-    Thro_Shut_Status(0,TEMP_TYPE_local);//:Add thermal IC local and remote  over temperature protect.
-    if(uMBGPU&0x02)//DIS  //ANGELAG012:add.
+    Thro_Shut_Status(0,TEMP_TYPE_local);//Add thermal IC local and remote  over temperature protect.
+    if(uMBGPU&0x02)//DIS  
     {
-    Thro_Shut_Status(0,TEMP_TYPE_remote);//:Add thermal IC local and remote  over temperature protect.
+        Thro_Shut_Status(0,TEMP_TYPE_remote);//Add thermal IC local and remote  over temperature protect.
     }
 
 }
@@ -1685,65 +1541,75 @@ void Thro_Shut_Status(BYTE BStep, BYTE BTType)
 
 	if ( BTType == 2 )
 	{	// Set External FAN.
-		//if ( EXT_VGA_Buff3 <= CPUTHRTable[BStep].Thr_Off )		// Check prochot turn OFF.
-		if ( EXT_VGA_Buff3 < THR_PRO_OFF)		//T14K+
-		{ CLR_MASK(Thro_Status, b2ProCH_EXTVGA); }
-		//else if ( EXT_VGA_Buff3 >= CPUTHRTable[BStep].Thr_On )	// Check prochot turn ON.
-		else if ( EXT_VGA_Buff3 >= THR_PRO_ON)	//T14K+
-		{ SET_MASK(Thro_Status, b2ProCH_EXTVGA); }
-
-		//if ( EXT_VGA_Buff3 >= CPUTHRTable[BStep].Thr_Shut )	// Check shutdown status.
-		if ( EXT_VGA_Buff3 >=THR_Tab_Shut)	//T14K+
-		{ Thro_Count_Shut(&EXTVGA_Shut_Cnt,TEMP_TYPE_EXT); }	// Check x times for shutdown protection.
+		if ( EXT_VGA_Buff3 < THR_PRO_OFF)		
+		{ 
+		    CLR_MASK(Thro_Status, b2ProCH_EXTVGA); 
+		}
+		else if ( EXT_VGA_Buff3 >= THR_PRO_ON)	
+		{ 
+		    SET_MASK(Thro_Status, b2ProCH_EXTVGA); 
+		}
+		if ( EXT_VGA_Buff3 >=THR_Tab_Shut)
+		{ 
+		    Thro_Count_Shut(&EXTVGA_Shut_Cnt,TEMP_TYPE_EXT); 
+		}	// Check x times for shutdown protection.
 		else
-		{ EXTVGA_Shut_Cnt = 0; }
+		{ 
+		    EXTVGA_Shut_Cnt = 0; 
+		}
 	}
 	else if ( BTType == 1 )
 	{	// Set Internal VGA.
-		//if ( VGA_TBuff3 <= CPUTHRTable[BStep].Thr_Off )	 	// Check prochot turn OFF.
-		 	
-		/*if ( VGA_TBuff3 < THR_PRO_OFF)		//+
-			{ CLR_MASK(Thro_Status, b1ProCH_VGA); }
-			//else if ( VGA_TBuff3 >= CPUTHRTable[BStep].Thr_On )	// Check prochot turn ON.
-			else if ( VGA_TBuff3 >= THR_PRO_ON )	//+
-		 	 { SET_MASK(Thro_Status, b1ProCH_VGA); }*/
-
-			//if ( VGA_TBuff3 >= CPUTHRTable[BStep].Thr_Shut )  	// Check shutdown status.
-			if ( VGA_TBuff3 >= VTHR_Tab_Shut )  //T14K+ //G87:Modify the GPU shutdown temperature  registers
-			{ Thro_Count_Shut(&VGA_Shut_Cnt,TEMP_TYPE_VGA); }	// Check x times for shutdown protection.
-			else
-			{ VGA_Shut_Cnt = 0; }
+		if ( VGA_TBuff3 >= VTHR_Tab_Shut )  //Modify the GPU shutdown temperature  registers
+		{ 
+		    Thro_Count_Shut(&VGA_Shut_Cnt,TEMP_TYPE_VGA); 
+		}	// Check x times for shutdown protection.
+		else
+		{ 
+		    VGA_Shut_Cnt = 0; 
+		}
 	}
-   	else if ( BTType == 4 ) //G90:Add thermal IC local and remote  over temperature protect.
+   	else if ( BTType == 4 ) //Add thermal IC local and remote  over temperature protect.
     {
-      	 if ( nVramTemp >= nVramoverTemp )  //ANGELAS070:remove
-       // if ( ThermistorCPU_TEMP >= nCPUthermistoroverTemp )  //ANGELAS070:add //thermal ic
-        { Thro_Count_Shut(&local_Shut_Cnt,TEMP_TYPE_local); }   // Check x times for shutdown protection.
+      	if ( nVramTemp >= nVramoverTemp ) 
+        { 
+            Thro_Count_Shut(&local_Shut_Cnt,TEMP_TYPE_local);
+        }   // Check x times for shutdown protection.
         else
-       	{ local_Shut_Cnt = 0; }
+       	{ 
+       	    local_Shut_Cnt = 0; 
+       	}
     }
-    else if ( BTType == 5 )//G90:Add thermal IC local and remote  over temperature protect.
+    else if ( BTType == 5 )//Add thermal IC local and remote  over temperature protect.
     {
-       	if ( nRamTemp >= nRamoverTemp )  //ANGELAS070:remove //thermal remote
-	   //	if ( EXTVGA_TEMP >= nGPUthermistoroverTemp )  //ANGELAS070:add
-        { Thro_Count_Shut(&remote_Shut_Cnt,TEMP_TYPE_remote); }   // Check x times for shutdown protection.
+       	if ( nRamTemp >= nRamoverTemp )   //thermal remote
+        { 
+            Thro_Count_Shut(&remote_Shut_Cnt,TEMP_TYPE_remote); 
+        }   // Check x times for shutdown protection.
         else
-       	{ remote_Shut_Cnt = 0; }
+       	{ 
+       	    remote_Shut_Cnt = 0; 
+       	}
     }
 	else
 	{	// Set Internal CPU.
-		//if ( TEMP_Buff_3 <= CPUTHRTable[BStep].Thr_Off ) //-	// Check prochot turn OFF.
-		if ( TEMP_Buff_3 < THR_PRO_OFF) //-
-		{ CLR_MASK(Thro_Status, b0ProCH_CPU); }
-		//else if ( TEMP_Buff_3 >= CPUTHRTable[BStep].Thr_On )  //- // Check prochot turn ON.
-		else if ( TEMP_Buff_3 >= THR_PRO_ON)  //-
-		{ SET_MASK(Thro_Status, b0ProCH_CPU); }
+		if ( TEMP_Buff_3 < THR_PRO_OFF) 
+		{ 
+		    CLR_MASK(Thro_Status, b0ProCH_CPU); 
+		}
+		else if ( TEMP_Buff_3 >= THR_PRO_ON)  
+		{ 
+		    SET_MASK(Thro_Status, b0ProCH_CPU); 
+		}
 
-		//if ( TEMP_Buff_3 >= CPUTHRTable[BStep].Thr_Shut )	//-// Check shutdown status.
-		if ( TEMP_Buff_3 >= THR_Tab_Shut )	//+
-		{ Thro_Count_Shut(&CPU_Shut_Cnt,TEMP_TYPE_CPU); }	// Check x times for shutdown protection.
+		if ( TEMP_Buff_3 >= THR_Tab_Shut )	
+		{ 
+		    Thro_Count_Shut(&CPU_Shut_Cnt,TEMP_TYPE_CPU);
+		}	// Check x times for shutdown protection.
 		else
-		{ CPU_Shut_Cnt = 0; }
+		{ 
+		    CPU_Shut_Cnt = 0; 
+		}
 	}
 	
 }
@@ -1755,63 +1621,47 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 {
 	BYTE BAvgTemp;
 
-	if ( IS_MASK_CLEAR(SYS_MISC1, ACPI_OS) ) { return; }
-	//if((CPU_TYPE &0xc0)!=0x80){return;}//G45:Add judge AMD GPU and NV GPU, AMD GPU not support torbo.//ANGELAS096:-Add CPU turbo enable/disable Q_event.
+	if ( IS_MASK_CLEAR(SYS_MISC1, ACPI_OS) ) 
+	{ 
+	    return; 
+	}
 
 	if ( BTType == 2 )
 	{	// Set External FAN.
 		if ( EXT_VGA_Buff3 <= BTurboRem )				// Check turbo resume.
-		{ CLR_MASK(Thro_Status, b5Turbo_EXTVGA); }
+		{ 
+		    CLR_MASK(Thro_Status, b5Turbo_EXTVGA); 
+		}
 		else if ( EXT_VGA_Buff3 >= BTurboOff )			// Check turbo Off.
-		{ SET_MASK(Thro_Status, b5Turbo_EXTVGA); }
+		{ 
+		    SET_MASK(Thro_Status, b5Turbo_EXTVGA); 
+		}
 	}
 	else if ( BTType == 1 )
 	{	// Set Internal VGA.
-		//if ( TEMP_Buff_3 <= BTurboRem ) // Check turbo resume.  //MEILING024:remove.
-		if ( VGA_TBuff3 <= BTurboRem ) // Check turbo resume.  //MEILING024:change to VGA temp.
-		{ CLR_MASK(Thro_Status, b4Turbo_VGA); }
-		//else if ( TEMP_Buff_3 >= BTurboOff )	  // Check turbo Off.  //MEILING024:remove.
-		else if ( VGA_TBuff3 >= BTurboOff ) // Check turbo Off.  //MEILING024:change to VGA temp.
-		{ SET_MASK(Thro_Status, b4Turbo_VGA); }
+		if ( VGA_TBuff3 <= BTurboRem ) // Check turbo resume. 
+		{ 
+		    CLR_MASK(Thro_Status, b4Turbo_VGA); 
+		}
+		else if ( VGA_TBuff3 >= BTurboOff ) // Check turbo Off.  
+		{ 
+		    SET_MASK(Thro_Status, b4Turbo_VGA); 
+		}
 	}
 	else
 	{	// Set Internal CPU.
 		if(Read_YOGA_ID()) //YOGA
 		{
-		/*	if(uMBGPU&0x02)//DIS
+
+			if(!QuiteMode)
 			{
-				if(VGA_TBuff3>=52)
+				if((nVramTemp>=59)||( TEMP_Buff_3 > 97) )           //Thermal u1
 				{
 					SET_MASK(Thro_Status, b3Turbo_CPU); 
 				}
-				else if( VGA_TBuff3 <= 47)	// Check turbo resume.
+				else if((nVramTemp <= 55)&&( TEMP_Buff_3 < 92) )	// Check turbo resume.
 				{ 
 					CLR_MASK(Thro_Status, b3Turbo_CPU);
-				}
-			}*/
-			if(!QuiteMode)
-			{
-				/*if(CPUI57==0x05)
-				{
-					if((nVramTemp>=52)||( TEMP_Buff_3 > 92) )           //Thermal u1
-					{
-						SET_MASK(Thro_Status, b3Turbo_CPU); 
-					}
-					else if((nVramTemp <= 48)&&( TEMP_Buff_3 < 87) )	// Check turbo resume.
-					{ 
-						CLR_MASK(Thro_Status, b3Turbo_CPU);
-					}
-				}
-				else*/
-				{
-					if((nVramTemp>=59)||( TEMP_Buff_3 > 97) )           //Thermal u1
-					{
-						SET_MASK(Thro_Status, b3Turbo_CPU); 
-					}
-					else if((nVramTemp <= 55)&&( TEMP_Buff_3 < 92) )	// Check turbo resume.
-					{ 
-						CLR_MASK(Thro_Status, b3Turbo_CPU);
-					}
 				}
 			}
 			else
@@ -1830,35 +1680,14 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 		{ 
 			if(uMBGPU&0x02)//DIS
 			{
-				/*if(( TEMP_Buff_3 > 62)&&(VGA_TBuff3>61))
+
+				if((nVramTemp>=59)||( TEMP_Buff_3 > 97) )           //Thermal u1
 				{
 					SET_MASK(Thro_Status, b3Turbo_CPU); 
 				}
-				else if( TEMP_Buff_3 <= 58)	// Check turbo resume.
+				else if((nVramTemp <= 55)&&( TEMP_Buff_3 < 92) )	// Check turbo resume.
 				{ 
 					CLR_MASK(Thro_Status, b3Turbo_CPU);
-				}*/
-				/*if(CPUI57==0x05)
-				{
-					if((nVramTemp>=52)||( TEMP_Buff_3 > 92) )           //Thermal u1
-					{
-						SET_MASK(Thro_Status, b3Turbo_CPU); 
-					}
-					else if((nVramTemp <= 48)&&( TEMP_Buff_3 < 87) )	// Check turbo resume.
-					{ 
-						CLR_MASK(Thro_Status, b3Turbo_CPU);
-					}
-				}
-				else*/
-				{
-					if((nVramTemp>=59)||( TEMP_Buff_3 > 97) )           //Thermal u1
-					{
-						SET_MASK(Thro_Status, b3Turbo_CPU); 
-					}
-					else if((nVramTemp <= 55)&&( TEMP_Buff_3 < 92) )	// Check turbo resume.
-					{ 
-						CLR_MASK(Thro_Status, b3Turbo_CPU);
-					}
 				}
 			}
 			else //uma
@@ -1876,93 +1705,13 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 		}
 	}
 	
-	//if ( IS_MASK_CLEAR(Thro_Status, (b3Turbo_CPU+b4Turbo_VGA+b5Turbo_EXTVGA)) )   
-	//MEILING033:remove start.
-	/*if ( IS_MASK_CLEAR(Thro_Status, b3Turbo_CPU) ) 
-	{ cTHERMThrottling &= 0xF0; }	// Not need throttling.
-	else
-	{
-	 	cTHERMThrottling &= 0xF0;	// Clear thermal throttling status.
-		cTHERMThrottling |= 0x01;	// Set P-State level.
-	}*/
-	//MEILING033:remove end.
-	
-	/*
-	// Add NV D4 turbo function when battery out power over 45W .
-	if(uMBID==0x17)//support 17' and NV
-	{
-		if(IS_MASK_CLEAR(Thro_Status,b7ProCH_BATT))//battery mode power <35w
-		{
-			if ( IS_MASK_CLEAR(Thro_Status, (b4Turbo_VGA+b5Turbo_EXTVGA)) )
-			//if (IS_MASK_CLEAR(BatteryAlarm,BATOCP)&&IS_MASK_CLEAR(Thro_Status, (b4Turbo_VGA+b5Turbo_EXTVGA)))
-			{
-				if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboOK) )		// bit2.
-				{
-					SET_MASK(uVGATurboFun, uDisVGATurboOK);			// Set bit2.
-					CLR_MASK(uVGATurboFun, uDisVGATurboD4OK);			// Set bit4.
-					CLR_MASK(uVGATurboFun, uDisVGATurboD2OK);			// Set bit5.
-					RamDebug(0xEE);  RamDebug(0x63);       
-					ECQEvent(DIS_TURBO_63); // 0x63 VGA ENABLE turbo.G24:remove GPU turbo Q event //:Add VGA turbo Q eventD1
-				}
-			}
-			else
-			{
-	 			if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboD2OK) )	// bit2.
-	 			{
-					SET_MASK(uVGATurboFun, uDisVGATurboD2OK);			// Set bit5.
-					CLR_MASK(uVGATurboFun, uDisVGATurboD4OK);			//  bit4.
-					CLR_MASK(uVGATurboFun, uDisVGATurboOK);			//  bit2.
-					RamDebug(0xEE);  
-					RamDebug(0x62);        
-					ECQEvent(EN_TURBO_62); // 0x62 VGA DISABLE turbo.G24:remove GPU turbo Q event//G58:Add VGA turbo Q eventD2
-	 			}
-			}
-		}
-		else//battery mode power >45w
-		{
-			if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboD4OK) )	// bit4.
-			{
-				SET_MASK(uVGATurboFun, uDisVGATurboD4OK);			// Set bit4.
-				CLR_MASK(uVGATurboFun, uDisVGATurboOK);			// bit2.
-				CLR_MASK(uVGATurboFun, uDisVGATurboD2OK);			// bit5.
-				ECQEvent(EN_TURBO_61);   //////D4
-			}
-		}
-	}
-	else  //support nv only
-	{
-
-		if ( IS_MASK_CLEAR(Thro_Status, (b4Turbo_VGA+b5Turbo_EXTVGA)) )
-		{
-			if ( IS_MASK_SET(uVGATurboFun,uDisVGATurboOK) )		// bit2.
-			{
-				CLR_MASK(uVGATurboFun, uDisVGATurboOK);			// Set bit2.
-				RamDebug(0xEE);  RamDebug(0x63);       
-				ECQEvent(DIS_TURBO_63); // 0x63 VGA ENABLE turbo.:remove GPU turbo Q event //:Add VGA turbo Q event
-			}
-		}
-		else
-		{
-	 		if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboOK) )	// bit2.
-	 		{
-				SET_MASK(uVGATurboFun, uDisVGATurboOK);			// Set bit2.
-				RamDebug(0xEE);  RamDebug(0x62);      
-				ECQEvent(EN_TURBO_62); // 0x62 VGA DISABLE turbo.G24:remove GPU turbo Q event//G58:Add VGA turbo Q event
-	 		}
-		}
-	}
-	//Add NV D4 turbo when battery out power over 45W.
-
-	*///ANGELAS096:-Add CPU turbo enable/disable Q_event.
-    //ANGELAS096:s+Add CPU turbo enable/disable Q_event.
 	//Add CPU turbo (66,67)Q event follow thermal.
     if ( IS_MASK_CLEAR(Thro_Status, b3Turbo_CPU ))
 	{
 		if ( IS_MASK_SET(uVGATurboFun,uDisCPUTurboOK) )		
 		{
 			CLR_MASK(uVGATurboFun, uDisCPUTurboOK);	
-            //ECQEvent(DIS_CPUTURBO_67);  //MEILING036:remove.
-            ECQEvent(EN_CPUTURBO_67);  //MEILING036:add.
+            ECQEvent(EN_CPUTURBO_67);  
 		}
 	}
 	else
@@ -1970,37 +1719,28 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 	 	if ( IS_MASK_CLEAR(uVGATurboFun,uDisCPUTurboOK) )	// bit3.
 	 	{
 			SET_MASK(uVGATurboFun, uDisCPUTurboOK);			// Set bit3. 
-            //ECQEvent(EN_CPUTURBO_66);  //MEILING036:remove.
-          ECQEvent(DIS_CPUTURBO_66);  //MEILING036:add.
+            ECQEvent(DIS_CPUTURBO_66); 
 	 	}
 	}
-	//ANGELAS096:e+Add CPU turbo enable/disable Q_event.
-	// Remove CPU turbo(66,67)Q event.
-	//ANGELAS103:S+Add GPU turbo enable/disable Q_event.
-    //if(uMBGPU&0x01)//only UMA need support for SKL  //MEILING033:remove.
-	{ 	
-		if ( IS_MASK_CLEAR(Thro_Status, b4Turbo_VGA) )
-		{
-			if ( IS_MASK_SET(uVGATurboFun,uDisVGATurboOK) )
-			{
-				//ECQEvent(EN_TURBO_62);  //MEILING033:remove.
-				cGPUThermalThrottling = 0; //MEILING033:add.
-				CLR_MASK(uVGATurboFun, uDisVGATurboOK);	
-			}
-		
-		}
-		else
-		{
-			if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboOK) )	// bit2.
-	 		{
-				SET_MASK(uVGATurboFun, uDisVGATurboOK);			// Set bit2. 
-            	//ECQEvent(DIS_TURBO_63); //MEILING033:remove.
-            	cGPUThermalThrottling = 0;  //ANGELAG006: modify D2 to D3 //MEILING033:add.
-	 		}
-		}
-    }
 
-	//MEILING040:S+ add internal GPU turbo on/off.
+	if ( IS_MASK_CLEAR(Thro_Status, b4Turbo_VGA) )
+	{
+		if ( IS_MASK_SET(uVGATurboFun,uDisVGATurboOK) )
+		{
+			cGPUThermalThrottling = 0; 
+			CLR_MASK(uVGATurboFun, uDisVGATurboOK);	
+		}
+	
+	}
+	else
+	{
+		if ( IS_MASK_CLEAR(uVGATurboFun,uDisVGATurboOK) )	// bit2.
+ 		{
+			SET_MASK(uVGATurboFun, uDisVGATurboOK);			// Set bit2. 
+        	cGPUThermalThrottling = 0;  //modify D2 to D3 
+ 		}
+	}
+	//add internal GPU turbo on/off.
 	if(uMBGPU&0x01)
 	{ 	
 		if ( IS_MASK_CLEAR(Thro_Status3, b0IntGPU_TURBO) )
@@ -2021,9 +1761,6 @@ void Thro_Turbo(BYTE BTurboRem, BYTE BTurboOff, BYTE BTType)
 	 		}
 		}
     }
-	//MEILING040:E+
-	
-	//ANGELAS103:E+Add GPU turbo enable/disable Q_event.
 }
 
 //-----------------------------------------------------------------------------
@@ -2115,72 +1852,59 @@ void ThrottlingControl(void)
 {
 	if ( SystemIsS0 )
 	{
-		//   Remove keep P1 states under battery mode.
-		/*
-	      if ( IS_MASK_CLEAR(SYS_STATUS,AC_ADP)&&(0x00==cBATTThrottling) )
-	     { cBATTThrottling = 0x01; }
-	     */
-		//  Remove keep P1 states under battery mode.
+
 		cThrottlingSet.byte &= 0xF0;	// Clear Throttling status.
 
 		if( ( cThrottlingSet.byte & 0x0F ) < cADPThrottling )	// Compare current and ADP Throttling 
-		// if( ( cThrottlingSet.byte & PSTATE_MAXStep ) < cADPThrottling )   //0ptimize CPU P_state (change 16 step to 8 step).//:Change MAX P_state from 7 step to 11 step.
 		{
 			cThrottlingSet.byte |= cADPThrottling;
 		}
 		if( ( cThrottlingSet.byte & 0x0F ) < cTHERMThrottling )	// Compare current and Thermal throttling./
-		//if( ( cThrottlingSet.byte & PSTATE_MAXStep ) < cTHERMThrottling )//:0ptimize CPU P_state (change 16 step to 8 step).//-
 		{
 			cThrottlingSet.byte &= 0xF0;
 			cThrottlingSet.byte |= cTHERMThrottling;
 		}
 		if( ( cThrottlingSet.byte & 0x0F ) < cBATTThrottling )	// Compare current and BAT throttling.
-		//if( ( cThrottlingSet.byte & PSTATE_MAXStep ) < cBATTThrottling )//:0ptimize CPU P_state (change 16 step to 8 step).//-
 		{
 			cThrottlingSet.byte &= 0xF0;
 			cThrottlingSet.byte |= cBATTThrottling;
 		}
 		
-		//MEILING055:S+ add battery Low throttling level.
+		//add battery Low throttling level.
 		if( ( cThrottlingSet.byte & 0x0F ) < cBATTLowThrottling )	// Compare current and BAT throttling.
-		//if( ( cThrottlingSet.byte & PSTATE_MAXStep ) < cBATTThrottling )//:0ptimize CPU P_state (change 16 step to 8 step).//-
 		{
 			cThrottlingSet.byte &= 0xF0;
 			cThrottlingSet.byte |= cBATTLowThrottling;
 		}
-		//MEILING055:E+
 		
 		if( ( cThrottlingSet.byte & 0x0F ) < nThrottlingAPSet )	// For AP or debug 
-		//if( ( cThrottlingSet.byte & PSTATE_MAXStep ) < nThrottlingAPSet )//0ptimize CPU P_state (change 16 step to 8 step).//-
 		{
 			cThrottlingSet.byte &= 0xF0;
 			cThrottlingSet.byte |= nThrottlingAPSet;
 		}
 
 		if( ( cThrottlingSet.byte & 0x0F ) != ( REAL_THROTTLING_INDEX & 0x0F ) )
-		//if( ( cThrottlingSet.byte & PSTATE_MAXStep ) != ( REAL_THROTTLING_INDEX & PSTATE_MAXStep ) )//:0ptimize CPU P_state (change 16 step to 8 step).//-
 		{	// Cpu throttling for power status change
 			if( ( (nRealThermalPinGET) && (( cThrottlingSet.byte & 0x0F ) >= 0x01 ))|| (!nRealThermalPinGET) )
-			//if( ( (nRealThermalPinGET) && (( cThrottlingSet.byte & PSTATE_MAXStep ) >= 0x01 ))|| (!nRealThermalPinGET) )//:0ptimize CPU P_state (change 16 step to 8 step).
 			{
-				cThrottlingSet.fbit.cTHRM_SW = 1;
+		        cThrottlingSet.fbit.cTHRM_SW = 1;
                 RamDebug(cADPThrottling);       
                 RamDebug(cTHERMThrottling);       
                 RamDebug(cBATTThrottling);        
                 RamDebug(REAL_THROTTLING_INDEX);        
 				REAL_THROTTLING_INDEX = (REAL_THROTTLING_INDEX & 0xF0) | (cThrottlingSet.byte & 0x0F);
-                //REAL_THROTTLING_INDEX = (REAL_THROTTLING_INDEX & 0xF0) | (cThrottlingSet.byte & PSTATE_MAXStep);//:0ptimize CPU P_state (change 16 step to 8 step).//-
+
                 RamDebug(REAL_THROTTLING_INDEX);      
 			}
 		}
-		if(CPUThrottlingDelayTime == 0) //MEILING052:send the 0x1D event after delay time.
+		if(CPUThrottlingDelayTime == 0) //send the 0x1D event after delay time.
 		{
 			if( cThrottlingSet.fbit.cTHRM_SW )
 			{
 				cThrottlingSet.fbit.cTHRM_SW = 0;
 				if ( IS_MASK_SET(SYS_MISC1, ACPI_OS) )	// Check OS mode.
 				{
-			    	RamDebug(0xEE);  RamDebug(CPU_SLOW_AD);        //T053+ 
+			    	RamDebug(0xEE);  RamDebug(CPU_SLOW_AD);     
 					ECQEvent(CPU_SLOW_AD); 	// 0x1D inform bios.
 				}
 			}
@@ -2188,10 +1912,10 @@ void ThrottlingControl(void)
 	}
 }
 
-//MEILING033:add start GPU throttling control function.
+//add start GPU throttling control function.
 void GPUThrottlingControl(void)
 {
-	if ( SystemIsS0 && (CPU_TYPE&0x80) ) //ANGELAG014: modify to only NV GPU //MEILING044:add.
+	if ( SystemIsS0 && (CPU_TYPE&0x80) ) //modify to only NV GPU 
 	{
 		cGPUThrottlingSet.byte &= 0xF0;	// Clear Throttling status.
 
@@ -2200,12 +1924,11 @@ void GPUThrottlingControl(void)
 			cGPUThrottlingSet.byte |= cGPUBattThrottling;
 		}
 		
-		//MEILING055:S+ add battery throttling level when PnP AC.
+		//add battery throttling level when PnP AC.
 		if( ( cGPUThrottlingSet.byte & 0x0F ) < cGPUACtoBattThrottling)	// Compare PnP AC battery Throttling 
 		{
 			cGPUThrottlingSet.byte |= cGPUACtoBattThrottling;
 		}
-		//MEILING055:E+.
 		
 		if( ( cGPUThrottlingSet.byte & 0x0F ) < cGPUBattOTPThrottling)	// Compare battery OPT Throttling 
 		{
@@ -2222,13 +1945,13 @@ void GPUThrottlingControl(void)
 			cGPUThrottlingSet.byte &= 0xF0;
 			cGPUThrottlingSet.byte |= cGPUThermalThrottling;
 		}
-		//ANGELAG017: add start
+
 		if( ( cGPUThrottlingSet.byte & 0x0F ) < cGPUBattOCPThrottling)	// Compare current and Thermal throttling
 		{
 			cGPUThrottlingSet.byte &= 0xF0;
 			cGPUThrottlingSet.byte |= cGPUBattOCPThrottling;
 		}
-		//ANGELAG017: add end
+
 		if( ( cGPUThrottlingSet.byte & 0x0F ) != ( GPU_REAL_THROTTLING_INDEX & 0x0F ) )
 		{	// send GPU throttling event.
 			GPU_REAL_THROTTLING_INDEX = (GPU_REAL_THROTTLING_INDEX & 0xF0) | (cGPUThrottlingSet.byte & 0x0F);
@@ -2238,7 +1961,6 @@ void GPUThrottlingControl(void)
 		}
 	}
 }
-//MEILING033:add end.
 
 /*****************************************************************************/
 // Procedure: Chk_FAN_RPM_Control							TimeDiv: 50mSec
@@ -2257,21 +1979,29 @@ void Chk_FAN_RPM_Control(void)
 			if( nAtmFanSpeed > ManualFanPRM )
 			{
 				if( FAN_PWM > 0 )
-				{ FAN_PWM--; }
+				{ 
+				    FAN_PWM--; 
+				}
 			}
 			else
 			{
 				if(FAN_PWM < FAN_PWM_Max)
-				{ FAN_PWM++; }
+				{ 
+				    FAN_PWM++; 
+				}
 				else
-				{ FAN_PWM = FAN_PWM_Max; }
+				{ 
+				    FAN_PWM = FAN_PWM_Max; 
+				}
 			}
 		}
 		//Open fan control function.
 		if ( (FAN_PWM == FAN_PWM_Max) && (nAtmFanSpeed > ManualFanPRM) )
 		{
 			if( FAN_PWM > 0 )
-			{ FAN_PWM--; }
+			{ 
+			    FAN_PWM--; 
+            }
 		}
 		//Open fan control function.
 	}
@@ -2297,21 +2027,29 @@ void Chk_FAN1_RPM_Control(void)
 			if( nAtmFan1Speed > ManualFan2PRM )
 			{
 				if( FAN1_PWM > 0 )
-				{ FAN1_PWM--; }
+				{ 
+				    FAN1_PWM--; 
+				}
 			}
 			else
 			{
 				if(FAN1_PWM < FAN1_PWM_Max)
-				{ FAN1_PWM++; }
+				{ 
+				    FAN1_PWM++; 
+				}
 				else
-				{ FAN1_PWM = FAN1_PWM_Max; }
+				{ 
+				    FAN1_PWM = FAN1_PWM_Max; 
+				}
 			}
 		}
 		//Open fan control function.
 		if ( (FAN1_PWM == FAN1_PWM_Max) && (nAtmFan1Speed > ManualFan2PRM) )
 		{
 			if( FAN1_PWM > 0 )
-			{ FAN1_PWM--; }
+			{ 
+			    FAN1_PWM--; 
+			}
 		}
 		//Open fan control function.
 	}
