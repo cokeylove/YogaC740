@@ -16,6 +16,10 @@ void Cmd_B4(void)
 	SET_MASK(nStopChgStat3H, ECFLASH);
 	FAN_PWM_OUT;		// Set FAN_PWM OUTPUT.
 	EC_FAN_PWM_HI();	// Set FAN Full On.
+//Add FAN2 control setting.
+    FAN1_PWM_OUT;		// Set FAN2_PWM OUTPUT.
+    EC_FAN1_PWM_HI();	// Set FAN2 Full On.
+//Add FAN2 control setting.
 
 	CHGIC_ptr = 2;		//reminder: call to write to SmartChg
 	WriteSmartChgIC();
@@ -781,11 +785,6 @@ void Cmd_46(BYTE nPort,BYTE nData)
 			FAN1_PWM = ManualFanPRM + 2;//72JERRY026: Modify double fan setting for MFG tool.
 			FAN1_SPEED_ALT;//72JERRY026: Modify double fan setting for MFG tool.
 		}
-
-		/*if ( uReserve07.fbit.b7Fan2Manual == 0 )
-		{ BRPM_Manual = ManualFanPRM; }		// Common FAN1 PRM value.
-		else
-	 	{ BRPM_Manual = ManualFan2PRM; }	*/// Respective FAN PRM value.//72JERRY026:- Modify double fan setting for MFG tool.
 		break;
 	}
 }

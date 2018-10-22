@@ -1210,34 +1210,34 @@ void Battery1Sec(void)
 
 const sRSmbusBStruct code ABatCommandTable [] =
 {//     command               REG                      no.
-	{ C_Date,		&nManufactureDateL		,0x00},				//Batpollstep1 = 0    	WORD
-	{ C_Dchem,		&batteryChemistry		,0x04},				//Batpollstep1 = 1    	BLOCK
-	{ C_Mname,		&BATTMANUFACTURE		,0x0A},				//Batpollstep1 = 2    	BLOCK
-	{ C_Dname,		&BATTDEVICENAME			,0x0A},				//Batpollstep1 = 3		BLOCK
-	{ C_OpMfgFun5,  &BAT1_Bar_Code          ,0x0A},             //Batpollstep1 = 4       BLOCK  //MEILING031:add. 
-	{ C_Date,		&nManufactureDateL		,0x00},				//Batpollstep1 = 5  	WORD
-	{ C_DCap,	    &nDesignCapL			,0x00},				//Batpollstep1 = 6  	WORD    0~8 initial only
-	{ C_DVolt,		&nDesignVoltL			,0x00},				//Batpollstep1 = 7  	WORD
-	{ C_SerialNo,	&nSerialNumL			,0x00},				//Batpollstep1 = 8  	WORD
-	{ C_mode,		&EC_C_modeL				,0x00},				//Batpollstep1 = 9		WORD
-	{ C_ChargingV,  &nChargingVoltL			,0x00},				//Batpollstep1 = 10  	WORD
-	{ C_CycleCount,	&EC_oCCBQl				,0x00},				//Batpollstep1 = 11  	WORD
-	{ C_volt,		&nPresentVoltL			,0x00},				//Batpollstep1 = 12  	WORD
-	{ C_current,	&nNowCurrentL			,0x00},				//Batpollstep1 = 13  	WORD
-	{ C_ChargingI,  &nBattCharCurrentL      ,0x00},				//Batpollstep1 = 14  	WORD
-	{ C_BatStatus,	&nBattery0x16L			,0x00},				//Batpollstep1 = 15  	WORD
-	{ C_RMcap,		&Bat0x0FTempL			,0x00},				//Batpollstep1 = 16  	WORD    9~19 normal polling
-	{ C_current,	&nNowCurrentL			,0x00},				//Batpollstep1 = 17  	WORD
-	{ C_FCcap,		&nFullChgCapL			,0x00},				//Batpollstep1 = 18 	WORD
-	{ C_temp,		&EC_oCBTl				,0x00},				//Batpollstep1 = 19 	WORD
-	{ C_RSOC,	 	&BAT1PERCL  			,0x00},				//Batpollstep1 = 20 	WORD
-	{ C_current,	&nNowCurrentL			,0x00},				//Batpollstep1 = 21  	WORD
-	{ C_AVcurrent,	&Bat0x0BTempL			,0x00}, 			//Batpollstep1 = 22 	WORD
-	{ C_LVMfgFun2,	&Bat0x3ETempL			,0x00},				//Batpollsetp1 = 23     WORD
-	{ C_access,		&Bat0x00TempL			,0x00}, 			//Batpollsetp1 = 24 	WORD
-	{ C_current,	&nNowCurrentL			,0x00},				//Batpollstep1 = 25  	WORD
-	{ C_RSOC,	 	&BAT1PERCL  			,0x00},				//Batpollstep1 = 26 	WORD  //Add read battery RSOC at bottom of table.
-	//{ C_D_FET,	&SHIPMODE_L			,0x00}, 				//Batpollstep1 = 27 	WORD
+	{ C_Date,		    &nManufactureDateL		,0x00},				//Batpollstep1 = 0    	WORD
+	{ C_Dchem,		    &batteryChemistry		,0x04},				//Batpollstep1 = 1    	BLOCK
+	{ C_Mname,		    &BATTMANUFACTURE		,0x0A},				//Batpollstep1 = 2    	BLOCK
+	{ C_Dname,		    &BATTDEVICENAME			,0x0A},				//Batpollstep1 = 3		BLOCK
+	{ C_OpMfgFun5,      &BAT1_Bar_Code          ,0x0A},             //Batpollstep1 = 4       BLOCK  //MEILING031:add. 
+	{ C_Date,		    &nManufactureDateL		,0x00},				//Batpollstep1 = 5  	WORD
+	{ C_DCap,	        &nDesignCapL			,0x00},				//Batpollstep1 = 6  	WORD    0~8 initial only
+	{ C_DVolt,		    &nDesignVoltL			,0x00},				//Batpollstep1 = 7  	WORD
+	{ C_SerialNo,	    &nSerialNumL			,0x00},				//Batpollstep1 = 8  	WORD
+	{ C_mode,		    &EC_C_modeL				,0x00},				//Batpollstep1 = 9		WORD
+	{ C_ChargingV,      &nChargingVoltL			,0x00},				//Batpollstep1 = 10  	WORD
+	{ C_CycleCount, 	&EC_oCCBQl				,0x00},				//Batpollstep1 = 11  	WORD
+	{ C_volt,		    &nPresentVoltL			,0x00},				//Batpollstep1 = 12  	WORD
+	{ C_current,	    &nNowCurrentL			,0x00},				//Batpollstep1 = 13  	WORD
+	{ C_ChargingI,      &nBattCharCurrentL      ,0x00},				//Batpollstep1 = 14  	WORD
+	{ C_BatStatus,	    &nBattery0x16L			,0x00},				//Batpollstep1 = 15  	WORD
+	{ C_RMcap,		    &Bat0x0FTempL			,0x00},				//Batpollstep1 = 16  	WORD    9~19 normal polling
+	{ C_current,	    &nNowCurrentL			,0x00},				//Batpollstep1 = 17  	WORD
+	{ C_FCcap,		    &nFullChgCapL			,0x00},				//Batpollstep1 = 18 	WORD
+	{ C_temp,		    &EC_oCBTl				,0x00},				//Batpollstep1 = 19 	WORD
+	{ C_RSOC,	 	    &BAT1PERCL  			,0x00},				//Batpollstep1 = 20 	WORD
+	{ C_current,	    &nNowCurrentL			,0x00},				//Batpollstep1 = 21  	WORD
+	{ C_AVcurrent,	    &Bat0x0BTempL			,0x00}, 			//Batpollstep1 = 22 	WORD
+	{ C_LVMfgFun2,	    &Bat0x3ETempL			,0x00},				//Batpollsetp1 = 23     WORD
+	{ C_access,		    &Bat0x00TempL			,0x00}, 			//Batpollsetp1 = 24 	WORD
+	{ C_current,	    &nNowCurrentL			,0x00},				//Batpollstep1 = 25  	WORD
+	{ C_RSOC,	 	    &BAT1PERCL  			,0x00},				//Batpollstep1 = 26 	WORD  //Add read battery RSOC at bottom of table.
+    { C_SmartCharge,    &BatSmartChargeL        ,0x00},             //Batpollstep1 = 27     WORD  //Add smart charge cmd.
 
 };
 
@@ -2211,7 +2211,7 @@ void Lenovo_Battery_EM80(void)
 		    CLEAR_MASK(LENOVOBATT,BAD_BATT); 
         }
 
-		if (IS_MASK_SET(Bat0x3ETempH,BIT1))			// 0x3E  bit9
+		if (IS_MASK_SET(Bat0x3ETempH,BIT4))			// 0x3E  bit9  //change to bit 12
 		{ 
 		    SET_MASK(LENOVOBATT,BATTERY_Exhaustion); 
         }	// Battery poor  (Exhaustion)
@@ -2416,29 +2416,41 @@ void Clear_Batt_First_Used_Date(void)
 *****************************************************************************************/
 void Battery_Expresscharge(void)
 {
-   if(IS_MASK_CLEAR(EC_C_modeL,b4QuickChargeMode))
-   {
-    return;
-   }//check support quick charge?
-   if (IS_MASK_SET(OEMControl,Expresschargemode))
-   { 
-		if(IS_MASK_CLEAR(Bat0x3ETempH,Expresscharge_mode))
+    if(IS_MASK_CLEAR(BatSmartChargeL,b0QuickChargeSupport))
+    {
+        return;
+    }
+    
+    if (IS_MASK_SET(OEMControl,Expresschargemode))
+    { 
+		if(IS_MASK_CLEAR(BatSmartChargeL,b1QuickChargeEnable))
 		{
-			SET_MASK(Bat0x3ETempH,Expresscharge_mode);
-		 	if(bRWSMBus(SMbusChB,SMbusWW,SmBat_Addr,C_LVMfgFun2,&Bat0x3ETempL,SMBus_NeedPEC))
+		    //only S5 support quick charge
+			if(SystemIsS5)
+			{
+				SET_MASK(BatSmartChargeL,b1QuickChargeEnable);
+			}
+			else
+			{
+				CLEAR_MASK(BatSmartChargeL,b1QuickChargeEnable);
+			}
+			
+		 	if(bRWSMBus(SMbusChB,SMbusWW,SmBat_Addr,C_LVMfgFun2,&BatSmartChargeL,SMBus_NeedPEC))
 	 		{
 	 			RamDebug(0xD1);
+	 			RamDebug(BatSmartChargeL);
 	 		}
        }
 	}
 	else
 	{
-		if(IS_MASK_SET(Bat0x3ETempH,Expresscharge_mode))
+		if(IS_MASK_SET(BatSmartChargeL,b1QuickChargeEnable))
 		{
-   		 	CLEAR_MASK(Bat0x3ETempH,Expresscharge_mode);
-  		 	if(bRWSMBus(SMbusChB,SMbusWW,SmBat_Addr,C_LVMfgFun2,&Bat0x3ETempL,SMBus_NeedPEC))
+   		 	CLEAR_MASK(BatSmartChargeL,b1QuickChargeEnable);
+  		 	if(bRWSMBus(SMbusChB,SMbusWW,SmBat_Addr,C_LVMfgFun2,&BatSmartChargeL,SMBus_NeedPEC))
 	 		{
 	 			RamDebug(0xD2);
+	 			RamDebug(BatSmartChargeL);
 	 		}
 		}
 	}

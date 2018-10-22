@@ -2034,15 +2034,25 @@ void Thro_Count_Shut(XBYTE *BShut_Cnt, BYTE TempType)
 	if ( *BShut_Cnt >= Thro_Shut_Cnt )	// Read 3 times.
 	{
 		if ( TempType == 2 )
-		{ ProcessSID(EXTVGAOVERTEMP_ID); }		// EXT VGAShutdown ID 0x1C.
+		{ 
+		    ProcessSID(EXTVGAOVERTEMP_ID); 
+		}		// EXT VGAShutdown ID 0x1C.
 		else if ( TempType == 1 )
-		{ ProcessSID(VGAOVERTEMP_ID); }	// VGA Shutdown ID 0x12.
+		{ 
+		    ProcessSID(VGAOVERTEMP_ID); 
+		}	// VGA Shutdown ID 0x12.
 		else if ( TempType == 4 )
-		{ ProcessSID(CPUthermistoroverTemp_ID); }	//ANGELAS082: ThermalIClocalOVerTEPM_ID to CPUthermistoroverTemp_ID//30 to33
+		{ 
+		    ProcessSID(CPUthermistoroverTemp_ID); 
+		}
 		else if ( TempType == 5 )
-		{ ProcessSID(GPUthermistoroverTemp_ID); }	//ANGELAS082: ThermalICremoteOVerTEPM_ID to GPUthermistoroverTemp_ID//31 to 34
+		{ 
+		    ProcessSID(GPUthermistoroverTemp_ID); 
+		}	
 		else
-		{ ProcessSID(DTSOVERTEMP_ID); }	// CPU Shutdown ID 0x11.
+		{ 
+		    ProcessSID(DTSOVERTEMP_ID); 
+		}	// CPU Shutdown ID 0x11.
 
         SET_MASK(SysStatus,ERR_ShuntDownFlag);
 	    CKCON &= 0x3F;			// set 26 bit counter // bit7-6 00=14ms,01=113ms, 10=911ms, 11(1/9.2MHz)*2'26=7.2S
@@ -2056,13 +2066,12 @@ void Thro_Count_Shut(XBYTE *BShut_Cnt, BYTE TempType)
 		SysPowState = SYSTEM_S0_S5;			// EC force Shutdown.
 
 		*BShut_Cnt = 0;
-		//RSMRST_LOW();
-		//Delay1MS(1);
-		//RSMRST_HI();
 		SET_MASK(USB_Charger, b2USB_TmlDis);	// Disable USB charger.
 	}
 	else
-	{ (*BShut_Cnt)++; }
+	{ 
+	    (*BShut_Cnt)++; 
+	}
 }
 
 //-----------------------------------------------------------------------------

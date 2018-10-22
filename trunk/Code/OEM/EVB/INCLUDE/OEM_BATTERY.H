@@ -67,6 +67,8 @@
 #define C_Dname            	0x21  	// device name
 #define C_Dchem            	0x22  	// device chemistry
 #define C_Mdata            	0x23 	// manufacture data
+#define C_SmartCharge       0x26    // smart charge
+
 #define C_OpMfgFun5         0x2F    //OptionalMfgFunction5 //MEILING031:add.
 #define C_D_FET            	0x34 	// Ship Mode and Additional Over Discharge Mode.
 

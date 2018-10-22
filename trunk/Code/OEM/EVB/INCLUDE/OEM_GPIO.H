@@ -264,10 +264,8 @@
 #define PortF6_Ctrl		INPUT	        //A     117 	PECI_EC
 #define PortF7_Ctrl		OUTPUT          //O	   118  	CHG_MOD3
 
-//ANGELAS038:add start
 #define EC_ON_HI()  		SET_MASK(GPDRF,BIT(0))
 #define EC_ON_LOW() 		CLEAR_MASK(GPDRF,BIT(0))
-//ANGELAS038:add end
 
 #define PM_PWRBTN_LOW()		CLEAR_MASK(GPDRF,BIT(1))
 #define PM_PWRBTN_HI()		SET_MASK(GPDRF,BIT(1))

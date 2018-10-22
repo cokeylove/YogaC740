@@ -1371,7 +1371,6 @@ const BYTE code ss2_B7[] = 	// F11
 const BYTE code ss2_B8[] = 	// F12
 {
     0x07,   // Normal
-    //0x9C,   // Next Track event
     0xDB,
 };
 

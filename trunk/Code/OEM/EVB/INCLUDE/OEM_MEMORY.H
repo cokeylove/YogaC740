@@ -160,7 +160,6 @@ extern XBYTE  	CHGIC_ReadCmd0x3FL;				//_at_(ECRAM1+0x28);
 extern XBYTE  	CHGIC_ReadCmd0x3FH;				//_at_(ECRAM1+0x29);
 extern XWORD  	BATTEMP;						//_at_(ECRAM1+0x2A);
 extern XBYTE   	EC_C_modeL;						//_at_(ECRAM1+0x2C);
-#define b4QuickChargeMode      BIT4//72JERRY013:Add battery quick charge function.
 extern XBYTE	EC_C_modeH;						//_at_(ECRAM1+0x2D);
 extern XBYTE	Charge_current_flag;					//_at_(ECRAM1+0x2e);//72JERRY066:Modify charge current vlave for power limit.
 #define       b0overpower      BIT0
@@ -246,7 +245,6 @@ extern XBYTE   	CHGIC_ReadCmd0x12H;				//_at_(ECRAM1+0x57);
 
 extern XBYTE    Bat0x3ETempL;					//_at_(ECRAM1+0x58);
 extern XBYTE    Bat0x3ETempH;					//_at_(ECRAM1+0x59);
-#define Expresscharge_mode    BIT4//72JERRY013:Add battery quick charge function.
 extern XBYTE	EC_BatteryStatusL;				//_at_(ECRAM1+0x5A);
 extern XBYTE	EC_BatteryStatusH;				//_at_(ECRAM1+0x5B);
 extern XBYTE    BattTemp;						//_at_(ECRAM1+0x5C);
@@ -490,12 +488,12 @@ extern XBYTE	pDevStus;					//_at_ OEMRAM2+0x03 203
 	#define	pKBLight			BIT5
 	#define	p3GDevice			BIT6
 	#define	pSwitchableBTN		BIT7
-//ANGELAS107:S-Add code for GBSI function.
-//ANGELAS033:Add start
-//extern XBYTE	batteryFirstUsedDateL;		//_at_ OEMRAM2+0x04
-//extern XBYTE	batteryFirstUsedDateH;		//_at_ OEMRAM2+0x05
-//ANGELAS033:Add end
-//ANGELAS107:E-Add code for GBSI function.
+	
+extern XBYTE	BatSmartChargeL;		//_at_ OEMRAM2+0x04
+	#define  b0QuickChargeSupport       BIT0       
+	#define  b1QuickChargeEnable    	BIT1
+extern XBYTE	BatSmartChargeH;		//_at_ OEMRAM2+0x05
+
 extern XBYTE  batteryChemistry[4];          //_at_ OEMRAM2+06 //ANGELAS107:Add code for GBSI function.
 #define	pReserve0B_bit0			BIT0
 #define	pTheaterKey				BIT1
