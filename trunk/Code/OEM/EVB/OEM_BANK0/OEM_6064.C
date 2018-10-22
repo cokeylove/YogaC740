@@ -298,7 +298,7 @@ void Hook_64Port(BYTE KBHICmd)
 		KBHIStep=0x01;
 		break;
 	case 0x49:
-		Cmd_49(0x60);//HEGANGS021:one key wake
+		Cmd_49(0x60);//one key wake
 		break;
 	case 0x4B:
 		KBHIStep=0x04;
@@ -752,7 +752,7 @@ void Cmd_46(BYTE nPort,BYTE nData)
 	case 0x84:
 		uReserve07.fbit.nFanManual = 0;		// return EC control.
 		break;
-	case 0x85:            //HEGANGS049:Add the 530s Highper formance and yoga30 quite mode function
+	case 0x85:            //HEGANGS049:Add the 530s High performance and yoga530 quite mode function
 		HighPerf = 1;		// Set high performance fantable
 		break;
 	case 0x86:
@@ -1740,6 +1740,7 @@ void Chk_UEFIStatus(void)
     	}
     }
 }
+
 void Clr_UEFIStatus(void)
 {
     if(IS_MASK_CLEAR(LENOVOPMFW_Temp,EEPROM_Token))

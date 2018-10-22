@@ -73,9 +73,9 @@ void ScanADCDyChannel1(void)
 		ADP_I_SUM += ADPI_Data[0];
 		ADPI_AvgData = ADP_I_SUM / 4;
    
-		if (!(ADPI2Sec%5))// HEGANGS006£ºModify protect setting
+		if (!(ADPI2Sec%5))//Modify protect setting
 		{	
-			if(Proch_Delay>0) // HEGANGS032:Modify power setting
+			if(Proch_Delay>0) //Modify power setting
 			Proch_Delay--;
 			if(Proch_Delay>8)
 			Proch_Delay=8;
@@ -175,7 +175,7 @@ void Init_VC(BYTE Group)
 
 void Chk_HybridFORBQ24780_STPP(void)
 {
-	if(Read_AC_IN() && (nBattGasgauge > Chk_Hybrid_STPP_min_BattGasgauge))   //HEGANGS038:Modify the charger IC turbo boost point (RSOC>10% Enable)   
+	if(Read_AC_IN() && (nBattGasgauge > Chk_Hybrid_STPP_min_BattGasgauge))   //Modify the charger IC turbo boost point (RSOC>10% Enable)   
 	{
 		SET_MASK(CHGIC_WriteCmd0x37L, TurboBoost);
 	 	if(IS_MASK_CLEAR(LENOVOPMFW,BATTERY_MAIN_CAL))  
@@ -190,7 +190,7 @@ void Chk_HybridFORBQ24780_STPP(void)
 			cBattFlag0.fbit.cCmdAcOff=0;	
  		}
 		
- 		if(nBattGasgauge <= Chk_Hybrid_STPP_min_BattGasgauge)//G32:change disableTurboBoost capacity from 40 to 36//G82:Change battery capacity from 39 to 40 for disable TurboBoost follow SPEC.
+ 		if(nBattGasgauge <= Chk_Hybrid_STPP_min_BattGasgauge)//change disableTurboBoost capacity from 40 to 36//G82:Change battery capacity from 39 to 40 for disable TurboBoost follow SPEC.
 		{
 			CLEAR_MASK(CHGIC_WriteCmd0x37L, TurboBoost);
 		}

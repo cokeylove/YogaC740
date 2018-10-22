@@ -237,6 +237,7 @@ const sDMAScratchSRAM code asDMAScratchSRAM[]=
 	{	&SCRA4H,	&SCRA4M,	&SCRA4L	}		// 256 bytes  (externl ram 0xF00 ~ 0xFFF)
 
 };
+
 void  CacheDma(BYTE sramnum,WORD addr)
 {
 	*asDMAScratchSRAM[sramnum].scarh = 0x80;

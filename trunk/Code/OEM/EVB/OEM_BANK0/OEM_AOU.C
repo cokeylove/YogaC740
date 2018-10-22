@@ -34,7 +34,8 @@
 // Non-AOU port | AC mode | PwrSDP | PwrSDP | PwrOff | PwrOff |
 //              | DC mode | PwrSDP | PwrSDP | PwrOff | PwrOff |
 // -------------+---------+--------+--------+--------+---------
-static AOU_USB_PORT_POWER_TABLE code AouPortPowerTbl = {
+static AOU_USB_PORT_POWER_TABLE code AouPortPowerTbl = 
+{
   {    // S0    // S3    // S4_5
     {  PwrCDP,  PwrDCP,  PwrDCP  }, // AcEnMode  (Table 6.)
     {  PwrCDP,  PwrDCP,  PwrOff  }, // DcEnMode  (Table 6.)
@@ -43,7 +44,8 @@ static AOU_USB_PORT_POWER_TABLE code AouPortPowerTbl = {
   }
 };
 
-static AOU_USB_PORT_POWER_TABLE code NonAouPortPowerTbl = {
+static AOU_USB_PORT_POWER_TABLE code NonAouPortPowerTbl = 
+{
   {    // S0    // S3    // S4_5
     {  PwrSDP,  PwrSDP,  PwrOn   }, // AcEnMode  (Table 6.)
     {  PwrSDP,  PwrSDP,  PwrOff  }, // DcEnMode  (Table 6.)
@@ -71,7 +73,8 @@ static AOU_USB_PORT_POWER_TABLE code NonAouPortPowerTbl = {
 //              | S4/S5 w/o device | PwrOff   | PwrOff  | PwrOff | PwrOff |
 // -------------+------------------+----------+---------+--------+---------
 
-static AOU_BATT_PERCENT_TABLE code AouBattDcPercentTbl[5] = {
+static AOU_BATT_PERCENT_TABLE code AouBattDcPercentTbl[5] = 
+{
   // AOU port
      // 100%-16%   // 15%-11%    // 10%-6%     // 5%-0%
   {  PwrCDP      , PwrCDP      , PwrCDP      , PwrCDP  },  // S0
@@ -81,7 +84,8 @@ static AOU_BATT_PERCENT_TABLE code AouBattDcPercentTbl[5] = {
   {  PwrDCP      , PwrOff      , PwrOff      , PwrOff  }   // S4/S5 w/o device
 };
 
-static AOU_BATT_PERCENT_TABLE  code NonAouDcBattPercentTbl[5] = {
+static AOU_BATT_PERCENT_TABLE  code NonAouDcBattPercentTbl[5] = 
+{
   // Non-AOU port
      // 100%-16%   // 15%-11%    // 10%-6%     // 5%-0%
   {  PwrSDP      , PwrSDP      , PwrSDP      , PwrSDP  },  // S0
@@ -106,240 +110,278 @@ static AOU_BATT_PERCENT_TABLE  code NonAouDcBattPercentTbl[5] = {
 // |    1     |    1     |  CDP, load detection with ILIM_LO + 60mA thresholds or if a BC1.2 primary detection occurs (S0)|
 // +----------+----------+------------------------------------------------------------------------------------------------+
 //
-void AouSdpModeS3 (
-) {
-CHG_MOD1_LOW();
-CHG_MOD3_LOW();
-}
-
-void AouDcpMode(
-) {
-CHG_MOD1_LOW();
-CHG_MOD3_HI();
-}
-
-void AouSdpModeS0(
-) { 
-CHG_MOD1_HI();
-CHG_MOD3_LOW();
-}
-
-void AouCdpMode(
-) {
-CHG_MOD1_HI();
-CHG_MOD3_HI();
-}
-//Modify USB charge setting in DC S5.
-void AouPowoffMode(
-)
+void AouSdpModeS3() 
 {
-CHG_MOD1_LOW();
-CHG_MOD3_LOW();
+    CHG_MOD1_LOW();
+    CHG_MOD3_LOW();
+}
+
+void AouDcpMode() 
+{
+    CHG_MOD1_LOW();
+    CHG_MOD3_HI();
+}
+
+void AouSdpModeS0() 
+{ 
+    CHG_MOD1_HI();
+    CHG_MOD3_LOW();
+}
+
+void AouCdpMode() 
+{
+    CHG_MOD1_HI();
+    CHG_MOD3_HI();
+}
+//Modify USB charge setting in DC S5.
+void AouPowoffMode()
+{
+    CHG_MOD1_LOW();
+    CHG_MOD3_LOW();
 
 }
 //Modify USB charge setting in DC S5.
-void GetSystemSxType (
-  AOU_SX_MODE     *AouSxMode
-) {
-  switch (SysPowState) {
-    case SYSTEM_S0:
-      *AouSxMode = S0PwrMode;
-      break;
+void GetSystemSxType (AOU_SX_MODE *AouSxMode) 
+{
+    switch (SysPowState) 
+    {
+        case SYSTEM_S0:
+            *AouSxMode = S0PwrMode;
+            break;
 
-    case SYSTEM_S3:
-    case SYSTEM_S0_S3:
-      *AouSxMode = S3PwrMode;
-      break;
+        case SYSTEM_S3:
+        case SYSTEM_S0_S3:
+            *AouSxMode = S3PwrMode;
+            break;
 
-    case SYSTEM_S4:
-    case SYSTEM_S5:
-	case SYSTEM_DSX://modify USB charge setting.
-    case SYSTEM_S0_S4:
-    case SYSTEM_S0_S5:
-	case SYSTEM_S5_DSX://modify USB charge setting.
+        case SYSTEM_S4:
+        case SYSTEM_S5:
+    	case SYSTEM_DSX://modify USB charge setting.
+        case SYSTEM_S0_S4:
+        case SYSTEM_S0_S5:
+    	case SYSTEM_S5_DSX://modify USB charge setting.
 		
-      *AouSxMode = S4_5PwrMode;
-      break;
-  }
+            *AouSxMode = S4_5PwrMode;
+            break;
+    }
 }
 
-AOU_USB_POWER_MODE  DetectAouUsbPwrMode (
-  AOU_USB_PORT_MODE UsbPortMode
-) {
-  AOU_USB_POWER_MODE  UsbPowerMode;
-  AOU_STATE           AouState;
-  AOU_SX_MODE         AouSxMode;
+AOU_USB_POWER_MODE  DetectAouUsbPwrMode (AOU_USB_PORT_MODE UsbPortMode) 
+{
+    AOU_USB_POWER_MODE  UsbPowerMode;
+    AOU_STATE           AouState;
+    AOU_SX_MODE         AouSxMode;
 
-  GetSystemSxType (&AouSxMode);
-  if (SYS_IS_AC_MODE) {
-    // System is in AC mode
-    if (IS_MASK_SET(EMStatusBit,b1SetUSBChgEn)) {
-      // AOU AC enabled
-      AouState = AcEnMode;
-    } else {
-      // AOU disabled
-      AouState = AcDisMode;
+    GetSystemSxType (&AouSxMode);
+    if (SYS_IS_AC_MODE) 
+    {
+        // System is in AC mode
+        if (IS_MASK_SET(EMStatusBit,b1SetUSBChgEn)) 
+        {
+            // AOU AC enabled
+            AouState = AcEnMode;
+        } 
+        else 
+        {
+            // AOU disabled
+            AouState = AcDisMode;
+        }
+    } 
+    else 
+    {
+        // System is in DC mode
+        if (IS_MASK_CLEAR(EMStatusBit,b1SetUSBChgEn))
+        { 
+            // AOU disabled
+            AouState = DcDisMode;      
+        } 
+        else 
+        {
+            // AOU AC/DC enabled
+            AouState = DcEnMode;
+        }
     }
-  } else {
-    // System is in DC mode
-    if (IS_MASK_CLEAR(EMStatusBit,b1SetUSBChgEn)){ 
-      // AOU disabled
-      AouState = DcDisMode;      
-    } else {
-      // AOU AC/DC enabled
-      AouState = DcEnMode;
+
+    GetSystemSxType (&AouSxMode);
+    if (UsbPortMode == AOU_PORT) 
+    {
+        UsbPowerMode = AouPortPowerTbl.PwrMode[AouState].Sx[AouSxMode];
+    } 
+    else 
+    {
+        UsbPowerMode = NonAouPortPowerTbl.PwrMode[AouState].Sx[AouSxMode];
     }
-  }
 
-  GetSystemSxType (&AouSxMode);
-  if (UsbPortMode == AOU_PORT) {
-    UsbPowerMode = AouPortPowerTbl.PwrMode[AouState].Sx[AouSxMode];
-  } else {
-    UsbPowerMode = NonAouPortPowerTbl.PwrMode[AouState].Sx[AouSxMode];
-  }
-
-  return UsbPowerMode;  
+    return UsbPowerMode;  
 }
 
-AOU_USB_POWER_MODE  DetectAouDcUsbPwrMode (
-  AOU_USB_PORT_MODE UsbPortMode
-) {
-  AOU_USB_POWER_MODE  UsbPowerMode;
-  BYTE                AouBattIndex;
-  BYTE                BattLevel;
-  AOU_SX_MODE         AouSxMode;
-  AOU_DC_SX_MODE      AouDcSxIndex;
+AOU_USB_POWER_MODE  DetectAouDcUsbPwrMode (AOU_USB_PORT_MODE UsbPortMode) 
+{
+    AOU_USB_POWER_MODE  UsbPowerMode;
+    BYTE                AouBattIndex;
+    BYTE                BattLevel;
+    AOU_SX_MODE         AouSxMode;
+    AOU_DC_SX_MODE      AouDcSxIndex;
 
-  //
-  // A debug flag for engineer to assign battery level directly for testing.
-  //
-  if (IS_MASK_SET (EC_AOU_DBG_FLAG, AOU_DC_LEVEL_DBG)) {
-    BattLevel = (EC_AOU_DBG_FLAG & (~AOU_DC_LEVEL_DBG));
-    if (BattLevel > 100) {
-      //
-      //  Max battery level is up to 100%.
-      //
-      BattLevel = 100;
-    }
-  } else {
     //
-    //  Real battery level.
+    // A debug flag for engineer to assign battery level directly for testing.
     //
-    BattLevel = nBattGasgauge;
-  }
-
-  AouBattIndex = 0; // Default 100%-16%
-
-  if ((BattLevel <= 15) && (BattLevel >= 11)) {
-    AouBattIndex = 1; // 15%-11%
-  } 
-  if ((BattLevel <= 10) && (BattLevel >= 5)) {
-    AouBattIndex = 2; // 10%-5%
-  } 
-  if (BattLevel <= 5) {
-    AouBattIndex = 3; // 5%-0%
-  }
-
-  GetSystemSxType (&AouSxMode);
-  if (AouSxMode != S0PwrMode) {
-    if (AouSxMode == S3PwrMode) {
-      if (1) {
-        AouDcSxIndex = S3DcPwrMode;
-      } else {
-        AouDcSxIndex = S3DcPwrModeNoDev;
-      }      
-    } else if (AouSxMode == S4_5PwrMode) {
-      if (1) {
-        AouDcSxIndex = S4_5DcPwrMode;
-      } else {
-        AouDcSxIndex = S4_5DcPwrModeNoDev;
-      }
+    if (IS_MASK_SET (EC_AOU_DBG_FLAG, AOU_DC_LEVEL_DBG)) 
+    {
+        BattLevel = (EC_AOU_DBG_FLAG & (~AOU_DC_LEVEL_DBG));
+        if (BattLevel > 100) 
+        {
+            //
+            //  Max battery level is up to 100%.
+            //
+            BattLevel = 100;
+        }
+    } 
+    else 
+    {
+        //
+        //  Real battery level.
+        //
+        BattLevel = nBattGasgauge;
     }
-  } else {
-    AouDcSxIndex = S0DcPwrMode;
-  };
 
-  if (UsbPortMode == AOU_PORT) {
-    UsbPowerMode = AouBattDcPercentTbl[AouDcSxIndex].AouBattLevel[AouBattIndex];
-    if ((IS_MASK_CLEAR(EMStatusBit,b6RdUSBChgS45)) && (AouSxMode == S4_5PwrMode)) {    //disable charge when S4/S5 and DC mode
-    UsbPowerMode = PwrOff;
+    AouBattIndex = 0; // Default 100%-16%
+
+    if ((BattLevel <= 15) && (BattLevel >= 11)) 
+    {
+        AouBattIndex = 1; // 15%-11%
     }
-  } else {
-    UsbPowerMode = NonAouDcBattPercentTbl[AouDcSxIndex].AouBattLevel[AouBattIndex];
-  }
+    
+    if ((BattLevel <= 10) && (BattLevel >= 5)) 
+    {
+        AouBattIndex = 2; // 10%-5%
+    }
+    
+    if (BattLevel <= 5) 
+    {
+        AouBattIndex = 3; // 5%-0%
+    }
 
-  return UsbPowerMode;  
+    GetSystemSxType (&AouSxMode);
+    if (AouSxMode != S0PwrMode) 
+    {
+        if (AouSxMode == S3PwrMode) 
+        {
+            if (1) 
+            {
+                AouDcSxIndex = S3DcPwrMode;
+            }
+            else 
+            {
+                AouDcSxIndex = S3DcPwrModeNoDev;
+            }      
+        }
+        else if (AouSxMode == S4_5PwrMode) 
+        {
+            if (1) 
+            {
+                AouDcSxIndex = S4_5DcPwrMode;
+            } 
+            else 
+            {
+                AouDcSxIndex = S4_5DcPwrModeNoDev;
+            }
+        }
+    } 
+    else 
+    {
+        AouDcSxIndex = S0DcPwrMode;
+    };
+
+    if (UsbPortMode == AOU_PORT) 
+    {
+        UsbPowerMode = AouBattDcPercentTbl[AouDcSxIndex].AouBattLevel[AouBattIndex];
+        if ((IS_MASK_CLEAR(EMStatusBit,b6RdUSBChgS45)) && (AouSxMode == S4_5PwrMode)) 
+        {    //disable charge when S4/S5 and DC mode
+            UsbPowerMode = PwrOff;
+        }
+    } 
+    else 
+    {
+            UsbPowerMode = NonAouDcBattPercentTbl[AouDcSxIndex].AouBattLevel[AouBattIndex];
+    }
+
+    return UsbPowerMode;  
 }
 
-void  SetAouUsbPortMode (
-  AOU_USB_PORT_MODE   UsbPortMode,
-  AOU_USB_POWER_MODE  UsbPwrMode
-) {
-//
-// Description:
-//      Handler for setting USB power mode.
-//
-// Arguments:
-//      UsbPortMode  - AOU_PORT or NON_AOU_PORT.
-//      UsbPwrMode   - There is PwrOff, PwrOn, PwrSDP, PwrCDP and PwrDCP for applying.
-//
-// Return:
-//      None.
-//
-  if (UsbPortMode == AOU_PORT) {
+void  SetAouUsbPortMode (AOU_USB_PORT_MODE   UsbPortMode,AOU_USB_POWER_MODE  UsbPwrMode)
+{
     //
-    // AOU port
+    // Description:
+    //      Handler for setting USB power mode.
     //
+    // Arguments:
+    //      UsbPortMode  - AOU_PORT or NON_AOU_PORT.
+    //      UsbPwrMode   - There is PwrOff, PwrOn, PwrSDP, PwrCDP and PwrDCP for applying.
+    //
+    // Return:
+    //      None.
+    //
+    if (UsbPortMode == AOU_PORT) 
+    {
+        //
+        // AOU port
+        //
 
-    switch (UsbPwrMode) {
-      case PwrOff:
-       USB_CHG_EN_LOW();
-       AouPowoffMode();//Modify USB charge setting in DC S5.
-        RamDebug (0xF0);
-        break;
+        switch (UsbPwrMode) 
+        {
+            case PwrOff:
+                USB_CHG_EN_LOW();
+                AouPowoffMode();//Modify USB charge setting in DC S5.
+                RamDebug (0xF0);
+                break;
 
-      case PwrSDP:
-        AouSdpModeS0();
-		USB_CHG_EN_HI();
-        RamDebug (0xF1);
-        break;
+            case PwrSDP:
+                AouSdpModeS0();
+		        USB_CHG_EN_HI();
+                RamDebug (0xF1);
+                break;
 
-      case PwrCDP:
-        AouCdpMode();
-		USB_CHG_EN_HI();
-        RamDebug (0xF2);
-        break;
+            case PwrCDP:
+                AouCdpMode();
+		        USB_CHG_EN_HI();
+                RamDebug (0xF2);
+                break;
 
-      case PwrDCP:
-        AouDcpMode();
-		USB_CHG_EN_HI();
-        RamDebug (0xF3);
-        break;     
+            case PwrDCP:
+                AouDcpMode();
+		        USB_CHG_EN_HI();
+                RamDebug (0xF3);
+                break;     
+        }
+    } 
+    else 
+    {
+        //
+        // Non-AOU port
+        //
+        switch (UsbPwrMode) 
+        {
+            case PwrOff:
+                USB_ON_INPUT;
+                break;
+
+            case PwrSDP:
+            case PwrCDP: // should not exist
+            case PwrDCP: // should not exist
+                USB_ON_OUTPUT;
+                USB_ON_LOW();
+                break;  
+	    }
+	    
+	    if(IS_MASK_SET(OEMControl,b4DisUSBpower))//Modify usb power setting when bios has detected the wake up device
+	    {
+		    if((SystemIsS3) && IS_MASK_CLEAR(EMStatusBit, b1SetUSBChgEn))
+		    {
+			    USB_ON_INPUT;
+		    }
+	    }
     }
-  } else {
-    //
-    // Non-AOU port
-    //
-    switch (UsbPwrMode) {
-      case PwrOff:
-        USB_ON_INPUT;
-        break;
-
-      case PwrSDP:
-      case PwrCDP: // should not exist
-      case PwrDCP: // should not exist
-        USB_ON_OUTPUT;
-        USB_ON_LOW();
-        break;  
-	}
-	if(IS_MASK_SET(OEMControl,b4DisUSBpower))//HEGANGS026:Modify usb power setting when bios has detected the wake up device
-	{
-		if((SystemIsS3) && IS_MASK_CLEAR(EMStatusBit, b1SetUSBChgEn))
-		{
-			USB_ON_INPUT;
-		}
-	}
-  }
 }
 #endif
 
@@ -356,7 +398,7 @@ void  SetAouUsbPortMode (
 //
 void AOU_Main()
 {
-#if Support_AOU5_V1_2
+    #if Support_AOU5_V1_2
 
     static AOU_USB_POWER_MODE  AouUsbPowerMode, NonAouUsbPowerMode;
     AOU_USB_POWER_MODE  PastAouUsbPowerMode, PastNonAouUsbPowerMode;

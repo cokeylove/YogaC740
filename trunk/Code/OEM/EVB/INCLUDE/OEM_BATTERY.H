@@ -19,7 +19,7 @@
 #define SMbusChB    0x01    // SMbus channel B index,SMbusCh2.
 #define SMbusChC    0x02    // SMbus channel C index,SMbusCh3.
 #define SMbusChD    0x03    // SMbus channel C index,SMbusCh4.
-// msmart
+
 //#define SMbusChC    0x00    // SMbus channel C index
 
 //-----------------------------------------------------------------
@@ -114,13 +114,13 @@ typedef struct RSmbusBStruct
     XBYTE 	*smbdataA;
 	BYTE    block_limit;
 } sRSmbusBStruct;
-//ANGELAS070:add start
+
 typedef struct RTVTstruct
 {
 	BYTE TEM;
 	WORD VOL;
 }SRTVTstruct;
-//ANGELAS070:add end
+
 //-----------------------------------------------------------------
 // Charge and discharge charger rules
 //-------------------------------------------- --------------------
@@ -134,48 +134,13 @@ typedef struct RTVTstruct
 //#define BOverVoltage		13400
 
 
-//#if 0
-//#define CHG_ABattery()	GPIOA.GPin5 = 1;GPIOA.GPin6 = 0;
-//#define CHG_BBattery()	GPIOA.GPin5 = 0;GPIOA.GPin6 = 1;
-//#define DISCHG_ABattery()	GPIOA.GPin7 = 1;
-//#define DISCHG_BBattery()	GPIOA.GPin7 = 0;
-//#endif
-//#define CHG_ABattery()		DACDAT0=0xE7; 	//Set charge current
-//#define CHG_BBattery()		;
-//#define DISCHG_ABattery()	DACDAT0=0; 		//off charge current
-//#define DISCHG_BBattery()	;
-//#define	NONE_BAT		0x00
-//#define	PWR_CHANGE		0x01
-//#define	CHARGE_BAT		0x02
-//#define	DISCHARGE_BAT	0x03
-//#define	PRE_CHARGE		0x04
-//#define	BAT_ERR			0x05
-
-
-//extern bit bCheckChargeDeviceID(void);
-//extern bit bCheckChargeMFID(void);
-//extern bit bSetChargeCurrent(BYTE LowByte, BYTE HithByte);
-//extern bit bSetChargeVoltage(BYTE LowByte, BYTE HithByte);
-//extern bit bSetInputCurrent(BYTE LowByte, BYTE HithByte);
-//extern bit bSetChargerMode(BYTE LowByte, BYTE HithByte);	// M+
 extern void vPollingBatteryData(void);
 extern void Charge_or_Discharge(void);
 extern void	AC_DC_EVENT(void);
 extern void	CheckAdapterInOut(void);
-//extern void Get_All_PSID_Info(void);
-//extern void bCheckBatteryIn(void);
-//extern void vProcessDischarge(void);
-//extern void vChkBatteyStatus(void);
-//extern void ChkBatteryPercentChange(void);
-//extern void vProcessCharge(void);
-//extern bit bAOverVoltage(void);
-//extern bit bBOverVoltage(void);
-//extern bit bAOverTemperature(void);
-//extern bit bBOverTemperature(void);
-//extern void vCoypBatteryData(void);
-//extern void vGetSelectorState(void);
+
 extern void ChkBattery_Percl();
-extern void Clear_Batt_First_Used_Date(void); //ANGELAG015: add
+extern void Clear_Batt_First_Used_Date(void); 
 
 //-----------------------------------------------------------------
 // PSID
@@ -233,16 +198,16 @@ extern void Lock_ShipMode(void);
 extern void Chk_Battery_Full(void);
 extern void UpBatteryPState();
 extern void DownBatteryPState();
-extern void CPUProchotCtrl();//MEILING033:add.
+extern void CPUProchotCtrl();
 extern void Battery100ms(void);
 extern void ChkBattery_abnormal(void);
 extern void LV_BAT_Authentication(void);
 extern void BATT_LEN_OFF(void);
 extern void BATT_LEN_ON(void);
-extern void PollingCPURT(void); //ANGELAS070:add
-extern void PollingGPURT(void); //ANGELAS070:add
-extern void ChkS3DCRSOC(void);//ANGELAS093
-extern void DownACtoBatteryGPUState();  //MEILING055:add.
+extern void PollingCPURT(void); 
+extern void PollingGPURT(void); 
+extern void ChkS3DCRSOC(void);
+extern void DownACtoBatteryGPUState();  
 extern void Battery_Expresscharge(void);
 extern void ChkPsys(void);
 extern void TurboDCOnly(void); 

@@ -14,7 +14,8 @@
 
 extern void AOU_Main(void);
 #if Support_AOU5_V1_2
-typedef enum _AOU_USB_POWER_MODE {
+typedef enum _AOU_USB_POWER_MODE 
+{
   PwrOff = 0,
   PwrOn,       // PwrOn action in EC is as the same as PwrSDP for Non-AOU port.
   PwrSDP = 1,
@@ -22,17 +23,20 @@ typedef enum _AOU_USB_POWER_MODE {
   PwrDCP
 } AOU_USB_POWER_MODE;
 
-typedef struct _AOU_SX_POWER_TABLE {
+typedef struct _AOU_SX_POWER_TABLE 
+{
   AOU_USB_POWER_MODE  Sx[3];
 } AOU_SX_POWER_TABLE;
 
-typedef enum _AOU_SX_MODE {
+typedef enum _AOU_SX_MODE 
+{
   S0PwrMode = 0,
   S3PwrMode,
   S4_5PwrMode
 } AOU_SX_MODE;
 
-typedef enum _AOU_DC_SX_MODE {
+typedef enum _AOU_DC_SX_MODE 
+{
   S0DcPwrMode = 0,
   S3DcPwrMode,
   S3DcPwrModeNoDev,
@@ -40,23 +44,26 @@ typedef enum _AOU_DC_SX_MODE {
   S4_5DcPwrModeNoDev
 } AOU_DC_SX_MODE;
 
-typedef struct _AOU_USB_PORT_POWER_TABLE {
+typedef struct _AOU_USB_PORT_POWER_TABLE 
+{
   AOU_SX_POWER_TABLE   PwrMode[4];
 } AOU_USB_PORT_POWER_TABLE;
 
-typedef enum _AOU_STATE {
+typedef enum _AOU_STATE 
+{
   AcEnMode = 0,
   DcEnMode,
   AcDisMode,
   DcDisMode,
 } AOU_STATE;
 
-typedef enum _AOU_USB_PORT_MODE {
+typedef enum _AOU_USB_PORT_MODE 
+{
   AOU_PORT = 0,
   NON_AOU_PORT
 } AOU_USB_PORT_MODE;
 
-void AouSdpModeS3 ();
+void AouSdpModeS3();
 void AouDcpMode();
 void AouSdpModeS0();
 void AouCdpMode();
@@ -66,7 +73,7 @@ AOU_USB_POWER_MODE  DetectAouUsbPwrMode (AOU_USB_PORT_MODE UsbPortMode);
 AOU_USB_POWER_MODE  DetectAouDcUsbPwrMode (AOU_USB_PORT_MODE UsbPortMode);
 void  SetAouUsbPortMode (AOU_USB_PORT_MODE UsbPortMode, AOU_USB_POWER_MODE UsbPwrMode);
 
-#define SYS_IS_AC_MODE  (!(IS_MASK_CLEAR(SYS_STATUS,AC_ADP))) //|| Read_ACOFF()))
+#define SYS_IS_AC_MODE  (!(IS_MASK_CLEAR(SYS_STATUS,AC_ADP))) 
 
 // Default: // 1. AOU enabled in BIOS or AP in AC mode.
 //          // 2. AOU DC enabled in BIOS in DC mode.
@@ -81,16 +88,19 @@ void  SetAouUsbPortMode (AOU_USB_PORT_MODE UsbPortMode, AOU_USB_POWER_MODE UsbPw
 
 typedef unsigned char AOU_BATT_LEVEL;
 
-typedef struct _AOU_BATT_PERCENT_TABLE {
+typedef struct _AOU_BATT_PERCENT_TABLE 
+{
   AOU_BATT_LEVEL  AouBattLevel[4];
 } AOU_BATT_PERCENT_TABLE;
 
-typedef struct _AOU_DC_USB_PORT_POWER_TABLE {
+typedef struct _AOU_DC_USB_PORT_POWER_TABLE 
+{
   AOU_BATT_PERCENT_TABLE *AouBattPercentTable;
   unsigned char          NumOfBattMode;
 } AOU_DC_USB_PORT_POWER_TABLE;
 
-typedef enum _AOU_SX_DEVICE_MODE {
+typedef enum _AOU_SX_DEVICE_MODE 
+{
   S0_PWR = 0,
   S3_WITH_DEVICE,
   S3_WO_DEVICE,
